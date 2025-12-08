@@ -1,9 +1,16 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Rules", href: "/automation" },
+  { title: "Order Automation", href: "/automation/orders" },
+  { title: "Inventory Automation", href: "/automation/inventory" },
+  { title: "Notifications", href: "/automation/notifications" },
+]
+
 export default function AutomationPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Automation</h1>

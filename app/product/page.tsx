@@ -1,9 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Products", href: "/product" },
+  { title: "Categories", href: "/product/categories" },
+  { title: "Brands", href: "/product/brands" },
+  { title: "Attributes", href: "/product/attributes" },
+  { title: "Import/Export", href: "/product/import-export" },
+]
+
 export default function ProductPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Product</h1>

@@ -1,9 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Purchase Orders", href: "/purchase" },
+  { title: "Draft", href: "/purchase/draft" },
+  { title: "Pending Approval", href: "/purchase/pending" },
+  { title: "Approved", href: "/purchase/approved" },
+  { title: "Received", href: "/purchase/received" },
+]
+
 export default function PurchasePage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Purchase</h1>

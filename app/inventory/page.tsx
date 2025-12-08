@@ -1,9 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "Stock Overview", href: "/inventory" },
+  { title: "Warehouses", href: "/inventory/warehouses" },
+  { title: "Low Stock", href: "/inventory/low-stock" },
+  { title: "Stock Adjustments", href: "/inventory/adjustments" },
+  { title: "Transfer Orders", href: "/inventory/transfers" },
+]
+
 export default function InventoryPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>

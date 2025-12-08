@@ -1,9 +1,16 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Merchants", href: "/merchant-management" },
+  { title: "Pending Approval", href: "/merchant-management/pending" },
+  { title: "Active Merchants", href: "/merchant-management/active" },
+  { title: "Merchant Analytics", href: "/merchant-management/analytics" },
+]
+
 export default function MerchantManagementPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Merchant Management</h1>

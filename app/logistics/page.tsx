@@ -1,9 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Shipments", href: "/logistics" },
+  { title: "In Transit", href: "/logistics/transit" },
+  { title: "Out for Delivery", href: "/logistics/delivery" },
+  { title: "Delivered", href: "/logistics/delivered" },
+  { title: "Carriers", href: "/logistics/carriers" },
+]
+
 export default function LogisticsPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Logistics</h1>

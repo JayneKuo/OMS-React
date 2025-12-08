@@ -1,9 +1,17 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+const sidebarItems = [
+  { title: "All Integrations", href: "/integrations" },
+  { title: "E-commerce", href: "/integrations/ecommerce" },
+  { title: "Shipping", href: "/integrations/shipping" },
+  { title: "Payment", href: "/integrations/payment" },
+  { title: "API Keys", href: "/integrations/api-keys" },
+]
+
 export default function IntegrationsPage() {
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>

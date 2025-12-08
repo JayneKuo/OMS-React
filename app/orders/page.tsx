@@ -3,6 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
+const sidebarItems = [
+  { title: "All Orders", href: "/orders" },
+  { title: "Pending", href: "/orders/pending" },
+  { title: "Processing", href: "/orders/processing" },
+  { title: "Shipped", href: "/orders/shipped" },
+  { title: "Delivered", href: "/orders/delivered" },
+  { title: "Cancelled", href: "/orders/cancelled" },
+]
+
 export default function OrdersPage() {
   const orders = [
     { id: "ORD-001", customer: "John Doe", status: "Pending", amount: "$299.00", date: "2024-01-15" },
@@ -12,7 +21,7 @@ export default function OrdersPage() {
   ]
 
   return (
-    <MainLayout>
+    <MainLayout sidebarItems={sidebarItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
