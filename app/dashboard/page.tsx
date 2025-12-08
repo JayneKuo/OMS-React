@@ -6,7 +6,7 @@ export default function DashboardPage() {
   const stats = [
     {
       title: "Total Orders",
-      value: "1,234",
+      value: "1,2341",
       change: "+12.5%",
       icon: ShoppingCart,
     },
