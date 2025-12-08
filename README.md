@@ -5,15 +5,15 @@ A modern Order Management System built with Next.js 14, TypeScript, and Tailwind
 ## Features
 
 - 📊 **Dashboard** - Overview of key metrics and recent activities
-- 🛒 **Orders** - Complete order management and tracking
-- 🔄 **Returns** - Handle product returns and refunds
-- 🛍️ **Purchase** - Manage purchase orders and suppliers
-- 🚚 **Logistics** - Track shipments and manage logistics
-- 📦 **Inventory** - Monitor stock levels across warehouses
+- � **Ordebrs** - Complete order management and tracking
+- �  **Returns** - Handle product returns and refunds
+- � ️ **Purchase** - Manage purchase orders and suppliers
+- � **Logristics** - Track shipments and manage logistics
+- � **Invientory** - Monitor stock levels across warehouses
 - 📦 **Product** - Manage product catalog
-- 📅 **Events** - System events and activity logs
-- 🔌 **Integrations** - Connect with third-party services
-- 📄 **POM** - Purchase Order Management
+- � ***Events** - System events and activity logs
+- �  **Integrations** - Connect with third-party services
+- � **POtM** - Purchase Order Management
 - ⚡ **Automation** - Configure automated workflows
 - 👥 **Customer Management** - Manage customer relationships
 - 🏪 **Merchant Management** - Handle merchant accounts
