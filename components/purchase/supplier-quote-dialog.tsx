@@ -239,7 +239,7 @@ export function SupplierQuoteDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
-            {t('supplierQuoteManagementTitle')}
+            {t('supplierQuoteManagementTitle' as any)}
           </DialogTitle>
         </DialogHeader>
 
@@ -260,7 +260,7 @@ export function SupplierQuoteDialog({
               </Label>
               <Button size="sm" onClick={() => setShowQuoteForm(!showQuoteForm)}>
                 <Plus className="h-4 w-4 mr-1" />
-                {t('addQuote')}
+                {t('addQuote' as any)}
               </Button>
             </div>
 
@@ -272,7 +272,7 @@ export function SupplierQuoteDialog({
                     <Label>{t('supplierField')}</Label>
                     <Select value={newQuote.supplierId} onValueChange={(value) => setNewQuote({...newQuote, supplierId: value})}>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('selectSupplierPlaceholder')} />
+                        <SelectValue placeholder={t('selectSupplierPlaceholder' as any)} />
                       </SelectTrigger>
                       <SelectContent>
                         {mockSuppliers.map(supplier => (
@@ -313,7 +313,7 @@ export function SupplierQuoteDialog({
                     />
                   </div>
                   <div>
-                    <Label>{t('leadTime')} ({t('days')})</Label>
+                    <Label>{t('leadTime' as any)} ({t('days' as any)})</Label>
                     <Input
                       type="number"
                       value={newQuote.leadTime}
@@ -347,14 +347,14 @@ export function SupplierQuoteDialog({
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{quote.supplierName}</span>
                         <Badge variant={quote.status === "RECEIVED" ? "default" : "secondary"}>
-                          {quote.status === "RECEIVED" ? t('quotedLabel') : t('pendingQuoteLabel')}
+                          {quote.status === "RECEIVED" ? t('quotedLabel' as any) : t('pendingQuoteLabel' as any)}
                         </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         {t('quoteLabel')}: {quote.currency} {quote.quotedPrice.toFixed(2)} | 
-                        {t('leadTime')}: {quote.leadTime}{t('days')} | 
-                        {t('moq')}: {quote.moq} | 
-                        {t('validUntil')}: {quote.validUntil}
+                        {t('leadTime' as any)}: {quote.leadTime}{t('days' as any)} | 
+                        {t('moq' as any)}: {quote.moq} | 
+                        {t('validUntil' as any)}: {quote.validUntil}
                       </div>
                       {quote.notes && (
                         <div className="text-xs text-muted-foreground mt-1">{quote.notes}</div>
@@ -374,7 +374,7 @@ export function SupplierQuoteDialog({
               {quoteRecords.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                  <p>{t('noQuoteRecords')}</p>
+                  <p>{t('noQuoteRecords' as any)}</p>
                 </div>
               )}
             </div>
@@ -382,10 +382,10 @@ export function SupplierQuoteDialog({
 
           {/* 供应商选择 */}
           <div className="space-y-2">
-            <Label>{t('directSelectSupplier')}</Label>
+            <Label>{t('directSelectSupplier' as any)}</Label>
             <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
               <SelectTrigger>
-                <SelectValue placeholder={t('selectSupplierPlaceholder')} />
+                <SelectValue placeholder={t('selectSupplierPlaceholder' as any)} />
               </SelectTrigger>
               <SelectContent>
                 {mockSuppliers.map(supplier => (
@@ -412,7 +412,7 @@ export function SupplierQuoteDialog({
             {t('cancel')}
           </Button>
           <Button onClick={handleSave}>
-            {t('saveSelection')}
+            {t('saveSelection' as any)}
           </Button>
         </div>
       </DialogContent>
