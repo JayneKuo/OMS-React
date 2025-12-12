@@ -320,14 +320,7 @@ export const translations = {
     approvingStatus: '已提交',
     approvedStatus: '通过',
     rejectedStatus: '拒绝',
-    cancelledStatus: '已取消',
-    exceptionStatus: '异常',
-    partialPOStatus: '部分PO',
-    fullPOStatus: '已关闭',
-    confirmedStatus: '已确认',
-    shippedStatus: '已发货',
-    receivedStatus: '已收货',
-    onHoldStatus: '暂停',
+
     closedStatus: '已关闭',
     
     // 优先级
@@ -368,6 +361,15 @@ export const translations = {
     types: '种',
     all: '全部',
     viewAll: '查看全部',
+    
+    // 状态标签页（小写版本）
+    draft: '草稿',
+    submitted: '已提交',
+    confirmed: '已确认',
+    shipped: '已发货',
+    received: '已收货',
+    onHold: '暂停',
+    cancelled: '已取消',
     batchApprove: '批量审批通过',
     batchReject: '批量拒绝',
     basicInfo: '基本信息',
@@ -375,6 +377,53 @@ export const translations = {
     approvalHistory: '审批历史',
     relatedPO: '关联PO',
     quoteFilesTab: '报价文件',
+    
+    // ==================== PO相关翻译 ====================
+    purchaseOrders: '采购订单',
+    managePurchaseOrders: '管理和跟踪供应商采购订单',
+    poNo: 'PO编号',
+    originalPoNo: '原始PO编号',
+    prNos: 'PR编号',
+    referenceNo: '参考编号',
+    supplierName: '供应商名称',
+    destination: '目的地',
+    receiptType: '收货类型',
+    exceptions: '异常',
+    totalPrice: '总价',
+    shippingCarrier: '承运商',
+    expectedShipDate: '预计发货日期',
+    expectedArrivalDate: '预计到货日期',
+    actualArrivalDate: '实际到货日期',
+    toCity: '目标城市',
+    toState: '目标州/省',
+    toCountry: '目标国家',
+    shippingService: '运输服务',
+    shippingNotes: '运输备注',
+    purchaseOrderDate: '采购订单日期',
+    warehouseName: '仓库名称',
+    itemCount: '商品数量',
+    
+
+    
+    // PO操作
+    track: '跟踪',
+    receive: '收货',
+    download: '下载',
+    resume: '恢复',
+    batchSubmitPO: '批量提交',
+    batchConfirm: '批量确认',
+    batchCancel: '批量取消',
+    batchTrack: '批量跟踪',
+    batchResume: '批量恢复',
+    batchUpdate: '批量更新',
+    newPO: '新建PO',
+    createManuallyPO: '手动创建',
+    importFromFilePO: '从文件导入',
+    downloadTemplatePO: '下载模板',
+    
+
+    
+
     
     // ==================== 搜索和筛选 ====================
     searchPlaceholder: '搜索PR编号、业务单号、申请人、部门或备注...',
@@ -726,18 +775,12 @@ export const translations = {
     ON_HOLD: 'On Hold',
     
     // Status tabs lowercase versions
-    draft: 'Draft',
-    submitted: 'Submitted',
     approving: 'Submitted',
     approved: 'Approved',
     rejected: 'Rejected',
-    cancelled: 'Cancelled',
     exception: 'Exception',
     partialPO: 'Partial PO',
     fullPO: 'Full PO',
-    confirmed: 'Confirmed',
-    shipped: 'Shipped',
-    received: 'Received',
     onHold: 'On Hold',
     closed: 'Closed',
     
@@ -756,14 +799,7 @@ export const translations = {
     approvingStatus: 'Submitted',
     approvedStatus: 'Approved',
     rejectedStatus: 'Rejected',
-    cancelledStatus: 'Cancelled',
-    exceptionStatus: 'Exception',
-    partialPOStatus: 'Partial PO',
-    fullPOStatus: 'Full PO',
-    confirmedStatus: 'Confirmed',
-    shippedStatus: 'Shipped',
-    receivedStatus: 'Received',
-    onHoldStatus: 'On Hold',
+
     closedStatus: 'Closed',
     
     // Receipt Type
@@ -795,6 +831,14 @@ export const translations = {
     types: 'types',
     all: 'All',
     viewAll: 'View All',
+    
+    // Status tabs (lowercase versions)
+    draft: 'Draft',
+    submitted: 'Submitted',
+    confirmed: 'Confirmed',
+    shipped: 'Shipped',
+    received: 'Received',
+    cancelled: 'Cancelled',
     batchApprove: 'Batch Approve',
     batchReject: 'Batch Reject',
     basicInfo: 'Request Details',
@@ -803,9 +847,50 @@ export const translations = {
     relatedPO: 'Purchase Orders',
     quoteFilesTab: 'Quotations',
     
-    // ==================== Search and Filter ====================
-    searchPlaceholder: 'Search by Request ID, Business Ref, Requestor, Department or Comments...',
+    // PO Actions
+    track: 'Track',
+    receive: 'Receive',
+    download: 'Download',
+    resume: 'Resume',
+    batchSubmitPO: 'Batch Submit',
+    batchConfirm: 'Batch Confirm',
+    batchCancel: 'Batch Cancel',
+    batchTrack: 'Batch Track',
+    batchResume: 'Batch Resume',
+    batchUpdate: 'Batch Update',
+    newPO: 'New PO',
+    createManuallyPO: 'Create Manually',
+    importFromFilePO: 'Import from File',
+    downloadTemplatePO: 'Download Template',
+    
+    // PO Related Translations
+    purchaseOrders: 'Purchase Orders',
+    managePurchaseOrders: 'Manage and track purchase orders from suppliers',
+    poNo: 'PO No.',
+    originalPoNo: 'Original PO No.',
+    prNos: 'PR No.',
+    referenceNo: 'Reference No.',
+    supplierName: 'Supplier Name',
+    destination: 'Destination',
+    receiptType: 'Receipt Type',
+    exceptions: 'Exceptions',
+    totalPrice: 'Total Price',
+    shippingCarrier: 'Shipping Carrier',
+    expectedShipDate: 'Expected Ship Date',
+    expectedArrivalDate: 'Expected Arrival Date',
+    actualArrivalDate: 'Actual Arrival Date',
+    toCity: 'To City',
+    toState: 'To State',
+    toCountry: 'To Country',
+    shippingService: 'Shipping Service',
+    shippingNotes: 'Shipping Notes',
+    purchaseOrderDate: 'Purchase Order Date',
+    warehouseName: 'Warehouse Name',
+    itemCount: 'Item Count',
     searchPOPlaceholder: 'Search by PO No., Original PO No., Reference No., Supplier, or Destination...',
+    
+    // Search and Filter
+    searchPlaceholder: 'Search by Request ID, Business Ref, Requestor, Department or Comments...',
     prNumber: 'Request ID',
     businessNumber: 'Business Reference',
     requesterNumber: 'Employee ID',
@@ -817,7 +902,7 @@ export const translations = {
     enterApproverName: 'Enter approver name',
     exampleBudgetProject: 'e.g.: Q1-MKT-001',
     
-    // ==================== Batch Actions ====================
+    // Batch Actions
     batchSubmit: 'Batch Submit',
     batchDelete: 'Batch Delete',
     batchGeneratePO: 'Batch Generate PO',
@@ -841,6 +926,13 @@ export const translations = {
     noQuoteRequests: 'No quote requests, click "Add Quote Request" to start managing quotes',
     statusLabel2: 'Status',
     actionsLabel2: 'Actions',
+    
+    
+    // ==================== Search and Filter ====================
+    
+    // ==================== Batch Actions ====================
+    
+    // Quote Request Management
 
   }
 }
