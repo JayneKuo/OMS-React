@@ -312,7 +312,6 @@ export const translations = {
     CONFIRMED: '已确认',
     SHIPPED: '已发货',
     RECEIVED: '已收货',
-    ON_HOLD: '暂停',
     
     // 状态标签页用的小写版本
     draftStatus: '草稿',
@@ -368,7 +367,7 @@ export const translations = {
     confirmed: '已确认',
     shipped: '已发货',
     received: '已收货',
-    onHold: '暂停',
+    exception: '异常',
     cancelled: '已取消',
     batchApprove: '批量审批通过',
     batchReject: '批量拒绝',
@@ -772,7 +771,6 @@ export const translations = {
     CONFIRMED: 'Confirmed',
     SHIPPED: 'Shipped',
     RECEIVED: 'Received',
-    ON_HOLD: 'On Hold',
     
     // Status tabs lowercase versions
     approving: 'Submitted',
@@ -781,7 +779,6 @@ export const translations = {
     exception: 'Exception',
     partialPO: 'Partial PO',
     fullPO: 'Full PO',
-    onHold: 'On Hold',
     closed: 'Closed',
     
     // Priority

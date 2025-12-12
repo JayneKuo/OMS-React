@@ -31,7 +31,7 @@ interface PurchaseOrder {
   supplierName: string
   supplierNo: string
   destination: string
-  status: "DRAFT" | "SUBMITTED" | "CONFIRMED" | "SHIPPED" | "RECEIVED" | "CANCELLED" | "ON_HOLD"
+  status: "DRAFT" | "SUBMITTED" | "CONFIRMED" | "SHIPPED" | "RECEIVED" | "CANCELLED" | "EXCEPTION"
   receiptType: "STANDARD" | "CROSS_DOCK" | "DROP_SHIP" | "RETURN_TO_VENDOR" | "TRANSFER"
   exceptions: string[]
   created: string
@@ -155,7 +155,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierName: "Premium Goods Supply",
     supplierNo: "SUP004",
     destination: "Central Warehouse - Chicago",
-    status: "ON_HOLD",
+    status: "EXCEPTION",
     receiptType: "DROP_SHIP",
     exceptions: ["Payment pending", "Quality check required"],
     created: "2024-01-16T08:00:00Z",
@@ -200,7 +200,7 @@ export default function POPage() {
     SHIPPED: { label: t('SHIPPED'), color: "bg-purple-100 text-purple-800" },
     RECEIVED: { label: t('RECEIVED'), color: "bg-teal-100 text-teal-800" },
     CANCELLED: { label: t('CANCELLED'), color: "bg-red-100 text-red-800" },
-    ON_HOLD: { label: t('ON_HOLD'), color: "bg-yellow-100 text-yellow-800" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "bg-yellow-100 text-yellow-800" },
   }
 
   const receiptTypeConfig = {
@@ -223,7 +223,7 @@ export default function POPage() {
         { id: "confirmed", label: t('CONFIRMED'), value: "CONFIRMED" },
         { id: "shipped", label: t('SHIPPED'), value: "SHIPPED" },
         { id: "received", label: t('RECEIVED'), value: "RECEIVED" },
-        { id: "on_hold", label: t('ON_HOLD'), value: "ON_HOLD" },
+        { id: "exception", label: t('EXCEPTION'), value: "EXCEPTION" },
         { id: "cancelled", label: t('CANCELLED'), value: "CANCELLED" },
       ],
     },
@@ -292,7 +292,7 @@ export default function POPage() {
       CONFIRMED: 0,
       SHIPPED: 0,
       RECEIVED: 0,
-      ON_HOLD: 0,
+      EXCEPTION: 0,
       CANCELLED: 0,
     }
     mockPOs.forEach(po => {
@@ -590,7 +590,7 @@ export default function POPage() {
                 { label: t('view'), action: () => console.log("View", row.orderNo) },
                 { label: t('download'), action: () => console.log("Download", row.orderNo) },
               ]
-            case "ON_HOLD":
+            case "EXCEPTION":
               return [
                 { label: t('view'), action: () => console.log("View", row.orderNo) },
                 { label: t('resume'), action: () => console.log("Resume", row.orderNo) },
@@ -684,7 +684,7 @@ export default function POPage() {
           return [
             { label: t('batchTrack'), action: () => console.log("Batch track", selectedRows) },
           ]
-        case "ON_HOLD":
+        case "EXCEPTION":
           return [
             { label: t('batchResume'), action: () => console.log("Batch resume", selectedRows) },
             { label: t('batchCancel'), action: () => console.log("Batch cancel", selectedRows), variant: "destructive" },
@@ -825,8 +825,8 @@ export default function POPage() {
             <TabsTrigger value="RECEIVED">
               {t('received')} <Badge variant="secondary" className="ml-2">{statusCounts.RECEIVED}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="ON_HOLD">
-              {t('onHold')} <Badge variant="secondary" className="ml-2">{statusCounts.ON_HOLD}</Badge>
+            <TabsTrigger value="EXCEPTION">
+              {t('exception')} <Badge variant="secondary" className="ml-2">{statusCounts.EXCEPTION}</Badge>
             </TabsTrigger>
             <TabsTrigger value="CANCELLED">
               {t('cancelled')} <Badge variant="secondary" className="ml-2">{statusCounts.CANCELLED}</Badge>

@@ -139,7 +139,7 @@ function POI18nTestContent() {
                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">{t('CONFIRMED')}</span>
                 <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">{t('SHIPPED')}</span>
                 <span className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-sm">{t('RECEIVED')}</span>
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">{t('ON_HOLD')}</span>
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">{t('EXCEPTION')}</span>
                 <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">{t('CANCELLED')}</span>
               </div>
             </CardContent>
