@@ -277,12 +277,12 @@ export function ProductSelectionDialog({
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
                   <TableHead className="w-12">{t('select')}</TableHead>
-                  <TableHead>{t('skuCode')}</TableHead>
+                  <TableHead>{t('skuCode' as any)}</TableHead>
                   <TableHead>{t('productName')}</TableHead>
                   <TableHead>{t('specifications')}</TableHead>
                   <TableHead>{t('brand')}</TableHead>
                   <TableHead>{t('category')}</TableHead>
-                  <TableHead>{t('unit')}</TableHead>
+                  <TableHead>{t('unit' as any)}</TableHead>
                   <TableHead className="text-right">{t('unitPrice')}</TableHead>
                   <TableHead className="text-right">{t('costPrice')}</TableHead>
                   <TableHead>{t('stockStatus')}</TableHead>
