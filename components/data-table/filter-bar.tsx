@@ -82,6 +82,7 @@ export function FilterBar({
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [showAdvanced, setShowAdvanced] = React.useState(false)
+  const [filterSearches, setFilterSearches] = React.useState<Record<string, string>>({})
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value)
@@ -238,7 +239,7 @@ export function FilterBar({
         {filters.map((filter) => {
           const activeCount = getActiveFilterCount(filter.id)
           const hasActiveFilters = activeCount > 0
-          const [filterSearch, setFilterSearch] = React.useState("")
+          const filterSearch = filterSearches[filter.id] || ""
           
           // Filter options based on search
           const filteredOptions = filter.options.filter(option =>
@@ -288,12 +289,12 @@ export function FilterBar({
                       <Input
                         placeholder={`Search ${filter.label.toLowerCase()}...`}
                         value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
+                        onChange={(e) => setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))}
                         className="h-8 pl-7 pr-7 text-sm"
                       />
                       {filterSearch && (
                         <button
-                          onClick={() => setFilterSearch("")}
+                          onClick={() => setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-3.5 w-3.5" />

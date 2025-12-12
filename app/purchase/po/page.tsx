@@ -218,18 +218,18 @@ export default function POPage() {
       label: t('status'),
       type: "multiple",
       options: [
-        { id: "draft", label: t('draft'), value: "DRAFT" },
-        { id: "submitted", label: t('submitted'), value: "SUBMITTED" },
-        { id: "confirmed", label: t('confirmed'), value: "CONFIRMED" },
-        { id: "shipped", label: t('shipped'), value: "SHIPPED" },
-        { id: "received", label: t('received'), value: "RECEIVED" },
-        { id: "on_hold", label: t('onHold'), value: "ON_HOLD" },
-        { id: "cancelled", label: t('cancelled'), value: "CANCELLED" },
+        { id: "draft", label: t('DRAFT'), value: "DRAFT" },
+        { id: "submitted", label: t('SUBMITTED'), value: "SUBMITTED" },
+        { id: "confirmed", label: t('CONFIRMED'), value: "CONFIRMED" },
+        { id: "shipped", label: t('SHIPPED'), value: "SHIPPED" },
+        { id: "received", label: t('RECEIVED'), value: "RECEIVED" },
+        { id: "on_hold", label: t('ON_HOLD'), value: "ON_HOLD" },
+        { id: "cancelled", label: t('CANCELLED'), value: "CANCELLED" },
       ],
     },
     {
       id: "receiptType",
-      label: t('receiptType'),
+      label: t('prType'),
       type: "multiple",
       options: [
         { id: "standard", label: t('STANDARD'), value: "STANDARD" },
@@ -241,7 +241,7 @@ export default function POPage() {
     },
     {
       id: "destination",
-      label: t('destination'),
+      label: t('targetWarehouse'),
       type: "multiple",
       options: [
         { id: "la", label: "Los Angeles", value: "Los Angeles" },
@@ -252,7 +252,7 @@ export default function POPage() {
     },
     {
       id: "supplier",
-      label: t('supplierName'),
+      label: t('supplierField'),
       type: "multiple",
       options: [
         { id: "abc", label: "ABC Suppliers Inc.", value: "ABC Suppliers Inc." },
@@ -263,7 +263,7 @@ export default function POPage() {
     },
     {
       id: "carrier",
-      label: t('shippingCarrier'),
+      label: t('supplierField'),
       type: "multiple",
       options: [
         { id: "fedex", label: "FedEx", value: "FedEx" },
@@ -275,11 +275,11 @@ export default function POPage() {
 
   // Advanced search field configurations
   const advancedSearchFields: SearchField[] = [
-    { id: "orderNo", label: t('poNo'), placeholder: "e.g., PO202403150001" },
-    { id: "originalPoNo", label: t('originalPoNo'), placeholder: "e.g., EXT-PO-2024-001" },
-    { id: "prNo", label: t('prNos'), placeholder: "e.g., PR202401100001" },
-    { id: "referenceNo", label: t('referenceNo'), placeholder: "e.g., REF202403150001" },
-    { id: "supplierName", label: t('supplierName'), placeholder: "e.g., ABC Suppliers Inc." },
+    { id: "orderNo", label: t('prNo'), placeholder: "e.g., PO202403150001" },
+    { id: "originalPoNo", label: t('businessNo'), placeholder: "e.g., EXT-PO-2024-001" },
+    { id: "prNo", label: t('prNo'), placeholder: "e.g., PR202401100001" },
+    { id: "referenceNo", label: t('businessNo'), placeholder: "e.g., REF202403150001" },
+    { id: "supplierName", label: t('supplierField'), placeholder: "e.g., ABC Suppliers Inc." },
     { id: "supplierNo", label: "Supplier No.", placeholder: "e.g., SUP001" },
   ]
 

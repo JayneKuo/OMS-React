@@ -65,11 +65,11 @@ export default function LanguageTestPage() {
             <CardTitle>PO翻译测试</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div><strong>{t('purchaseOrders')}:</strong> Purchase Orders</div>
-            <div><strong>{t('poNo')}:</strong> PO No.</div>
-            <div><strong>{t('supplierName')}:</strong> Supplier Name</div>
-            <div><strong>{t('destination')}:</strong> Destination</div>
-            <div><strong>{t('totalPrice')}:</strong> Total Price</div>
+            <div><strong>{t('purchaseOrder')}:</strong> Purchase Orders</div>
+            <div><strong>{t('prNo')}:</strong> PO No.</div>
+            <div><strong>{t('supplierField')}:</strong> Supplier Name</div>
+            <div><strong>{t('targetWarehouse')}:</strong> Destination</div>
+            <div><strong>{t('unitPrice')}:</strong> Total Price</div>
           </CardContent>
         </Card>
 
@@ -91,10 +91,10 @@ export default function LanguageTestPage() {
             <CardTitle>操作翻译测试</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div><strong>{t('track')}:</strong> Track</div>
-            <div><strong>{t('receive')}:</strong> Receive</div>
-            <div><strong>{t('download')}:</strong> Download</div>
-            <div><strong>{t('resume')}:</strong> Resume</div>
+            <div><strong>{t('view')}:</strong> Track</div>
+            <div><strong>{t('confirm')}:</strong> Receive</div>
+            <div><strong>{t('export')}:</strong> Download</div>
+            <div><strong>{t('refresh')}:</strong> Resume</div>
             <div><strong>{t('batchActions')}:</strong> Batch Actions</div>
           </CardContent>
         </Card>

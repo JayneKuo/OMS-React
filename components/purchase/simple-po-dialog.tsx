@@ -12,32 +12,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Package, MapPin } from "lucide-react"
 import { TranslationKey } from "@/lib/i18n"
+import { useI18n } from "@/components/i18n-provider"
+
+// 默认翻译文本
+const defaultTexts: Record<string, string> = {
+  poGenerationDialog: '生成采购订单 (PO)',
+  prNo: 'PR编号',
+  selectItems: '选择商品行',
+  supplierInfo: '供应商信息',
+  supplierName: '供应商名称',
+  supplierCode: '供应商代码',
+  contact: '联系人',
+  phone: '联系电话',
+  email: '邮箱',
+  shippingAddress: '发货地址',
+  tradeTerms: '交易条款',
+  buyerNotes: '买方备注',
+  cancel: '取消',
+  generatePO: '生成PO',
+}
 
 // 安全的useI18n hook，当没有Provider时使用默认值
 function useSafeI18n() {
   try {
-    const { useI18n } = require("@/components/i18n-provider")
     return useI18n()
   } catch {
     // 如果没有Provider，返回默认的中文文本
     return {
       t: (key: TranslationKey) => {
-        const defaultTexts: Record<string, string> = {
-          poGenerationDialog: '生成采购订单 (PO)',
-          prNo: 'PR编号',
-          selectItems: '选择商品行',
-          supplierInfo: '供应商信息',
-          supplierName: '供应商名称',
-          supplierCode: '供应商代码',
-          contact: '联系人',
-          phone: '联系电话',
-          email: '邮箱',
-          shippingAddress: '发货地址',
-          tradeTerms: '交易条款',
-          buyerNotes: '买方备注',
-          cancel: '取消',
-          generatePO: '生成PO',
-        }
         return defaultTexts[key] || key
       }
     }

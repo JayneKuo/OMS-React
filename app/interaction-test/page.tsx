@@ -59,7 +59,7 @@ export default function InteractionTestPage() {
                   <li>点击右上角用户头像按钮 / Click the user avatar button in the top right</li>
                   <li>查看下拉菜单是否出现 / Check if dropdown menu appears</li>
                   <li>尝试切换语言 / Try switching language</li>
-                  <li>点击导航菜单中的"采购管理" / Click "Purchase Management" in navigation</li>
+                  <li>点击导航菜单中的&quot;采购管理&quot; / Click &quot;Purchase Management&quot; in navigation</li>
                 </ol>
               </div>
             </CardContent>

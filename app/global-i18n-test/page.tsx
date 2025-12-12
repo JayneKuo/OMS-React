@@ -86,8 +86,8 @@ export default function GlobalI18nTestPage() {
         <CardContent>
           <div className="text-sm space-y-2">
             <p>1. 点击右上角用户头像</p>
-            <p>2. 在下拉菜单中找到"Language"选项</p>
-            <p>3. 选择"中文简体"或"English"</p>
+            <p>2. 在下拉菜单中找到&quot;Language&quot;选项</p>
+            <p>3. 选择&quot;中文简体&quot;或&quot;English&quot;</p>
             <p>4. 观察页面文本是否立即切换</p>
             <p>5. 访问 /purchase/pr 查看PR列表页面的国际化效果</p>
           </div>

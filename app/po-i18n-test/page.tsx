@@ -57,12 +57,12 @@ function POI18nTestContent() {
               <CardTitle>基本信息 / Basic Info</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div><strong>{t('poNo')}:</strong> PO202403150001</div>
-              <div><strong>{t('originalPoNo')}:</strong> EXT-PO-2024-001</div>
-              <div><strong>{t('prNos')}:</strong> PR202401100001</div>
-              <div><strong>{t('referenceNo')}:</strong> REF202403150001</div>
-              <div><strong>{t('supplierName')}:</strong> ABC Suppliers Inc.</div>
-              <div><strong>{t('destination')}:</strong> Main Warehouse</div>
+              <div><strong>{t('prNo')}:</strong> PO202403150001</div>
+              <div><strong>{t('businessNo')}:</strong> EXT-PO-2024-001</div>
+              <div><strong>{t('prNo')}:</strong> PR202401100001</div>
+              <div><strong>{t('businessNo')}:</strong> REF202403150001</div>
+              <div><strong>{t('supplierField')}:</strong> ABC Suppliers Inc.</div>
+              <div><strong>{t('targetWarehouse')}:</strong> Main Warehouse</div>
             </CardContent>
           </Card>
 
@@ -73,10 +73,10 @@ function POI18nTestContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div><strong>{t('status')}:</strong> {t('CONFIRMED')}</div>
-              <div><strong>{t('receiptType')}:</strong> {t('STANDARD')}</div>
-              <div><strong>{t('exceptions')}:</strong> 0</div>
-              <div><strong>{t('totalPrice')}:</strong> USD 12,500.00</div>
-              <div><strong>{t('shippingCarrier')}:</strong> FedEx</div>
+              <div><strong>{t('prType')}:</strong> {t('STANDARD')}</div>
+              <div><strong>{t('exceptionMark')}:</strong> 0</div>
+              <div><strong>{t('unitPrice')}:</strong> USD 12,500.00</div>
+              <div><strong>{t('supplierField')}:</strong> FedEx</div>
             </CardContent>
           </Card>
 
@@ -88,9 +88,9 @@ function POI18nTestContent() {
             <CardContent className="space-y-2">
               <div><strong>{t('created')}:</strong> 2024-01-15</div>
               <div><strong>{t('updated')}:</strong> 2024-01-16</div>
-              <div><strong>{t('expectedShipDate')}:</strong> 2024-01-20</div>
-              <div><strong>{t('expectedArrivalDate')}:</strong> 2024-01-25</div>
-              <div><strong>{t('purchaseOrderDate')}:</strong> 2024-01-15</div>
+              <div><strong>{t('latestShipDate')}:</strong> 2024-01-20</div>
+              <div><strong>{t('expectedDeliveryDate')}:</strong> 2024-01-25</div>
+              <div><strong>{t('created')}:</strong> 2024-01-15</div>
             </CardContent>
           </Card>
 
@@ -103,9 +103,9 @@ function POI18nTestContent() {
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline">{t('view')}</Button>
                 <Button size="sm" variant="outline">{t('edit')}</Button>
-                <Button size="sm" variant="outline">{t('track')}</Button>
-                <Button size="sm" variant="outline">{t('receive')}</Button>
-                <Button size="sm" variant="outline">{t('download')}</Button>
+                <Button size="sm" variant="outline">{t('view')}</Button>
+                <Button size="sm" variant="outline">{t('confirm')}</Button>
+                <Button size="sm" variant="outline">{t('export')}</Button>
                 <Button size="sm" variant="destructive">{t('cancel')}</Button>
               </div>
             </CardContent>
@@ -118,11 +118,11 @@ function POI18nTestContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline">{t('batchSubmitPO')}</Button>
-                <Button size="sm" variant="outline">{t('batchConfirm')}</Button>
-                <Button size="sm" variant="outline">{t('batchTrack')}</Button>
-                <Button size="sm" variant="outline">{t('batchResume')}</Button>
-                <Button size="sm" variant="destructive">{t('batchCancel')}</Button>
+                <Button size="sm" variant="outline">{t('batchSubmit')}</Button>
+                <Button size="sm" variant="outline">{t('confirm')}</Button>
+                <Button size="sm" variant="outline">{t('view')}</Button>
+                <Button size="sm" variant="outline">{t('refresh')}</Button>
+                <Button size="sm" variant="destructive">{t('cancel')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -134,13 +134,13 @@ function POI18nTestContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">{t('draft')}</span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{t('submitted')}</span>
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">{t('confirmed')}</span>
-                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">{t('shipped')}</span>
-                <span className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-sm">{t('received')}</span>
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">{t('onHold')}</span>
-                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">{t('cancelled')}</span>
+                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">{t('DRAFT')}</span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{t('SUBMITTED')}</span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">{t('CONFIRMED')}</span>
+                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">{t('SHIPPED')}</span>
+                <span className="px-2 py-1 bg-teal-100 text-teal-800 rounded text-sm">{t('RECEIVED')}</span>
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">{t('ON_HOLD')}</span>
+                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">{t('CANCELLED')}</span>
               </div>
             </CardContent>
           </Card>
