@@ -99,6 +99,7 @@ interface SimplePODialogProps {
   lineItems: LineItem[]
   prNo: string
   onConfirm: (data: POGenerationData) => void
+  isContinueGeneration?: boolean // 是否是继续生成PO
 }
 
 export function SimplePODialog({
@@ -107,6 +108,7 @@ export function SimplePODialog({
   lineItems,
   prNo,
   onConfirm,
+  isContinueGeneration = false,
 }: SimplePODialogProps) {
   const { t } = useSafeI18n()
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
@@ -175,7 +177,7 @@ export function SimplePODialog({
 
   const handleConfirm = () => {
     if (!isFormValid()) {
-      alert("请填写所有必填字段，包括每个供应商的详细信息")
+      alert(t('fillAllRequiredFields') || "请填写所有必填字段，包括每个供应商的详细信息")
       return
     }
 
@@ -263,7 +265,7 @@ export function SimplePODialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            {t('poGenerationDialog')}
+            {isContinueGeneration ? t('continueGeneratePODialog') : t('poGenerationDialog')}
           </DialogTitle>
           <DialogDescription>
             {t('prNo')}: {prNo} - 请选择商品行并补充必要信息
@@ -283,7 +285,7 @@ export function SimplePODialog({
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{supplier}</Badge>
                       <span className="text-sm text-muted-foreground">
-                        ({items.length} 个商品)
+                        ({items.length} {t('itemsCount')})
                       </span>
                     </div>
                     <Button
@@ -291,7 +293,7 @@ export function SimplePODialog({
                       size="sm"
                       onClick={() => handleSelectAll(supplier)}
                     >
-                      {items.every(item => selectedItems.includes(item.id)) ? "取消全选" : "全选"}
+                      {items.every(item => selectedItems.includes(item.id)) ? t('deselectAll') : t('selectAll')}
                     </Button>
                   </div>
                   
@@ -336,20 +338,20 @@ export function SimplePODialog({
                       <div className="flex items-center gap-2 mb-4">
                         <Badge variant="outline">{supplier}</Badge>
                         <span className="text-sm text-muted-foreground">
-                          ({lineItems.filter(item => (item.supplier || "未指定供应商") === supplier && selectedItems.includes(item.id)).length} 个商品)
+                          ({lineItems.filter(item => (item.supplier || "未指定供应商") === supplier && selectedItems.includes(item.id)).length} {t('itemsCount')})
                         </span>
                       </div>
                       
                       {/* 供应商基本信息 */}
                       <div className="space-y-4">
-                        <h4 className="font-medium text-sm">供应商基本信息</h4>
+                        <h4 className="font-medium text-sm">{t('supplierInfo')}</h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>{t('supplierName')} *</Label>
                             <Input
                               value={info.name}
                               onChange={(e) => updateSupplierInfo(supplier, "name", e.target.value)}
-                              placeholder={`输入${t('supplierName')}`}
+                              placeholder={t('enterSupplierName')}
                             />
                           </div>
                           <div className="space-y-2">
@@ -357,7 +359,7 @@ export function SimplePODialog({
                             <Input
                               value={info.code}
                               onChange={(e) => updateSupplierInfo(supplier, "code", e.target.value)}
-                              placeholder={`输入${t('supplierCode')}`}
+                              placeholder={t('enterSupplierCode')}
                             />
                           </div>
                           <div className="space-y-2">
@@ -365,7 +367,7 @@ export function SimplePODialog({
                             <Input
                               value={info.contact}
                               onChange={(e) => updateSupplierInfo(supplier, "contact", e.target.value)}
-                              placeholder={`输入${t('contact')}姓名`}
+                              placeholder={t('enterContactName')}
                             />
                           </div>
                           <div className="space-y-2">
@@ -373,7 +375,7 @@ export function SimplePODialog({
                             <Input
                               value={info.phone}
                               onChange={(e) => updateSupplierInfo(supplier, "phone", e.target.value)}
-                              placeholder={`输入${t('phone')}`}
+                              placeholder={t('enterContactPhone')}
                             />
                           </div>
                           <div className="space-y-2 col-span-2">
@@ -382,7 +384,7 @@ export function SimplePODialog({
                               type="email"
                               value={info.email}
                               onChange={(e) => updateSupplierInfo(supplier, "email", e.target.value)}
-                              placeholder={`输入${t('email')}地址`}
+                              placeholder={t('enterEmailAddress')}
                             />
                           </div>
                         </div>
@@ -395,7 +397,7 @@ export function SimplePODialog({
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label>国家</Label>
+                              <Label>{t('country')}</Label>
                               <Select 
                                 value={info.shippingAddress.country} 
                                 onValueChange={(value) => updateSupplierShippingAddress(supplier, "country", value)}
@@ -411,59 +413,59 @@ export function SimplePODialog({
                               </Select>
                             </div>
                             <div className="space-y-2">
-                              <Label>州/省 *</Label>
+                              <Label>{t('stateProvinceRequired')}</Label>
                               <Input
                                 value={info.shippingAddress.state}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "state", e.target.value)}
-                                placeholder="输入州/省"
+                                placeholder={t('enterStateProvince')}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>城市 *</Label>
+                              <Label>{t('cityRequired')}</Label>
                               <Input
                                 value={info.shippingAddress.city}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "city", e.target.value)}
-                                placeholder="输入城市"
+                                placeholder={t('enterCity')}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>邮编</Label>
+                              <Label>{t('zipCode')}</Label>
                               <Input
                                 value={info.shippingAddress.zipCode}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "zipCode", e.target.value)}
-                                placeholder="输入邮编"
+                                placeholder={t('postalCode')}
                               />
                             </div>
                             <div className="space-y-2 col-span-2">
-                              <Label>地址1 *</Label>
+                              <Label>{t('address1Required')}</Label>
                               <Input
                                 value={info.shippingAddress.address1}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "address1", e.target.value)}
-                                placeholder="输入详细地址"
+                                placeholder={t('streetAddress')}
                               />
                             </div>
                             <div className="space-y-2 col-span-2">
-                              <Label>地址2</Label>
+                              <Label>{t('address2Optional')}</Label>
                               <Input
                                 value={info.shippingAddress.address2}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "address2", e.target.value)}
-                                placeholder="输入补充地址信息（可选）"
+                                placeholder={t('apartmentFloorInfo')}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>收货联系人 *</Label>
+                              <Label>{t('shippingContactRequired')}</Label>
                               <Input
                                 value={info.shippingAddress.contact}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "contact", e.target.value)}
-                                placeholder="输入收货联系人"
+                                placeholder={t('enterShippingContact')}
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label>联系电话</Label>
+                              <Label>{t('contactPhone')}</Label>
                               <Input
                                 value={info.shippingAddress.phone}
                                 onChange={(e) => updateSupplierShippingAddress(supplier, "phone", e.target.value)}
-                                placeholder="输入联系电话"
+                                placeholder={t('enterContactPhone')}
                               />
                             </div>
                           </div>
@@ -474,49 +476,49 @@ export function SimplePODialog({
                           <h4 className="font-medium text-sm">{t('tradeTerms')} *</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label>付款方式 *</Label>
+                              <Label>{t('paymentMethodRequired')}</Label>
                               <Select 
                                 value={info.paymentMethod} 
                                 onValueChange={(value) => updateSupplierInfo(supplier, "paymentMethod", value)}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="选择付款方式" />
+                                  <SelectValue placeholder={t('selectPaymentMethod')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="T/T">电汇 (T/T)</SelectItem>
-                                  <SelectItem value="L/C">信用证 (L/C)</SelectItem>
-                                  <SelectItem value="D/P">付款交单 (D/P)</SelectItem>
-                                  <SelectItem value="D/A">承兑交单 (D/A)</SelectItem>
-                                  <SelectItem value="Cash">现金</SelectItem>
+                                  <SelectItem value="T/T">{t('telegraphicTransfer')}</SelectItem>
+                                  <SelectItem value="L/C">{t('letterOfCredit')}</SelectItem>
+                                  <SelectItem value="D/P">{t('documentsAgainstPayment')}</SelectItem>
+                                  <SelectItem value="D/A">{t('documentsAgainstAcceptance')}</SelectItem>
+                                  <SelectItem value="Cash">{t('cash')}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                             <div className="space-y-2">
-                              <Label>运输方式 *</Label>
+                              <Label>{t('shippingMethodRequired')}</Label>
                               <Select 
                                 value={info.shippingMethod} 
                                 onValueChange={(value) => updateSupplierInfo(supplier, "shippingMethod", value)}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="选择运输方式" />
+                                  <SelectValue placeholder={t('selectShippingMethod')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Sea">海运</SelectItem>
-                                  <SelectItem value="Air">空运</SelectItem>
-                                  <SelectItem value="Express">快递</SelectItem>
-                                  <SelectItem value="Land">陆运</SelectItem>
-                                  <SelectItem value="Multimodal">多式联运</SelectItem>
+                                  <SelectItem value="Sea">{t('seaTransport')}</SelectItem>
+                                  <SelectItem value="Air">{t('airTransport')}</SelectItem>
+                                  <SelectItem value="Express">{t('expressDelivery')}</SelectItem>
+                                  <SelectItem value="Land">{t('landTransport')}</SelectItem>
+                                  <SelectItem value="Multimodal">{t('multimodalTransport')}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                             <div className="space-y-2">
-                              <Label>贸易条款 *</Label>
+                              <Label>{t('tradeTermsRequired')}</Label>
                               <Select 
                                 value={info.tradeTerms} 
                                 onValueChange={(value) => updateSupplierInfo(supplier, "tradeTerms", value)}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="选择贸易条款" />
+                                  <SelectValue placeholder={t('selectTradeTerms')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="FOB">FOB (Free On Board)</SelectItem>
@@ -528,7 +530,7 @@ export function SimplePODialog({
                               </Select>
                             </div>
                             <div className="space-y-2">
-                              <Label>最晚发货日期 *</Label>
+                              <Label>{t('latestShipDateRequired')}</Label>
                               <Input
                                 type="date"
                                 value={info.latestShipDate}
@@ -544,7 +546,7 @@ export function SimplePODialog({
                           <Textarea
                             value={info.buyerNotes}
                             onChange={(e) => updateSupplierInfo(supplier, "buyerNotes", e.target.value)}
-                            placeholder="输入针对该供应商的特殊要求或备注信息..."
+                            placeholder={t('enterSpecialRequirements')}
                             className="min-h-[80px]"
                           />
                         </div>
@@ -566,7 +568,7 @@ export function SimplePODialog({
             {t('cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={!isFormValid()}>
-            {t('generatePO')} ({selectedItems.length} 个商品)
+            {t('generatePO')} ({selectedItems.length} {t('itemsCount')})
           </Button>
         </DialogFooter>
       </DialogContent>

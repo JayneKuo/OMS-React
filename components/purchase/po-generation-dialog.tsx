@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Package, Truck, CreditCard, FileText, MapPin, Calendar } from "lucide-react"
+import { useI18n } from "@/components/i18n-provider"
 
 interface LineItem {
   id: string
@@ -72,6 +73,7 @@ export function POGenerationDialog({
   prNo,
   onConfirm,
 }: POGenerationDialogProps) {
+  const { t } = useI18n()
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
   const [supplierInfo, setSupplierInfo] = React.useState({
     name: "",
@@ -100,14 +102,14 @@ export function POGenerationDialog({
   const groupedItems = React.useMemo(() => {
     const groups: Record<string, LineItem[]> = {}
     lineItems.forEach(item => {
-      const supplier = item.supplier || "未指定供应商"
+      const supplier = item.supplier || t('unspecifiedSupplier')
       if (!groups[supplier]) {
         groups[supplier] = []
       }
       groups[supplier].push(item)
     })
     return groups
-  }, [lineItems])
+  }, [lineItems, t])
 
   // 检查是否所有必填信息都已填写
   const isFormValid = () => {
@@ -168,10 +170,10 @@ export function POGenerationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            生成采购订单 (PO)
+            {t('generatePurchaseOrder')}
           </DialogTitle>
           <DialogDescription>
-            PR编号: {prNo} - 请选择商品行并补充必要信息
+            {t('prNumberLabel')}: {prNo} - {t('selectItemsAndFillInfo')}
           </DialogDescription>
         </DialogHeader>
 
@@ -179,7 +181,7 @@ export function POGenerationDialog({
           {/* 商品行选择 */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">选择商品行</CardTitle>
+              <CardTitle className="text-base">{t('selectLineItems')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(groupedItems).map(([supplier, items]) => (
@@ -188,7 +190,7 @@ export function POGenerationDialog({
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{supplier}</Badge>
                       <span className="text-sm text-muted-foreground">
-                        ({items.length} 个商品)
+                        ({items.length} {t('itemsCount')})
                       </span>
                     </div>
                     <Button
@@ -196,7 +198,7 @@ export function POGenerationDialog({
                       size="sm"
                       onClick={() => handleSelectAll(supplier)}
                     >
-                      {items.every(item => selectedItems.includes(item.id)) ? "取消全选" : "全选"}
+                      {items.every(item => selectedItems.includes(item.id)) ? t('deselectAll') : t('selectAll')}
                     </Button>
                   </div>
                   
@@ -229,54 +231,54 @@ export function POGenerationDialog({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
-                供应商信息 *
+                {t('supplierInfo')} *
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="supplierName">供应商名称 *</Label>
+                <Label htmlFor="supplierName">{t('supplierNameRequired')}</Label>
                 <Input
                   id="supplierName"
                   value={supplierInfo.name}
                   onChange={(e) => setSupplierInfo(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="输入供应商名称"
+                  placeholder={t('enterSupplierName')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplierCode">供应商代码</Label>
+                <Label htmlFor="supplierCode">{t('supplierCode')}</Label>
                 <Input
                   id="supplierCode"
                   value={supplierInfo.code}
                   onChange={(e) => setSupplierInfo(prev => ({ ...prev, code: e.target.value }))}
-                  placeholder="输入供应商代码"
+                  placeholder={t('enterSupplierCode')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplierContact">联系人 *</Label>
+                <Label htmlFor="supplierContact">{t('contactPersonRequired')}</Label>
                 <Input
                   id="supplierContact"
                   value={supplierInfo.contact}
                   onChange={(e) => setSupplierInfo(prev => ({ ...prev, contact: e.target.value }))}
-                  placeholder="输入联系人姓名"
+                  placeholder={t('enterContactName')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplierPhone">联系电话</Label>
+                <Label htmlFor="supplierPhone">{t('contactPhone')}</Label>
                 <Input
                   id="supplierPhone"
                   value={supplierInfo.phone}
                   onChange={(e) => setSupplierInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="输入联系电话"
+                  placeholder={t('enterContactPhone')}
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="supplierEmail">邮箱</Label>
+                <Label htmlFor="supplierEmail">{t('email')}</Label>
                 <Input
                   id="supplierEmail"
                   type="email"
                   value={supplierInfo.email}
                   onChange={(e) => setSupplierInfo(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="输入邮箱地址"
+                  placeholder={t('enterEmailAddress')}
                 />
               </div>
             </CardContent>
@@ -287,12 +289,12 @@ export function POGenerationDialog({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                发货地址 *
+                {t('shippingAddress')} *
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="country">国家</Label>
+                <Label htmlFor="country">{t('country')}</Label>
                 <Select value={shippingAddress.country} onValueChange={(value) => setShippingAddress(prev => ({ ...prev, country: value }))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -305,66 +307,66 @@ export function POGenerationDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state">州/省 *</Label>
+                <Label htmlFor="state">{t('stateProvinceRequired')}</Label>
                 <Input
                   id="state"
                   value={shippingAddress.state}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
-                  placeholder="输入州/省"
+                  placeholder={t('enterStateProvince')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city">城市 *</Label>
+                <Label htmlFor="city">{t('cityRequired')}</Label>
                 <Input
                   id="city"
                   value={shippingAddress.city}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
-                  placeholder="输入城市"
+                  placeholder={t('enterCity')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zipCode">邮编</Label>
+                <Label htmlFor="zipCode">{t('zipCode')}</Label>
                 <Input
                   id="zipCode"
                   value={shippingAddress.zipCode}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, zipCode: e.target.value }))}
-                  placeholder="输入邮编"
+                  placeholder={t('enterZipCode')}
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="address1">地址1 *</Label>
+                <Label htmlFor="address1">{t('address1Required')}</Label>
                 <Input
                   id="address1"
                   value={shippingAddress.address1}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, address1: e.target.value }))}
-                  placeholder="输入详细地址"
+                  placeholder={t('enterDetailedAddress')}
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="address2">地址2</Label>
+                <Label htmlFor="address2">{t('address2Optional')}</Label>
                 <Input
                   id="address2"
                   value={shippingAddress.address2}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, address2: e.target.value }))}
-                  placeholder="输入补充地址信息（可选）"
+                  placeholder={t('enterSupplementaryAddress')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="shippingContact">收货联系人 *</Label>
+                <Label htmlFor="shippingContact">{t('shippingContactRequired')}</Label>
                 <Input
                   id="shippingContact"
                   value={shippingAddress.contact}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, contact: e.target.value }))}
-                  placeholder="输入收货联系人"
+                  placeholder={t('enterShippingContact')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="shippingPhone">联系电话</Label>
+                <Label htmlFor="shippingPhone">{t('contactPhone')}</Label>
                 <Input
                   id="shippingPhone"
                   value={shippingAddress.phone}
                   onChange={(e) => setShippingAddress(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="输入联系电话"
+                  placeholder={t('enterContactPhone')}
                 />
               </div>
             </CardContent>
@@ -373,44 +375,44 @@ export function POGenerationDialog({
           {/* 交易条款 */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">交易条款 *</CardTitle>
+              <CardTitle className="text-base">{t('tradeTerms')} *</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="paymentMethod">付款方式 *</Label>
+                <Label htmlFor="paymentMethod">{t('paymentMethodRequired')}</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择付款方式" />
+                    <SelectValue placeholder={t('selectPaymentMethod')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="T/T">电汇 (T/T)</SelectItem>
-                    <SelectItem value="L/C">信用证 (L/C)</SelectItem>
-                    <SelectItem value="D/P">付款交单 (D/P)</SelectItem>
-                    <SelectItem value="D/A">承兑交单 (D/A)</SelectItem>
-                    <SelectItem value="Cash">现金</SelectItem>
+                    <SelectItem value="T/T">{t('telegraphicTransfer')}</SelectItem>
+                    <SelectItem value="L/C">{t('letterOfCredit')}</SelectItem>
+                    <SelectItem value="D/P">{t('documentsAgainstPayment')}</SelectItem>
+                    <SelectItem value="D/A">{t('documentsAgainstAcceptance')}</SelectItem>
+                    <SelectItem value="Cash">{t('cash')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="shippingMethod">运输方式 *</Label>
+                <Label htmlFor="shippingMethod">{t('shippingMethodRequired')}</Label>
                 <Select value={shippingMethod} onValueChange={setShippingMethod}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择运输方式" />
+                    <SelectValue placeholder={t('selectShippingMethod')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Sea">海运</SelectItem>
-                    <SelectItem value="Air">空运</SelectItem>
-                    <SelectItem value="Express">快递</SelectItem>
-                    <SelectItem value="Land">陆运</SelectItem>
-                    <SelectItem value="Multimodal">多式联运</SelectItem>
+                    <SelectItem value="Sea">{t('seaTransport')}</SelectItem>
+                    <SelectItem value="Air">{t('airTransport')}</SelectItem>
+                    <SelectItem value="Express">{t('expressDelivery')}</SelectItem>
+                    <SelectItem value="Land">{t('landTransport')}</SelectItem>
+                    <SelectItem value="Multimodal">{t('multimodalTransport')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tradeTerms">贸易条款 *</Label>
+                <Label htmlFor="tradeTerms">{t('tradeTermsRequired')}</Label>
                 <Select value={tradeTerms} onValueChange={setTradeTerms}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择贸易条款" />
+                    <SelectValue placeholder={t('selectTradeTerms')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="FOB">FOB (Free On Board)</SelectItem>
@@ -422,7 +424,7 @@ export function POGenerationDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="latestShipDate">最晚发货日期 *</Label>
+                <Label htmlFor="latestShipDate">{t('latestShipDateRequired')}</Label>
                 <Input
                   id="latestShipDate"
                   type="date"
@@ -436,13 +438,13 @@ export function POGenerationDialog({
           {/* 买方备注 */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">买方备注</CardTitle>
+              <CardTitle className="text-base">{t('buyerNotes')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea
                 value={buyerNotes}
                 onChange={(e) => setBuyerNotes(e.target.value)}
-                placeholder="输入特殊要求或备注信息..."
+                placeholder={t('enterSpecialRequirements')}
                 className="min-h-[80px]"
               />
             </CardContent>
@@ -451,10 +453,10 @@ export function POGenerationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
+            {t('cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={!isFormValid()}>
-            生成PO ({selectedItems.length} 个商品)
+            {t('generatePOWithItems')} ({selectedItems.length} {t('itemsCount')})
           </Button>
         </DialogFooter>
       </DialogContent>

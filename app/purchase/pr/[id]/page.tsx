@@ -255,36 +255,36 @@ export default function PRDetailPage({ params }: { params: { id: string } }) {
         ]
       case "APPROVED":
         return [
-          { label: "生成PO", action: () => setShowPODialog(true) },
-          { label: "取消", action: () => updatePRStatus("CANCELLED", "取消", "cancel"), variant: "destructive" },
+          { label: t('generatePO'), action: () => setShowPODialog(true) },
+          { label: t('cancel'), action: () => updatePRStatus("CANCELLED", t('cancel'), "cancel"), variant: "destructive" },
         ]
       case "REJECTED":
         return [
-          { label: "编辑", action: () => window.location.href = `/purchase/pr/${pr.id}/edit` },
-          { label: "复制", action: () => window.location.href = `/purchase/pr/create?copy=${pr.id}` },
+          { label: t('edit'), action: () => window.location.href = `/purchase/pr/${pr.id}/edit` },
+          { label: t('copy'), action: () => window.location.href = `/purchase/pr/create?copy=${pr.id}` },
         ]
       case "CANCELLED":
         return [
-          { label: "复制", action: () => window.location.href = `/purchase/pr/create?copy=${pr.id}` },
+          { label: t('copy'), action: () => window.location.href = `/purchase/pr/create?copy=${pr.id}` },
         ]
       case "EXCEPTION":
         return [
-          { label: "修复", action: () => window.location.href = `/purchase/pr/${pr.id}/edit` },
-          { label: "取消", action: () => updatePRStatus("CANCELLED", "取消", "cancel"), variant: "destructive" },
+          { label: t('fix'), action: () => window.location.href = `/purchase/pr/${pr.id}/edit` },
+          { label: t('cancel'), action: () => updatePRStatus("CANCELLED", t('cancel'), "cancel"), variant: "destructive" },
         ]
       case "PARTIAL_PO":
         return [
-          { label: "继续生成PO", action: () => setShowPODialog(true) },
-          { label: "查看PO", action: () => console.log("View PO", pr.prNo) },
-          { label: "取消未挂PO商品", action: () => updatePRStatus("FULL_PO", "取消未挂PO商品", "cancelUnlinkedPO"), variant: "destructive" },
+          { label: t('continueGeneratePO'), action: () => setShowPODialog(true) },
+          { label: t('viewPO'), action: () => console.log("View PO", pr.prNo) },
+          { label: t('cancelUnlinkedItems'), action: () => updatePRStatus("FULL_PO", t('cancelUnlinkedItems'), "cancelUnlinkedPO"), variant: "destructive" },
         ]
       case "FULL_PO":
         return [
-          { label: "查看PO", action: () => console.log("View PO", pr.prNo) },
+          { label: t('viewPO'), action: () => console.log("View PO", pr.prNo) },
         ]
       case "CLOSED":
         return [
-          { label: "查看PO", action: () => console.log("View PO", pr.prNo) },
+          { label: t('viewPO'), action: () => console.log("View PO", pr.prNo) },
         ]
       default:
         return []
@@ -1022,6 +1022,7 @@ export default function PRDetailPage({ params }: { params: { id: string } }) {
         lineItems={pr.lineItems}
         prNo={pr.prNo}
         onConfirm={handlePOGeneration}
+        isContinueGeneration={pr.status === "PARTIAL_PO"}
       />
     </MainLayout>
   )
