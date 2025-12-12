@@ -277,7 +277,6 @@ export const translations = {
     
     // 列表页筛选和表头
     prStatus: 'PR状态',
-    businessEntity: '业务实体',
     targetWarehouses: '目标仓库',
     expectedDeliveryDate: '预期到货时间',
     skuCount: '商品数量',
@@ -873,7 +872,6 @@ export const translations = {
     
     // 列表页筛选和表头
     prStatus: 'PR Status',
-    businessEntity: 'Business Entity',
     targetWarehouses: 'Target Warehouses',
     expectedDeliveryDate: 'Expected Delivery Date',
     skuCount: 'SKU Count',
