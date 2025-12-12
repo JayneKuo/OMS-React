@@ -290,6 +290,7 @@ export const translations = {
     enterShippingContact: '输入收货联系人',
     selectPaymentMethod: '选择付款方式',
     selectShippingMethod: '选择运输方式',
+    shippingMethod: '运输方式',
     selectTradeTerms: '选择贸易条款',
     enterSpecialRequirements: '输入特殊要求或备注信息...',
     generatePOWithItems: '生成PO',
@@ -314,12 +315,6 @@ export const translations = {
     receivingContactPersonLabel: '收货联系人',
     shippingAddressDetail: '收货地址',
     detailedAddressLabel: '详细地址',
-    creationTimeLabel: '创建时间',
-    expectedDeliveryTimeDetail: '期望交货时间',
-    latestShipDateDetail: '最晚发货日期',
-    targetWarehouseDetail: '目标仓库',
-    multiWarehouse: '多仓库',
-    supplierLabel: '供应商',
     poAmountLabel: 'PO金额',
     productQuantityLabel: '商品数量',
     expectedDeliveryTimeLabel2: '期望交货时间',
@@ -352,8 +347,6 @@ export const translations = {
     address1Field: '地址1',
     streetAddress: '街道地址',
     zipCodeField: '邮编',
-    postalCode: '邮政编码',
-    address2Optional: '地址2（可选）',
     apartmentFloorInfo: '公寓号、楼层等补充信息',
     deliveryNotes: '交付备注',
     specialDeliveryRequirements: '特殊交付要求、注意事项等',
@@ -366,12 +359,10 @@ export const translations = {
     selectCurrency: '选择币种',
     batchSetTaxRate: '批量设置税率(%)',
     batchSetSupplier: '批量设置供应商',
-    enterSupplierName: '输入供应商名称',
     applyToAllProducts: '应用到所有商品',
     noProductDetails: '暂无商品明细，点击"添加商品"开始选择商品',
     lineNumber: '行号',
     productInfo: '商品信息',
-    quantity: '数量',
     quantityField: '数量',
     unitField: '单位',
     currencyField: '币种',
@@ -518,11 +509,14 @@ export const translations = {
     // ==================== PO相关翻译 ====================
     purchaseOrders: '采购订单',
     managePurchaseOrders: '管理和跟踪供应商采购订单',
+    
+
     poNo: 'PO编号',
     originalPoNo: '原始PO编号',
     prNos: 'PR编号',
     referenceNo: '参考编号',
     supplierName: '供应商名称',
+    supplierNo: '供应商编号',
     destination: '目的地',
     receiptType: '收货类型',
     exceptions: '异常',
@@ -540,6 +534,106 @@ export const translations = {
     warehouseName: '仓库名称',
     itemCount: '商品数量',
     
+    // PO状态体系
+    shippingStatus: '运输状态',
+    receivingStatus: '收货状态',
+    dataSource: '来源',
+    
+    // 主状态（PO Contract State）
+    CREATED: '已创建',
+    PENDING_CONFIRMATION: '待确认',
+    PARTIALLY_RECEIVED: '部分收货',
+    
+    // 运输状态（Shipping Status）
+    NOT_SHIPPED: '未发运',
+    ASN_CREATED: '已创建ASN',
+    SHIPPING_SHIPPED: '已发运',
+    IN_TRANSIT: '在途',
+    ARRIVED_AT_WAREHOUSE: '到仓',
+    SHIPMENT_COMPLETED: '发运完成',
+    
+    // 收货状态（Receiving Status）
+    NOT_RECEIVED: '未收货',
+    IN_RECEIVING: '收货中',
+    FULLY_RECEIVED: '全部收货',
+    OVER_RECEIVED: '超收',
+    
+    // 状态描述
+    noASNCreated: '没有ASN',
+    asnCreatedNotShipped: '创建了ASN，但供应商尚未发运',
+    asnMarkedShipped: 'ASN标记Shipped或有tracking event',
+    carrierEventInTransit: 'Carrier event进入运输阶段',
+    arrivedAtWarehouse: '货到仓库',
+    allASNCompleted: '所有ASN都完成',
+    noReceiptRecordsStatus: '没有任意收货记录',
+    warehouseStartedReceiving: '仓库开始卸货/收货',
+    partialLinesReceived: '部分行收货完成',
+    allLinesReceived: '所有行收货完成',
+    overReceivedAbnormal: '超收（异常）',
+    
+    // 来源
+    MANUAL: '手动创建',
+    PR_CONVERSION: 'PR转单',
+    API_IMPORT: '接口导入',
+    
+    // PO数量字段
+    totalOrderQty: '订购总数量',
+    shippedQty: '已发运数量',
+    receivedQty: '已收货数量',
+    asnCount: 'ASN数量',
+    
+    // PO新增编辑页面
+    createPurchaseOrder: '新建采购订单',
+    createNewPurchaseOrder: '创建新的采购订单',
+    editPurchaseOrder: '编辑采购订单',
+    purchaseOrderDetails: '采购订单详情',
+    enterOriginalPoNo: '输入原始PO编号',
+    enterReferenceNo: '输入参考编号',
+    purchaseType: '采购类型',
+    selectPurchaseType: '选择采购类型',
+    supplierAndDeliveryInfo: '供应商与交付信息',
+    deliveryInfo: '交付信息',
+    enterContactPerson: '输入联系人',
+    enterContactEmail: '输入联系邮箱',
+    freightTerms: '运费条款',
+    selectFreightTerms: '选择运费条款',
+    collect: '到付',
+    prepaid: '预付',
+    incoterm: '贸易条款',
+    selectIncoterm: '选择贸易条款',
+    productLines: '商品行',
+    noProductLines: '暂无商品行，点击"添加商品"开始选择商品',
+    lineNo: '行号',
+    orderQty: '订购数量',
+    returnedQty: '退供数量',
+    lineAmount: '行金额',
+    saveAsCreated: '保存为已创建',
+    saveAndSend: '保存并发送',
+    attachments: '附件',
+    enterAdditionalNotes: '输入附加备注信息',
+    
+    // PO详情页面
+    poHeaderInfo: 'PO头信息',
+    warehouseInfo: '仓库信息',
+    warehouseAddress: '仓库地址',
+    quantitySummary: '数量汇总',
+    relatedPRs: '关联PR',
+    asnInfo: 'ASN信息',
+    receiptRecords: '收货记录',
+    rtvInfo: '退供信息',
+    noASNRecords: '暂无ASN记录',
+    noReceiptRecords: '暂无收货记录',
+    noRTVRecords: '暂无退供记录',
+    asnNo: 'ASN编号',
+    carrier: '承运商',
+    trackingNo: '跟踪号',
+    estimatedArrival: '预计到达',
+    
+    // PO编辑页面权限
+    limitedEditPermissions: '编辑权限受限',
+    prConversionEditLimitations: 'PR转单的PO编辑权限受限，部分字段不可修改',
+    statusEditLimitations: '当前状态下编辑权限受限',
+    
 
     
     // PO操作
@@ -547,12 +641,24 @@ export const translations = {
     receive: '收货',
     download: '下载',
     resume: '恢复',
+    send: '发送',
+    resend: '重新发送',
+    createASN: '创建ASN',
+    viewASN: '查看ASN',
+    viewReceipts: '查看收货记录',
+    viewRTV: '查看退供记录',
+    
+    // 批量操作
+    batchSend: '批量发送',
+    batchResend: '批量重发',
+    batchCreateASN: '批量创建ASN',
     batchSubmitPO: '批量提交',
     batchConfirm: '批量确认',
     batchCancel: '批量取消',
     batchTrack: '批量跟踪',
     batchResume: '批量恢复',
     batchUpdate: '批量更新',
+    batchDelete: '批量删除',
     newPO: '新建PO',
     createManuallyPO: '手动创建',
     importFromFilePO: '从文件导入',
@@ -578,7 +684,6 @@ export const translations = {
     
     // ==================== 批量操作 ====================
     batchSubmit: '批量提交',
-    batchDelete: '批量删除',
     batchGeneratePO: '批量生成PO',
     noAvailableActions: '此状态无可用操作',
     downloadTemplate: '下载模板',
@@ -601,6 +706,70 @@ export const translations = {
     noQuoteRequests: '暂无询价请求，点击"新增询价"开始管理询价',
     statusLabel2: '状态',
     actionsLabel2: '操作',
+    
+    // PO Create Page New Fields
+    selectPriority: '选择优先级',
+    enterDepartment: '输入部门',
+    shippingAddressInfo: '发货地址信息',
+    receivingAddressInfo: '收货地址信息',
+    latestShippingTime: '最晚发运时间',
+    warehouse: '仓库',
+    costInformation: '费用信息',
+    shippingCost: '运费',
+    handlingFee: '操作费',
+    otherCharge: '其他费用',
+    isShippingTaxable: '运费需纳税',
+    
+    // Product Line New Fields
+    length: '长度',
+    width: '宽度',
+    height: '高度',
+    volume: '体积',
+    taxRate: '税率(%)',
+    taxAmount: '税额',
+    supplierPerLine: '供应商',
+    requiresSN: '需要SN',
+    noSNRequired: '无需SN',
+    requiresLot: '需要批次',
+    noLotRequired: '无需批次',
+    
+    // Cost Summary
+    costSummary: '费用汇总',
+    productTotals: '商品合计',
+    subtotal: '小计',
+    productTotal: '商品总计',
+    additionalCosts: '附加费用',
+    shippingTaxable: '运费纳税',
+    shippingTaxRate: '运费税率',
+    shippingTaxAmount: '运费税额',
+    yes: '是',
+    no: '否',
+    grandTotal: '总计',
+    includesAllCostsAndTaxes: '包含所有费用和税额',
+    
+    // Address Fields
+    postalCode: '邮政编码',
+    
+    // New address and contact fields
+    deliveryContactAndAddress: '交付联系人与地址',
+    supplierContactAndAddress: '供应商联系人与地址',
+    
+    // Missing keys
+    contactPerson: '联系人',
+    selected: '已选择',
+    quantity: '数量',
+    totalAmount: '总金额',
+    receivingProgress: '收货进度',
+    supplierLabel: '供应商',
+    selectCountry: '选择国家',
+    enterQuantity: '输入数量',
+    enterUnitPrice: '输入单价',
+    
+    // New cost cards translations
+    productSummary: '商品汇总',
+    totalItems: '商品总数',
+    totalQuantity: '总数量',
+    orderTotal: '订单总计'
   },
   en: {
     // ==================== Common ====================
@@ -889,6 +1058,7 @@ export const translations = {
     enterShippingContact: 'Enter shipping contact',
     selectPaymentMethod: 'Select payment method',
     selectShippingMethod: 'Select shipping method',
+    shippingMethod: 'Shipping Method',
     selectTradeTerms: 'Select trade terms',
     enterSpecialRequirements: 'Enter special requirements or notes...',
     generatePOWithItems: 'Generate PO',
@@ -913,12 +1083,6 @@ export const translations = {
     receivingContactPersonLabel: 'Receiving Contact Person',
     shippingAddressDetail: 'Shipping Address',
     detailedAddressLabel: 'Detailed Address',
-    creationTimeLabel: 'Creation Time',
-    expectedDeliveryTimeDetail: 'Expected Delivery Time',
-    latestShipDateDetail: 'Latest Ship Date',
-    targetWarehouseDetail: 'Target Warehouse',
-    multiWarehouse: 'Multi-Warehouse',
-    supplierLabel: 'Supplier',
     poAmountLabel: 'PO Amount',
     productQuantityLabel: 'Product Quantity',
     expectedDeliveryTimeLabel2: 'Expected Delivery Time',
@@ -951,8 +1115,6 @@ export const translations = {
     address1Field: 'Address 1',
     streetAddress: 'Street address',
     zipCodeField: 'Zip Code',
-    postalCode: 'Postal code',
-    address2Optional: 'Address 2 (Optional)',
     apartmentFloorInfo: 'Apartment, floor, etc.',
     deliveryNotes: 'Delivery Notes',
     specialDeliveryRequirements: 'Special delivery requirements, notes, etc.',
@@ -965,11 +1127,9 @@ export const translations = {
     selectCurrency: 'Select Currency',
     batchSetTaxRate: 'Batch Set Tax Rate (%)',
     batchSetSupplier: 'Batch Set Supplier',
-    enterSupplierName: 'Enter supplier name',
     applyToAllProducts: 'Apply to All Products',
     noProductDetails: 'No product details, click "Add Product" to start selecting products',
     productInfo: 'Product Info',
-    quantity: 'Quantity',
     quantityField: 'Quantity',
     unitField: 'Unit',
     currencyField: 'Currency',
@@ -1120,12 +1280,24 @@ export const translations = {
     receive: 'Receive',
     download: 'Download',
     resume: 'Resume',
+    send: 'Send',
+    resend: 'Resend',
+    createASN: 'Create ASN',
+    viewASN: 'View ASN',
+    viewReceipts: 'View Receipts',
+    viewRTV: 'View RTV',
+    
+    // Batch Actions
+    batchSend: 'Batch Send',
+    batchResend: 'Batch Resend',
+    batchCreateASN: 'Batch Create ASN',
     batchSubmitPO: 'Batch Submit',
     batchConfirm: 'Batch Confirm',
     batchCancel: 'Batch Cancel',
     batchTrack: 'Batch Track',
     batchResume: 'Batch Resume',
     batchUpdate: 'Batch Update',
+    batchDelete: 'Batch Delete',
     newPO: 'New PO',
     createManuallyPO: 'Create Manually',
     importFromFilePO: 'Import from File',
@@ -1134,11 +1306,14 @@ export const translations = {
     // PO Related Translations
     purchaseOrders: 'Purchase Orders',
     managePurchaseOrders: 'Manage and track purchase orders from suppliers',
+    
+
     poNo: 'PO No.',
     originalPoNo: 'Original PO No.',
     prNos: 'PR No.',
     referenceNo: 'Reference No.',
     supplierName: 'Supplier Name',
+    supplierNo: 'Supplier No.',
     destination: 'Destination',
     receiptType: 'Receipt Type',
     exceptions: 'Exceptions',
@@ -1157,6 +1332,106 @@ export const translations = {
     itemCount: 'Item Count',
     searchPOPlaceholder: 'Search by PO No., Original PO No., Reference No., Supplier, or Destination...',
     
+    // PO Status System
+    shippingStatus: 'Shipping Status',
+    receivingStatus: 'Receiving Status',
+    dataSource: 'Data Source',
+    
+    // Contract State
+    CREATED: 'Created',
+    PENDING_CONFIRMATION: 'Pending Confirmation',
+    PARTIALLY_RECEIVED: 'Partially Received',
+    
+    // Shipping Status
+    NOT_SHIPPED: 'Not Shipped',
+    ASN_CREATED: 'ASN Created',
+    SHIPPING_SHIPPED: 'Shipped',
+    IN_TRANSIT: 'In Transit',
+    ARRIVED_AT_WAREHOUSE: 'Arrived at Warehouse',
+    SHIPMENT_COMPLETED: 'Shipment Completed',
+    
+    // Receiving Status
+    NOT_RECEIVED: 'Not Received',
+    IN_RECEIVING: 'In Receiving',
+    FULLY_RECEIVED: 'Fully Received',
+    OVER_RECEIVED: 'Over Received',
+    
+    // Status Descriptions
+    noASNCreated: 'No ASN created',
+    asnCreatedNotShipped: 'ASN created but supplier has not shipped yet',
+    asnMarkedShipped: 'ASN marked as Shipped or has tracking event',
+    carrierEventInTransit: 'Carrier event entered transit phase',
+    arrivedAtWarehouse: 'Arrived at warehouse',
+    allASNCompleted: 'All ASNs completed',
+    noReceiptRecordsStatus: 'No receipt records',
+    warehouseStartedReceiving: 'Warehouse started unloading/receiving',
+    partialLinesReceived: 'Partial lines received',
+    allLinesReceived: 'All lines received',
+    overReceivedAbnormal: 'Over received (abnormal)',
+    
+    // Data Source
+    MANUAL: 'Manual',
+    PR_CONVERSION: 'PR Conversion',
+    API_IMPORT: 'API Import',
+    
+    // PO Quantity Fields
+    totalOrderQty: 'Total Order Qty',
+    shippedQty: 'Shipped Qty',
+    receivedQty: 'Received Qty',
+    asnCount: 'ASN Count',
+    
+    // PO Create/Edit Pages
+    createPurchaseOrder: 'Create Purchase Order',
+    createNewPurchaseOrder: 'Create new purchase order',
+    editPurchaseOrder: 'Edit Purchase Order',
+    purchaseOrderDetails: 'Purchase Order Details',
+    enterOriginalPoNo: 'Enter original PO number',
+    enterReferenceNo: 'Enter reference number',
+    purchaseType: 'Purchase Type',
+    selectPurchaseType: 'Select purchase type',
+    supplierAndDeliveryInfo: 'Supplier & Delivery Information',
+    deliveryInfo: 'Delivery Information',
+    enterContactPerson: 'Enter contact person',
+    enterContactEmail: 'Enter contact email',
+    freightTerms: 'Freight Terms',
+    selectFreightTerms: 'Select freight terms',
+    collect: 'Collect',
+    prepaid: 'Prepaid',
+    incoterm: 'Incoterm',
+    selectIncoterm: 'Select incoterm',
+    productLines: 'Product Lines',
+    noProductLines: 'No product lines, click "Add Product" to start selecting products',
+    lineNo: 'Line No.',
+    orderQty: 'Order Qty',
+    returnedQty: 'Returned Qty',
+    lineAmount: 'Line Amount',
+    saveAsCreated: 'Save as Created',
+    saveAndSend: 'Save and Send',
+    attachments: 'Attachments',
+    enterAdditionalNotes: 'Enter additional notes',
+    
+    // PO Detail Page
+    poHeaderInfo: 'PO Header Information',
+    warehouseInfo: 'Warehouse Information',
+    warehouseAddress: 'Warehouse Address',
+    quantitySummary: 'Quantity Summary',
+    relatedPRs: 'Related PRs',
+    asnInfo: 'ASN Information',
+    receiptRecords: 'Receipt Records',
+    rtvInfo: 'RTV Information',
+    noASNRecords: 'No ASN records',
+    noReceiptRecords: 'No receipt records',
+    noRTVRecords: 'No RTV records',
+    asnNo: 'ASN No.',
+    carrier: 'Carrier',
+    trackingNo: 'Tracking No.',
+    estimatedArrival: 'Estimated Arrival',
+    
+    // PO Edit Permissions
+    limitedEditPermissions: 'Limited Edit Permissions',
+    prConversionEditLimitations: 'PO converted from PR has limited edit permissions, some fields cannot be modified',
+    statusEditLimitations: 'Edit permissions are limited under current status',
+    
     // Search and Filter
     searchPlaceholder: 'Search by Request ID, Business Ref, Requestor, Department or Comments...',
     prNumber: 'Request ID',
@@ -1172,7 +1447,6 @@ export const translations = {
     
     // Batch Actions
     batchSubmit: 'Batch Submit',
-    batchDelete: 'Batch Delete',
     batchGeneratePO: 'Batch Generate PO',
     noAvailableActions: 'No available actions for this status',
     downloadTemplate: 'Download Template',
@@ -1196,13 +1470,69 @@ export const translations = {
     statusLabel2: 'Status',
     actionsLabel2: 'Actions',
     
+    // PO Create Page New Fields
+    selectPriority: 'Select Priority',
+    enterDepartment: 'Enter Department',
+    shippingAddressInfo: 'Shipping Address Information',
+    receivingAddressInfo: 'Receiving Address Information',
+    latestShippingTime: 'Latest Shipping Time',
+    warehouse: 'Warehouse',
+    costInformation: 'Cost Information',
+    shippingCost: 'Shipping Cost',
+    handlingFee: 'Handling Fee',
+    otherCharge: 'Other Charge',
+    isShippingTaxable: 'Is Shipping Taxable',
     
-    // ==================== Search and Filter ====================
+    // Product Line New Fields
+    length: 'Length',
+    width: 'Width',
+    height: 'Height',
+    volume: 'Volume',
+    taxRate: 'Tax Rate (%)',
+    taxAmount: 'Tax Amount',
+    supplierPerLine: 'Supplier',
+    requiresSN: 'Requires SN',
+    noSNRequired: 'No SN Required',
+    requiresLot: 'Requires Lot',
+    noLotRequired: 'No Lot Required',
     
-    // ==================== Batch Actions ====================
+    // Cost Summary
+    costSummary: 'Cost Summary',
+    productTotals: 'Product Totals',
+    subtotal: 'Subtotal',
+    productTotal: 'Product Total',
+    additionalCosts: 'Additional Costs',
+    shippingTaxable: 'Shipping Taxable',
+    shippingTaxRate: 'Shipping Tax Rate',
+    shippingTaxAmount: 'Shipping Tax Amount',
+    yes: 'Yes',
+    no: 'No',
+    grandTotal: 'Grand Total',
+    includesAllCostsAndTaxes: 'Includes all costs and taxes',
     
-    // Quote Request Management
-
+    // Address Fields
+    postalCode: 'Postal Code',
+    
+    // New address and contact fields
+    deliveryContactAndAddress: 'Delivery Contact & Address',
+    supplierContactAndAddress: 'Supplier Contact & Address',
+    
+    // Missing keys
+    contactPerson: 'Contact Person',
+    selected: 'Selected',
+    quantity: 'Quantity',
+    totalAmount: 'Total Amount',
+    receivingProgress: 'Receiving Progress',
+    supplierLabel: 'Supplier',
+    selectCountry: 'Select Country',
+    enterQuantity: 'Enter Quantity',
+    enterUnitPrice: 'Enter Unit Price',
+    
+    // New cost cards translations
+    productSummary: 'Product Summary',
+    totalItems: 'Total Items',
+    totalQuantity: 'Total Quantity',
+    orderTotal: 'Order Total'
   }
 }
 
