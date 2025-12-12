@@ -115,7 +115,7 @@ export function SNLotManagementDialog({
           <div className="p-3 bg-muted rounded-md">
             <div className="font-medium">{productName}</div>
             <div className="text-sm text-muted-foreground">SKU: {skuCode}</div>
-            <div className="text-sm text-muted-foreground">{t('quantity')}: {quantity}</div>
+            <div className="text-sm text-muted-foreground">{t('quantity' as any)}: {quantity}</div>
           </div>
 
           {/* 序列号管理 */}
