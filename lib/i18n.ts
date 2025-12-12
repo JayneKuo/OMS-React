@@ -417,6 +417,7 @@ export const translations = {
     enterQuotePrice: '输入报价',
     selectValidDate: '选择有效期',
     uploadQuoteFile: '上传报价文件',
+    pleaseSelectSupplierAndPrice: '请选择供应商并输入报价',
     
     // SN/批次管理弹窗
     snLotManagement: 'SN/批次管理',
@@ -1014,6 +1015,7 @@ export const translations = {
     enterQuotePrice: 'Enter quote price',
     selectValidDate: 'Select valid date',
     uploadQuoteFile: 'Upload quote file',
+    pleaseSelectSupplierAndPrice: 'Please select supplier and enter price',
     
     // SN/Lot Management Dialog
     snLotManagement: 'SN/Lot Management',

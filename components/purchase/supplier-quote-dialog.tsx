@@ -174,7 +174,7 @@ export function SupplierQuoteDialog({
   // 添加新询价
   const addQuoteRecord = () => {
     if (!newQuote.supplierId || !newQuote.quotedPrice) {
-      alert(t('pleaseSelectSupplierAndPrice'))
+      alert(t('pleaseSelectSupplierAndPrice' as any))
       return
     }
 
