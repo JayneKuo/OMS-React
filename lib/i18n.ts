@@ -500,6 +500,7 @@ export const translations = {
     cancelled: '已取消',
     partialPO: '部分PO',
     fullPO: '完整PO',
+    closed: '已关闭',
     batchApprove: '批量审批通过',
     batchReject: '批量拒绝',
     basicInfo: '基本信息',
