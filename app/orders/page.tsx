@@ -21,7 +21,7 @@ export default function OrdersPage() {
   ]
 
   return (
-    <MainLayout sidebarItems={sidebarItems}>
+    <MainLayout sidebarItems={sidebarItems} moduleName="Orders">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

@@ -10,7 +10,7 @@ const sidebarItems = [
 
 export default function MerchantManagementPage() {
   return (
-    <MainLayout sidebarItems={sidebarItems}>
+    <MainLayout sidebarItems={sidebarItems} moduleName="Merchant Management">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Merchant Management</h1>

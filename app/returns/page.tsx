@@ -11,7 +11,7 @@ const sidebarItems = [
 
 export default function ReturnsPage() {
   return (
-    <MainLayout sidebarItems={sidebarItems}>
+    <MainLayout sidebarItems={sidebarItems} moduleName="Returns">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Returns</h1>

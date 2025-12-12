@@ -10,7 +10,7 @@ const sidebarItems = [
 
 export default function EventsPage() {
   return (
-    <MainLayout sidebarItems={sidebarItems}>
+    <MainLayout sidebarItems={sidebarItems} moduleName="Events">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Events</h1>

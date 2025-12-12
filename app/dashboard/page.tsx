@@ -1,15 +1,15 @@
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, ShoppingCart, TrendingUp, Users } from "lucide-react"
-
-const sidebarItems = [
-  { title: "Overview", href: "/dashboard" },
-  { title: "Analytics", href: "/dashboard/analytics" },
-  { title: "Reports", href: "/dashboard/reports" },
-  { title: "Settings", href: "/dashboard/settings" },
-]
+import { Package, ShoppingCart, TrendingUp, Users, LayoutDashboard, BarChart3, FileText, Settings } from "lucide-react"
 
 export default function DashboardPage() {
+  const sidebarItems = [
+    { title: "Overview", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { title: "Analytics", href: "/dashboard/analytics", icon: <BarChart3 className="h-4 w-4" /> },
+    { title: "Reports", href: "/dashboard/reports", icon: <FileText className="h-4 w-4" /> },
+    { title: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
+  ]
+
   const stats = [
     {
       title: "Total Orders",
@@ -38,7 +38,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <MainLayout sidebarItems={sidebarItems}>
+    <MainLayout sidebarItems={sidebarItems} moduleName="Dashboard">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
