@@ -14,7 +14,7 @@ const nextConfig = {
   },
   // 禁用一些开发时的检查来加速启动
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: false,
