@@ -490,11 +490,16 @@ export const translations = {
     // 状态标签页（小写版本）
     draft: '草稿',
     submitted: '已提交',
+    approving: '审批中',
+    approved: '已审批',
+    rejected: '已拒绝',
     confirmed: '已确认',
     shipped: '已发货',
     received: '已收货',
     exception: '异常',
     cancelled: '已取消',
+    partialPO: '部分PO',
+    fullPO: '完整PO',
     batchApprove: '批量审批通过',
     batchReject: '批量拒绝',
     basicInfo: '基本信息',
@@ -1028,9 +1033,6 @@ export const translations = {
     RECEIVED: 'Received',
     
     // Status tabs lowercase versions
-    approving: 'Submitted',
-    approved: 'Approved',
-    rejected: 'Rejected',
     exception: 'Exception',
     partialPO: 'Partial PO',
     fullPO: 'Full PO',
@@ -1085,6 +1087,9 @@ export const translations = {
     // Status tabs (lowercase versions)
     draft: 'Draft',
     submitted: 'Submitted',
+    approving: 'Approving',
+    approved: 'Approved',
+    rejected: 'Rejected',
     confirmed: 'Confirmed',
     shipped: 'Shipped',
     received: 'Received',
