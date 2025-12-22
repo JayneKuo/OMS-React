@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Trash2, Save, Send, ArrowLeft, ShoppingBag, Settings, Building, Calendar } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
+import { SNLotManagementDialog } from "@/components/purchase/sn-lot-management-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
@@ -311,6 +312,10 @@ export default function CreatePOPage() {
   // Batch Settings Dialog State
   const [showBatchSettingsDialog, setShowBatchSettingsDialog] = React.useState(false)
   
+  // SN/LOT Management Dialog State
+  const [showSNLotDialog, setShowSNLotDialog] = React.useState(false)
+  const [selectedLineItemForSNLot, setSelectedLineItemForSNLot] = React.useState<string | null>(null)
+  
   // Attachments State
   const [attachments, setAttachments] = React.useState<File[]>([])
   const [notes, setNotes] = React.useState("")
@@ -413,6 +418,33 @@ export default function CreatePOPage() {
       }
       return item
     }))
+  }
+
+  // Open SN/LOT management dialog
+  const openSNLotDialog = (lineItemId: string) => {
+    setSelectedLineItemForSNLot(lineItemId)
+    setShowSNLotDialog(true)
+  }
+
+  // Handle SN/LOT management save
+  const handleSNLotSave = (data: {
+    specifiedSerialNumbers: string[]
+    specifiedLotNumbers: string[]
+    snLotNotes: string
+  }) => {
+    if (selectedLineItemForSNLot) {
+      setLineItems(lineItems.map(item => {
+        if (item.id === selectedLineItemForSNLot) {
+          return {
+            ...item,
+            specifiedSerialNumbers: data.specifiedSerialNumbers,
+            specifiedLotNumbers: data.specifiedLotNumbers,
+            notes: data.snLotNotes
+          }
+        }
+        return item
+      }))
+    }
   }
 
   // Update line item
@@ -1123,6 +1155,8 @@ export default function CreatePOPage() {
                       <TableHead className="min-w-[150px]">{t('supplierPerLine')}</TableHead>
                       <TableHead className="w-[100px]">{t('snManagement')}</TableHead>
                       <TableHead className="w-[100px]">{t('lotManagement')}</TableHead>
+                      <TableHead className="w-[120px]">{t('snList')}</TableHead>
+                      <TableHead className="w-[120px]">{t('lotList')}</TableHead>
                       <TableHead className="min-w-[120px]">{t('notes')}</TableHead>
                       <TableHead className="w-[60px]">{t('actions')}</TableHead>
                     </TableRow>
@@ -1298,6 +1332,62 @@ export default function CreatePOPage() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <div className="space-y-1">
+                            {item.specifiedSerialNumbers && item.specifiedSerialNumbers.length > 0 ? (
+                              <div className="space-y-1">
+                                <div className="text-xs text-muted-foreground">
+                                  {item.specifiedSerialNumbers.length} SN(s)
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 text-xs"
+                                  onClick={() => openSNLotDialog(item.id)}
+                                >
+                                  {t('view')}
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-muted-foreground"
+                                onClick={() => openSNLotDialog(item.id)}
+                              >
+                                {t('add')}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {item.specifiedLotNumbers && item.specifiedLotNumbers.length > 0 ? (
+                              <div className="space-y-1">
+                                <div className="text-xs text-muted-foreground">
+                                  {item.specifiedLotNumbers.length} LOT(s)
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 text-xs"
+                                  onClick={() => openSNLotDialog(item.id)}
+                                >
+                                  {t('view')}
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-muted-foreground"
+                                onClick={() => openSNLotDialog(item.id)}
+                              >
+                                {t('add')}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Input
                             value={item.notes}
                             onChange={(e) => updateLineItem(item.id, "notes", e.target.value)}
@@ -1421,7 +1511,7 @@ export default function CreatePOPage() {
                             onChange={(e) => setCostInfo({...costInfo, isShippingTaxable: e.target.checked})}
                             className="rounded"
                           />
-                          含税
+                          {t('isShippingTaxable')}
                         </Label>
                       </td>
                       <td className="px-4 py-3"></td>
@@ -1630,6 +1720,23 @@ export default function CreatePOPage() {
           selectedCount={selectedLineItems.length}
           onBatchUpdate={batchUpdateLineItems}
         />
+
+        {/* SN/LOT Management Dialog */}
+        {selectedLineItemForSNLot && (
+          <SNLotManagementDialog
+            open={showSNLotDialog}
+            onOpenChange={setShowSNLotDialog}
+            productName={lineItems.find(item => item.id === selectedLineItemForSNLot)?.productName || ''}
+            skuCode={lineItems.find(item => item.id === selectedLineItemForSNLot)?.skuCode || ''}
+            quantity={lineItems.find(item => item.id === selectedLineItemForSNLot)?.quantity || 0}
+            requiresSerialNumber={lineItems.find(item => item.id === selectedLineItemForSNLot)?.requiresSerialNumber || false}
+            requiresLotNumber={lineItems.find(item => item.id === selectedLineItemForSNLot)?.requiresLotNumber || false}
+            specifiedSerialNumbers={lineItems.find(item => item.id === selectedLineItemForSNLot)?.specifiedSerialNumbers || []}
+            specifiedLotNumbers={lineItems.find(item => item.id === selectedLineItemForSNLot)?.specifiedLotNumbers || []}
+            snLotNotes={lineItems.find(item => item.id === selectedLineItemForSNLot)?.notes || ''}
+            onSave={handleSNLotSave}
+          />
+        )}
       </div>
     </MainLayout>
   )

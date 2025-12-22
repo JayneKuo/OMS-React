@@ -8,41 +8,30 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy, MapPin, FileCheck } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
+import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
 
-const sidebarItems = [
-  { title: "PR (Purchase Request)", href: "/purchase/pr", icon: <FileText className="h-4 w-4" /> },
-  { title: "PO (Purchase Order)", href: "/purchase/po", icon: <ShoppingCart className="h-4 w-4" /> },
-  { title: "ASN (Advance Ship Notice)", href: "/purchase/asn", icon: <Truck className="h-4 w-4" /> },
-  { title: "Receipts", href: "/purchase/receipts", icon: <Package className="h-4 w-4" /> },
-  { title: "Receipt Confirm", href: "/purchase/receipt-confirm", icon: <CheckCircle className="h-4 w-4" /> },
-]
-
-// PO Data Interface based on the optimized status system
+// PO Data Interface using new status enums
 interface PurchaseOrder {
   id: string
   orderNo: string
-  originalPoNo: string // Original PO number from external system
-  prNos: string[] // Related PR numbers (multiple PRs can be consolidated into one PO)
+  originalPoNo: string
+  prNos: string[]
   referenceNo: string
   supplierName: string
   supplierNo: string
   destination: string
   warehouseName: string
   
-  // 主状态（PO Status）- 使用新的状态枚举
+  // 使用新的状态枚举
   status: POStatus
-  
-  // 运输状态（Shipping Status）- 使用新的状态枚举
   shippingStatus: ShippingStatus | null
-  
-  // 收货状态（Receiving Status）- 使用新的状态枚举
   receivingStatus: ReceivingStatus | null
   
   // 来源
@@ -79,7 +68,7 @@ interface PurchaseOrder {
   exceptions: string[]
 }
 
-// Mock data with optimized status system
+// Mock data with new status system
 const mockPOs: PurchaseOrder[] = [
   {
     id: "1",
@@ -91,7 +80,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP001",
     destination: "Main Warehouse - Los Angeles",
     warehouseName: "Main Warehouse",
-    status: POStatus.IN_TRANSIT,
+    status: POStatus.IN_PROGRESS,
     shippingStatus: ShippingStatus.SHIPPED,
     receivingStatus: ReceivingStatus.NOT_RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -124,13 +113,13 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP002",
     destination: "East Distribution Center - New York",
     warehouseName: "East DC",
-    status: POStatus.WAITING_FOR_RECEIVING,
+    status: POStatus.IN_PROGRESS,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
     totalOrderQty: 1200,
     shippedQty: 1200,
-    receivedQty: 0,
+    receivedQty: 600,
     totalPrice: 35000.00,
     currency: "USD",
     asnCount: 2,
@@ -157,7 +146,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP003",
     destination: "West Fulfillment Center - Seattle",
     warehouseName: "West FC",
-    status: POStatus.COMPLETED,
+    status: POStatus.COMPLETE,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -223,7 +212,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP005",
     destination: "South Warehouse - Miami",
     warehouseName: "South WH",
-    status: POStatus.PARTIAL_RECEIPT,
+    status: POStatus.IN_PROGRESS,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
@@ -279,42 +268,7 @@ const mockPOs: PurchaseOrder[] = [
     itemCount: 8,
     exceptions: [],
   },
-  {
-    id: "7",
-    orderNo: "PO202403150007",
-    originalPoNo: "EXT-PO-2024-007",
-    prNos: ["PR202401200001"],
-    referenceNo: "REF202403150007",
-    supplierName: "Fast Delivery Inc.",
-    supplierNo: "SUP007",
-    destination: "Main Warehouse - Los Angeles",
-    warehouseName: "Main Warehouse",
-    status: POStatus.RECEIVING,
-    shippingStatus: ShippingStatus.ARRIVED,
-    receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
-    dataSource: "PR_CONVERSION",
-    totalOrderQty: 750,
-    shippedQty: 750,
-    receivedQty: 200,
-    totalPrice: 22000.00,
-    currency: "USD",
-    asnCount: 2,
-    created: "2024-01-19T14:30:00Z",
-    updated: "2024-01-21T16:45:00Z",
-    expectedArrivalDate: "2024-01-21",
-    purchaseOrderDate: "2024-01-19",
-    toCity: "Los Angeles",
-    toState: "CA",
-    toCountry: "USA",
-    shippingService: "Express",
-    shippingCarrier: "DHL",
-    shippingNotes: "Currently receiving at warehouse",
-    itemCount: 25,
-    exceptions: [],
-  },
 ]
-
-// 状态配置将在组件内部使用 t() 函数动态获取标签
 
 export default function POPage() {
   const { t } = useI18n()
@@ -329,89 +283,14 @@ export default function POPage() {
   const [selectedRows, setSelectedRows] = React.useState<(string | number)[]>([])
   const [activeTab, setActiveTab] = React.useState<string>("all")
 
-  // 主状态配置（PO Status）
-  const statusConfig = {
-    NEW: { label: t('NEW'), color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
-    IN_TRANSIT: { label: t('IN_TRANSIT'), color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200" },
-    WAITING_FOR_RECEIVING: { label: t('WAITING_FOR_RECEIVING'), color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200" },
-    RECEIVING: { label: t('RECEIVING'), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200" },
-    PARTIAL_RECEIPT: { label: t('PARTIAL_RECEIPT'), color: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200" },
-    COMPLETED: { label: t('COMPLETED'), color: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" },
-    CANCELLED: { label: t('CANCELLED'), color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200" },
-  }
-
-  // 运输状态配置（Shipping Status）- 基于实际触发事件
-  const shippingStatusConfig = {
-    NOT_SHIPPED: { 
-      label: t('NOT_SHIPPED'), 
-      color: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-      description: t('noASNCreated')
-    },
-    ASN_CREATED: { 
-      label: t('ASN_CREATED'), 
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400",
-      description: t('asnCreatedNotShipped')
-    },
-    SHIPPED: { 
-      label: t('SHIPPED'), 
-      color: "bg-purple-50 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400",
-      description: t('asnMarkedShipped')
-    },
-    IN_TRANSIT: { 
-      label: t('IN_TRANSIT'), 
-      color: "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400",
-      description: t('carrierEventInTransit')
-    },
-    ARRIVED_AT_WAREHOUSE: { 
-      label: t('ARRIVED_AT_WAREHOUSE'), 
-      color: "bg-green-50 text-green-600 dark:bg-green-900/50 dark:text-green-400",
-      description: t('arrivedAtWarehouse')
-    },
-    SHIPMENT_COMPLETED: { 
-      label: t('SHIPMENT_COMPLETED'), 
-      color: "bg-teal-50 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400",
-      description: t('allASNCompleted')
-    },
-  }
-
-  // 收货状态配置（Receiving Status）- 基于实际触发事件
-  const receivingStatusConfig = {
-    NOT_RECEIVED: { 
-      label: t('NOT_RECEIVED'), 
-      color: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-      description: t('noReceiptRecords')
-    },
-    IN_RECEIVING: { 
-      label: t('IN_RECEIVING'), 
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400",
-      description: t('warehouseStartedReceiving')
-    },
-    PARTIALLY_RECEIVED: { 
-      label: t('PARTIALLY_RECEIVED'), 
-      color: "bg-orange-50 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400",
-      description: t('partialLinesReceived')
-    },
-    FULLY_RECEIVED: { 
-      label: t('FULLY_RECEIVED'), 
-      color: "bg-green-50 text-green-600 dark:bg-green-900/50 dark:text-green-400",
-      description: t('allLinesReceived')
-    },
-    OVER_RECEIVED: { 
-      label: t('OVER_RECEIVED'), 
-      color: "bg-red-50 text-red-600 dark:bg-red-900/50 dark:text-red-400",
-      description: t('overReceivedAbnormal')
-    },
-  }
-
   // 来源配置
   const dataSourceConfig = {
-    MANUAL: { label: t('MANUAL'), color: "bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" },
-    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "bg-green-50 text-green-700 dark:bg-green-900/50 dark:text-green-300" },
-    API_IMPORT: { label: t('API_IMPORT'), color: "bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300" },
+    MANUAL: { label: t('MANUAL'), color: "bg-blue-50 text-blue-700" },
+    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "bg-green-50 text-green-700" },
+    API_IMPORT: { label: t('API_IMPORT'), color: "bg-purple-50 text-purple-700" },
   }
 
-  // Define filter configurations based on optimized PO system
+  // Define filter configurations
   const filterConfigs: FilterConfig[] = [
     {
       id: "status",
@@ -419,11 +298,8 @@ export default function POPage() {
       type: "multiple",
       options: [
         { id: "new", label: t('NEW'), value: POStatus.NEW },
-        { id: "in_transit", label: t('IN_TRANSIT'), value: POStatus.IN_TRANSIT },
-        { id: "waiting_for_receiving", label: t('WAITING_FOR_RECEIVING'), value: POStatus.WAITING_FOR_RECEIVING },
-        { id: "receiving", label: t('RECEIVING'), value: POStatus.RECEIVING },
-        { id: "partial_receipt", label: t('PARTIAL_RECEIPT'), value: POStatus.PARTIAL_RECEIPT },
-        { id: "completed", label: t('COMPLETED'), value: POStatus.COMPLETED },
+        { id: "in_progress", label: t('IN_PROGRESS'), value: POStatus.IN_PROGRESS },
+        { id: "complete", label: t('COMPLETE'), value: POStatus.COMPLETE },
         { id: "cancelled", label: t('CANCELLED'), value: POStatus.CANCELLED },
         { id: "exception", label: t('EXCEPTION'), value: POStatus.EXCEPTION },
       ],
@@ -447,8 +323,6 @@ export default function POPage() {
         { id: "not_received", label: t('NOT_RECEIVED'), value: ReceivingStatus.NOT_RECEIVED },
         { id: "partial_received", label: t('PARTIAL_RECEIVED'), value: ReceivingStatus.PARTIAL_RECEIVED },
         { id: "received", label: t('RECEIVED'), value: ReceivingStatus.RECEIVED },
-        { id: "fully_received", label: t('FULLY_RECEIVED'), value: "FULLY_RECEIVED" },
-        { id: "over_received", label: t('OVER_RECEIVED'), value: "OVER_RECEIVED" },
       ],
     },
     {
@@ -499,16 +373,13 @@ export default function POPage() {
     { id: "supplierNo", label: t('supplierNo'), placeholder: "e.g., SUP001" },
   ]
 
-  // Calculate status counts based on status
+  // Calculate status counts
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {
       all: mockPOs.length,
       [POStatus.NEW]: 0,
-      [POStatus.IN_TRANSIT]: 0,
-      [POStatus.WAITING_FOR_RECEIVING]: 0,
-      [POStatus.RECEIVING]: 0,
-      [POStatus.PARTIAL_RECEIPT]: 0,
-      [POStatus.COMPLETED]: 0,
+      [POStatus.IN_PROGRESS]: 0,
+      [POStatus.COMPLETE]: 0,
       [POStatus.CANCELLED]: 0,
       [POStatus.EXCEPTION]: 0,
     }
@@ -544,7 +415,6 @@ export default function POPage() {
     if (Object.keys(advancedSearchValues).length > 0) {
       filtered = filtered.filter(po => {
         return Object.entries(advancedSearchValues).every(([key, value]) => {
-          // Handle PR Nos search specially since it's an array
           if (key === 'prNos') {
             return po.prNos.some(prNo => prNo.toLowerCase().includes(value.toLowerCase()))
           }
@@ -579,7 +449,7 @@ export default function POPage() {
     setCurrentPage(1)
   }, [searchValue, activeFilters, advancedSearchValues, activeTab])
 
-  // Define columns with default visibility based on optimized PO system
+  // Define columns
   const allColumns: Column<PurchaseOrder>[] = [
     {
       id: "orderNo",
@@ -667,48 +537,6 @@ export default function POPage() {
       cell: (row) => row.totalOrderQty.toLocaleString(),
     },
     {
-      id: "shippedQty",
-      header: t('shippedQty'),
-      width: "120px",
-      defaultVisible: false,
-      cell: (row) => (
-        <div className="text-center">
-          <div className="font-medium">{row.shippedQty.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.totalOrderQty > 0 ? `${((row.shippedQty / row.totalOrderQty) * 100).toFixed(1)}%` : '0%'}
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "receivedQty",
-      header: t('receivedQty'),
-      width: "120px",
-      defaultVisible: false,
-      cell: (row) => (
-        <div className="text-center">
-          <div className="font-medium">{row.receivedQty.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.totalOrderQty > 0 ? `${((row.receivedQty / row.totalOrderQty) * 100).toFixed(1)}%` : '0%'}
-          </div>
-        </div>
-      ),
-    },
-
-    {
-      id: "asnCount",
-      header: t('asnCount'),
-      width: "100px",
-      defaultVisible: false,
-      cell: (row) => (
-        <div className="text-center">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            {row.asnCount}
-          </Badge>
-        </div>
-      ),
-    },
-    {
       id: "dataSource",
       header: t('dataSource'),
       width: "120px",
@@ -748,158 +576,44 @@ export default function POPage() {
       defaultVisible: true,
     },
     {
-      id: "prNos",
-      header: t('prNos'),
-      width: "200px",
-      defaultVisible: false,
-      cell: (row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.prNos.slice(0, 2).map((prNo, index) => (
-            <Badge key={index} variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-700">
-              {prNo}
-            </Badge>
-          ))}
-          {row.prNos.length > 2 && (
-            <Badge variant="outline" className="bg-gray-50 text-gray-600 text-xs dark:bg-gray-800 dark:text-gray-400">
-              +{row.prNos.length - 2}
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: "exceptions",
-      header: t('exceptions'),
-      width: "100px",
-      defaultVisible: false,
-      cell: (row) => (
-        row.exceptions.length > 0 ? (
-          <div className="flex items-center gap-1 text-red-600">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-xs">{row.exceptions.length}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )
-      ),
-    },
-    {
-      id: "shippingCarrier",
-      header: t('shippingCarrier'),
-      accessorKey: "shippingCarrier",
-      width: "150px",
-      defaultVisible: false,
-    },
-    {
-      id: "toCity",
-      header: t('toCity'),
-      accessorKey: "toCity",
-      width: "120px",
-      defaultVisible: false,
-    },
-    {
-      id: "toState",
-      header: t('toState'),
-      accessorKey: "toState",
-      width: "100px",
-      defaultVisible: false,
-    },
-    {
-      id: "toCountry",
-      header: t('toCountry'),
-      accessorKey: "toCountry",
-      width: "120px",
-      defaultVisible: false,
-    },
-    {
-      id: "updated",
-      header: t('updated'),
-      width: "180px",
-      defaultVisible: false,
-      cell: (row) => new Date(row.updated).toLocaleString(),
-    },
-    {
-      id: "shippingService",
-      header: t('shippingService'),
-      accessorKey: "shippingService",
-      width: "150px",
-      defaultVisible: false,
-    },
-    {
-      id: "shippingNotes",
-      header: t('shippingNotes'),
-      accessorKey: "shippingNotes",
-      width: "200px",
-      defaultVisible: false,
-    },
-    {
-      id: "purchaseOrderDate",
-      header: t('purchaseOrderDate'),
-      accessorKey: "purchaseOrderDate",
-      width: "180px",
-      defaultVisible: false,
-    },
-    {
       id: "actions",
       header: t('actions'),
       width: "240px",
       defaultVisible: true,
       cell: (row) => {
-        // Define available actions based on status
         const getAvailableActions = () => {
           switch (row.status) {
             case POStatus.NEW:
               return [
-                { label: t('send'), icon: <Send className="h-3 w-3" />, action: () => console.log("Send to supplier", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('cancel'), icon: <X className="h-3 w-3" />, action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
+                { label: t('edit'), icon: <Edit className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}/edit`) },
+                { label: t('send'), icon: <Send className="h-3 w-3" />, action: () => console.log("Send to supplier", row.orderNo) },
+                { label: t('delete'), icon: <X className="h-3 w-3" />, action: () => console.log("Delete", row.orderNo), variant: "destructive" },
               ]
-            case POStatus.IN_TRANSIT:
+            case POStatus.IN_PROGRESS:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('markArrived'), icon: <MapPin className="h-3 w-3" />, action: () => console.log("Mark arrived", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`) },
+                { label: t('createASN'), icon: <Truck className="h-3 w-3" />, action: () => console.log("Create ASN", row.orderNo) },
+                { label: t('viewReceipts'), icon: <CheckCircle className="h-3 w-3" />, action: () => console.log("View receipts", row.orderNo) },
               ]
-            case POStatus.WAITING_FOR_RECEIVING:
+            case POStatus.COMPLETE:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
-              ]
-            case POStatus.RECEIVING:
-              return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('completeReceipt'), icon: <FileCheck className="h-3 w-3" />, action: () => console.log("Complete receipt", row.orderNo), variant: undefined, disabled: undefined },
-              ]
-            case POStatus.PARTIAL_RECEIPT:
-              return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
-              ]
-            case POStatus.COMPLETED:
-              return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`) },
+                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo) },
               ]
             case POStatus.CANCELLED:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('reopen'), icon: <RotateCcw className="h-3 w-3" />, action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`) },
+                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo) },
               ]
             case POStatus.EXCEPTION:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('reopen'), icon: <RotateCcw className="h-3 w-3" />, action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('viewReason'), icon: <AlertCircle className="h-3 w-3" />, action: () => console.log("View exception reason", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`) },
+                { label: t('resume'), icon: <RotateCcw className="h-3 w-3" />, action: () => console.log("Resume", row.orderNo) },
+                { label: t('cancel'), icon: <X className="h-3 w-3" />, action: () => console.log("Cancel", row.orderNo), variant: "destructive" },
               ]
             default:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`) },
               ]
           }
         }
@@ -914,7 +628,6 @@ export default function POPage() {
                 variant={action.variant === "destructive" ? "destructive" : "outline"}
                 size="sm"
                 onClick={action.action}
-                disabled={action.disabled}
                 className="text-xs px-2 py-1 h-7 flex items-center gap-1"
               >
                 {action.icon}
@@ -972,37 +685,16 @@ export default function POPage() {
         case POStatus.NEW:
           return [
             { label: t('batchSend'), action: () => console.log("Batch send", selectedRows) },
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
-            { label: t('batchCancel'), action: () => console.log("Batch cancel", selectedRows), variant: "destructive" },
+            { label: t('batchDelete'), action: () => console.log("Batch delete", selectedRows), variant: "destructive" },
           ]
-        case POStatus.IN_TRANSIT:
+        case POStatus.IN_PROGRESS:
           return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchMarkArrived'), action: () => console.log("Batch mark arrived", selectedRows) },
-          ]
-        case POStatus.WAITING_FOR_RECEIVING:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
-          ]
-        case POStatus.RECEIVING:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCompleteReceipt'), action: () => console.log("Batch complete receipt", selectedRows) },
-          ]
-        case POStatus.PARTIAL_RECEIPT:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
-          ]
-        case POStatus.CANCELLED:
-          return [
-            { label: t('batchReopen'), action: () => console.log("Batch reopen", selectedRows) },
+            { label: t('batchCreateASN'), action: () => console.log("Batch create ASN", selectedRows) },
           ]
         case POStatus.EXCEPTION:
           return [
-            { label: t('batchReopen'), action: () => console.log("Batch reopen", selectedRows) },
+            { label: t('batchResume'), action: () => console.log("Batch resume", selectedRows) },
+            { label: t('batchCancel'), action: () => console.log("Batch cancel", selectedRows), variant: "destructive" },
           ]
         default:
           return []
@@ -1014,6 +706,8 @@ export default function POPage() {
       { label: t('batchExport'), action: () => console.log("Batch export", selectedRows) },
     ]
   }, [selectedRows, selectedStatuses, t])
+
+  const sidebarItems = createPurchaseSidebarItems(t)
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
@@ -1035,7 +729,7 @@ export default function POPage() {
               {selectedRows.length > 0 ? `${t('export')} (${selectedRows.length})` : t('export')}
             </Button>
             
-            {/* Batch Actions Dropdown - Always visible */}
+            {/* Batch Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button disabled={selectedRows.length === 0}>
@@ -1050,22 +744,6 @@ export default function POPage() {
                   </div>
                 ) : (
                   <>
-                    {selectedStatuses.length === 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('status')}: {statusConfig[selectedStatuses[0] as keyof typeof statusConfig]?.label}
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    {selectedStatuses.length > 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('mixedStatus')} ({selectedStatuses.length} {t('types')})
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
                     {availableBatchActions.length > 0 ? (
                       availableBatchActions.map((action, index) => (
                         <DropdownMenuItem
@@ -1119,35 +797,26 @@ export default function POPage() {
           </div>
         </div>
 
-        {/* Contract State Tabs */}
+        {/* PO Status Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">
               {t('all')} <Badge variant="secondary" className="ml-2">{statusCounts.all}</Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.NEW}>
-              {t('NEW')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.NEW] || 0}</Badge>
+              {t('NEW')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.NEW]}</Badge>
             </TabsTrigger>
-            <TabsTrigger value={POStatus.IN_TRANSIT}>
-              {t('IN_TRANSIT')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.IN_TRANSIT] || 0}</Badge>
+            <TabsTrigger value={POStatus.IN_PROGRESS}>
+              {t('IN_PROGRESS')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.IN_PROGRESS]}</Badge>
             </TabsTrigger>
-            <TabsTrigger value={POStatus.WAITING_FOR_RECEIVING}>
-              {t('WAITING_FOR_RECEIVING')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.WAITING_FOR_RECEIVING] || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.RECEIVING}>
-              {t('RECEIVING')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.RECEIVING] || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.PARTIAL_RECEIPT}>
-              {t('PARTIAL_RECEIPT')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.PARTIAL_RECEIPT] || 0}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.COMPLETED}>
-              {t('COMPLETED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.COMPLETED] || 0}</Badge>
+            <TabsTrigger value={POStatus.COMPLETE}>
+              {t('COMPLETE')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.COMPLETE]}</Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.CANCELLED}>
-              {t('CANCELLED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CANCELLED] || 0}</Badge>
+              {t('CANCELLED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CANCELLED]}</Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.EXCEPTION}>
-              {t('EXCEPTION')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.EXCEPTION] || 0}</Badge>
+              {t('EXCEPTION')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.EXCEPTION]}</Badge>
             </TabsTrigger>
           </TabsList>
         </Tabs>

@@ -115,7 +115,7 @@ export function SNLotManagementDialog({
           <div className="p-3 bg-muted rounded-md">
             <div className="font-medium">{productName}</div>
             <div className="text-sm text-muted-foreground">SKU: {skuCode}</div>
-            <div className="text-sm text-muted-foreground">{t('quantity' as any)}: {quantity}</div>
+            <div className="text-sm text-muted-foreground">{t('quantity')}: {quantity}</div>
           </div>
 
           {/* 序列号管理 */}
@@ -159,7 +159,7 @@ export function SNLotManagementDialog({
               </div>
 
               <div className="text-xs text-muted-foreground">
-                提示: 如果不指定具体序列号，将在收货时记录实际收到的序列号
+                {t('snHint')}
               </div>
             </div>
           )}
@@ -208,7 +208,7 @@ export function SNLotManagementDialog({
               </div>
 
               <div className="text-xs text-muted-foreground">
-                提示: 如果不指定具体批次号，将在收货时记录实际收到的批次号
+                {t('lotHint')}
               </div>
             </div>
           )}
@@ -227,15 +227,15 @@ export function SNLotManagementDialog({
           {/* 统计信息 */}
           <div className="p-3 bg-blue-50 rounded-md">
             <div className="text-sm text-blue-800">
-              <div className="font-medium mb-1">管理要求:</div>
+              <div className="font-medium mb-1">{t('managementRequirements')}:</div>
               <div className="space-y-1 text-xs">
                 {requiresSerialNumber && (
-                  <div>• 序列号管理: 已指定 {serialNumbers.filter(sn => sn.trim()).length} 个序列号</div>
+                  <div>• {t('serialNumberManagement')}: {t('specified')} {serialNumbers.filter(sn => sn.trim()).length} {t('serialNumbers')}</div>
                 )}
                 {requiresLotNumber && (
-                  <div>• 批次号管理: 已指定 {lotNumbers.filter(lot => lot.trim()).length} 个批次号</div>
+                  <div>• {t('lotNumberManagement')}: {t('specified')} {lotNumbers.filter(lot => lot.trim()).length} {t('lotNumbers')}</div>
                 )}
-                <div>• 采购数量: {quantity} 件</div>
+                <div>• {t('purchaseQuantity')}: {quantity} {t('pieces')}</div>
               </div>
             </div>
           </div>
@@ -247,7 +247,7 @@ export function SNLotManagementDialog({
             {t('cancel')}
           </Button>
           <Button onClick={handleSave}>
-            {t('save')}设置
+            {t('saveSettings')}
           </Button>
         </div>
       </DialogContent>

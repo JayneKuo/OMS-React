@@ -18,13 +18,8 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const sidebarItems = [
-  { title: "PR (Purchase Request)", href: "/purchase/pr", icon: <FileText className="h-4 w-4" /> },
-  { title: "PO (Purchase Order)", href: "/purchase/po", icon: <ShoppingCart className="h-4 w-4" /> },
-  { title: "ASN (Advance Ship Notice)", href: "/purchase/asn", icon: <Truck className="h-4 w-4" /> },
-  { title: "Receipts", href: "/purchase/receipts", icon: <Package className="h-4 w-4" /> },
-  { title: "Receipt Confirm", href: "/purchase/receipt-confirm", icon: <CheckCircle className="h-4 w-4" /> },
-]
+// Import the shared sidebar items
+import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
 
 // PR Data Interface based on requirements
 interface PurchaseRequest {
@@ -1139,6 +1134,8 @@ function PRPageContent() {
       { label: t('batchExport'), icon: <Download className="h-4 w-4" />, action: () => console.log("Batch export", selectedRows) },
     ]
   }, [selectedRows, selectedStatuses])
+
+  const sidebarItems = createPurchaseSidebarItems(t)
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
