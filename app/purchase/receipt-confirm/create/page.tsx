@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -125,7 +126,7 @@ const mockPOs: Record<string, POInfo> = {
   },
 }
 
-export default function CreateReceiptConfirmPage() {
+function CreateReceiptConfirmContent() {
   const { t } = useI18n()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -459,6 +460,20 @@ export default function CreateReceiptConfirmPage() {
         </Card>
       </div>
     </MainLayout>
+  )
+}
+
+export default function CreateReceiptConfirmPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground">加载中...</p>
+        </div>
+      </div>
+    }>
+      <CreateReceiptConfirmContent />
+    </Suspense>
   )
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -72,7 +73,7 @@ const mockPOData = {
   }
 }
 
-export default function CreateShipmentPage() {
+function CreateShipmentContent() {
   const { t } = useI18n()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -561,5 +562,19 @@ export default function CreateShipmentPage() {
         </div>
       </div>
     </MainLayout>
+  )
+}
+
+export default function CreateShipmentPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground">加载中...</p>
+        </div>
+      </div>
+    }>
+      <CreateShipmentContent />
+    </Suspense>
   )
 }
