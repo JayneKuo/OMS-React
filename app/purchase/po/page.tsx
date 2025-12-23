@@ -16,14 +16,7 @@ import { useRouter } from "next/navigation"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
 import { LocalWarehouseReceiptDialog } from "@/components/purchase/local-warehouse-receipt-dialog"
-
-const sidebarItems = [
-  { title: "PR (Purchase Request)", href: "/purchase/pr", icon: <FileText className="h-4 w-4" /> },
-  { title: "PO (Purchase Order)", href: "/purchase/po", icon: <ShoppingCart className="h-4 w-4" /> },
-  { title: "ASN (Advance Ship Notice)", href: "/purchase/asn", icon: <Truck className="h-4 w-4" /> },
-  { title: "Receipts", href: "/purchase/receipts", icon: <Package className="h-4 w-4" /> },
-  { title: "Receipt Confirm", href: "/purchase/receipt-confirm", icon: <CheckCircle className="h-4 w-4" /> },
-]
+import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
 
 // PO Data Interface based on the optimized status system
 interface PurchaseOrder {
@@ -364,6 +357,7 @@ const warehouseMap: Record<string, { id: string; name: string; type: "LOCAL_WARE
 export default function POPage() {
   const { t } = useI18n()
   const router = useRouter()
+  const sidebarItems = createPurchaseSidebarItems(t)
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = React.useState<AdvancedSearchValues>({})
