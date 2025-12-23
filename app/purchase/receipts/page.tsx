@@ -1163,7 +1163,6 @@ export default function ReceiptsPage() {
               onRowClick={(row) => handleView(row)}
               hideColumnControl={true}
               batchActions={selectedRows.length > 0 ? availableBatchActions : undefined}
-              hideColumnControl={true}
             />
           </CardContent>
         </Card>

@@ -157,9 +157,9 @@ const mockShipments: ShipmentInfo[] = [
 
 // Mock Warehouses
 const mockWarehouses = [
-  { id: "WH001", name: "Main Warehouse - Los Angeles", type: "VIRTUAL" },
+  { id: "WH001", name: "Main Warehouse - Los Angeles", type: "LOCAL_WAREHOUSE" },
   { id: "WH002", name: "East Distribution Center - New York", type: "THIRD_PARTY" },
-  { id: "WH003", name: "West Fulfillment Center - Seattle", type: "VIRTUAL" },
+  { id: "WH003", name: "West Fulfillment Center - Seattle", type: "LOCAL_WAREHOUSE" },
   { id: "WH004", name: "Central Warehouse - Chicago", type: "THIRD_PARTY" },
 ]
 
@@ -221,7 +221,7 @@ export default function CreateReceiptPage() {
 
   // 获取仓库类型
   const selectedWarehouse = mockWarehouses.find(w => w.id === warehouse)
-  const isVirtualWarehouse = selectedWarehouse?.type === "VIRTUAL"
+  const isLocalWarehouse = selectedWarehouse?.type === "LOCAL_WAREHOUSE"
   const isThirdPartyWarehouse = selectedWarehouse?.type === "THIRD_PARTY"
 
   // 生成Receipt No

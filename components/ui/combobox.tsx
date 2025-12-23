@@ -151,7 +151,7 @@ export function Combobox({
                     className="text-primary font-medium"
                   >
                     <Check className="mr-2 h-4 w-4 opacity-0" />
-                    Use "{searchValue.trim()}"
+                    Use &quot;{searchValue.trim()}&quot;
                   </CommandItem>
                 </div>
               ) : (

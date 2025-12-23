@@ -77,7 +77,7 @@ export default function ShipmentCreationTestPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p>1. 点击下方任意PO的"创建发运单"按钮</p>
+            <p>1. 点击下方任意PO的&ldquo;创建发运单&rdquo;按钮</p>
             <p>2. 系统将跳转到发运单创建页面</p>
             <p>3. PO信息将自动填充到发运单表单中</p>
             <p>4. 验证供应商信息、仓库信息、商品行等是否正确填充</p>
@@ -187,7 +187,7 @@ export default function ShipmentCreationTestPage() {
             <div>
               <h4 className="font-medium mb-2">✅ 已实现功能</h4>
               <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• PO列表页"创建发运单"按钮跳转到发运单创建页面</li>
+                <li>• PO列表页&ldquo;创建发运单&rdquo;按钮跳转到发运单创建页面</li>
                 <li>• 通过URL参数传递PO ID (poId)</li>
                 <li>• 自动填充供应商信息（名称、联系人、电话、邮箱、地址）</li>
                 <li>• 自动填充仓库信息（名称、地址）</li>
@@ -201,7 +201,7 @@ export default function ShipmentCreationTestPage() {
             <div>
               <h4 className="font-medium mb-2">🔄 数据流转</h4>
               <div className="text-sm text-muted-foreground space-y-1">
-                <div>1. PO列表页 → 点击"创建发运单"</div>
+                <div>1. PO列表页 → 点击&ldquo;创建发运单&rdquo;</div>
                 <div>2. 跳转到 /purchase/shipments/create?poId=xxx</div>
                 <div>3. 发运单页面读取poId参数</div>
                 <div>4. 根据poId获取PO数据并自动填充表单</div>

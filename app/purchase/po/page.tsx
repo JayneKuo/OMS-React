@@ -15,6 +15,7 @@ import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
+import { LocalWarehouseReceiptDialog } from "@/components/purchase/local-warehouse-receipt-dialog"
 
 const sidebarItems = [
   { title: "PR (Purchase Request)", href: "/purchase/pr", icon: <FileText className="h-4 w-4" /> },
@@ -35,6 +36,7 @@ interface PurchaseOrder {
   supplierNo: string
   destination: string
   warehouseName: string
+  warehouseId?: string // 仓库ID，用于判断仓库类型
   
   // 主状态（PO Status）- 使用新的状态枚举
   status: POStatus
@@ -312,7 +314,50 @@ const mockPOs: PurchaseOrder[] = [
     itemCount: 25,
     exceptions: [],
   },
+  {
+    id: "8",
+    orderNo: "PO202403150008",
+    originalPoNo: "EXT-PO-2024-008",
+    prNos: ["PR202401220001"],
+    referenceNo: "REF202403150008",
+    supplierName: "Digital Products Co.",
+    supplierNo: "SUP008",
+    destination: "West Fulfillment Center - Seattle",
+    warehouseName: "West FC",
+    status: POStatus.WAITING_FOR_RECEIVING,
+    shippingStatus: ShippingStatus.ARRIVED,
+    receivingStatus: ReceivingStatus.NOT_RECEIVED,
+    dataSource: "MANUAL",
+    totalOrderQty: 600,
+    shippedQty: 600,
+    receivedQty: 0,
+    totalPrice: 18000.00,
+    currency: "USD",
+    asnCount: 1,
+    created: "2024-01-22T09:00:00Z",
+    updated: "2024-01-22T15:30:00Z",
+    expectedArrivalDate: "2024-01-24",
+    purchaseOrderDate: "2024-01-22",
+    toCity: "Seattle",
+    toState: "WA",
+    toCountry: "USA",
+    shippingService: "Express",
+    shippingCarrier: "FedEx",
+    shippingNotes: "Local warehouse - ready for receiving",
+    itemCount: 12,
+    exceptions: [],
+  },
 ]
+
+// 仓库映射 - 用于判断仓库类型
+const warehouseMap: Record<string, { id: string; name: string; type: "LOCAL_WAREHOUSE" | "THIRD_PARTY" }> = {
+  "Main Warehouse": { id: "WH001", name: "Main Warehouse - Los Angeles", type: "LOCAL_WAREHOUSE" },
+  "East DC": { id: "WH002", name: "East Distribution Center - New York", type: "THIRD_PARTY" },
+  "West FC": { id: "WH003", name: "West Fulfillment Center - Seattle", type: "LOCAL_WAREHOUSE" },
+  "Central WH": { id: "WH004", name: "Central Warehouse - Chicago", type: "THIRD_PARTY" },
+  "South WH": { id: "WH005", name: "South Warehouse - Miami", type: "THIRD_PARTY" },
+  "North WH": { id: "WH006", name: "North Warehouse - Boston", type: "THIRD_PARTY" },
+}
 
 // 状态配置将在组件内部使用 t() 函数动态获取标签
 
@@ -328,6 +373,115 @@ export default function POPage() {
   const [visibleColumns, setVisibleColumns] = React.useState<Set<string>>(new Set())
   const [selectedRows, setSelectedRows] = React.useState<(string | number)[]>([])
   const [activeTab, setActiveTab] = React.useState<string>("all")
+  const [showLocalWarehouseReceiptDialog, setShowLocalWarehouseReceiptDialog] = React.useState(false)
+  const [currentPOForReceipt, setCurrentPOForReceipt] = React.useState<PurchaseOrder | null>(null)
+
+  // Mock PO Line Items数据 - 实际应用中应该从API获取
+  const mockPOLineItems: Record<string, Array<{
+    id: string
+    lineNo: number
+    skuCode: string
+    productName: string
+    specifications: string
+    quantity: number
+    uom: string
+    receivedQty: number
+  }>> = {
+    "1": [
+      {
+        id: "1-1",
+        lineNo: 1,
+        skuCode: "SKU001",
+        productName: "iPhone 15 Pro",
+        specifications: "256GB, Natural Titanium",
+        quantity: 100,
+        uom: "PCS",
+        receivedQty: 0,
+      },
+      {
+        id: "1-2",
+        lineNo: 2,
+        skuCode: "SKU002",
+        productName: "MacBook Pro",
+        specifications: "14-inch, M3 Pro, 512GB SSD",
+        quantity: 50,
+        uom: "PCS",
+        receivedQty: 0,
+      },
+    ],
+    "8": [
+      {
+        id: "8-1",
+        lineNo: 1,
+        skuCode: "SKU004",
+        productName: "AirPods Pro",
+        specifications: "2nd Generation, USB-C",
+        quantity: 300,
+        uom: "PCS",
+        receivedQty: 0,
+      },
+      {
+        id: "8-2",
+        lineNo: 2,
+        skuCode: "SKU005",
+        productName: "Apple Watch Series 9",
+        specifications: "45mm, GPS, Midnight",
+        quantity: 150,
+        uom: "PCS",
+        receivedQty: 0,
+      },
+      {
+        id: "8-3",
+        lineNo: 3,
+        skuCode: "SKU006",
+        productName: "Magic Keyboard",
+        specifications: "For iPad Pro 12.9-inch",
+        quantity: 150,
+        uom: "PCS",
+        receivedQty: 0,
+      },
+    ],
+  }
+
+  // 将PurchaseOrder转换为弹窗需要的POInfo格式
+  const convertPOToPOInfo = (po: PurchaseOrder) => {
+    return {
+      id: po.id,
+      orderNo: po.orderNo,
+      supplierName: po.supplierName,
+      warehouseName: po.warehouseName,
+      warehouseId: warehouseMap[po.warehouseName]?.id || "",
+      lineItems: mockPOLineItems[po.id] || [],
+    }
+  }
+
+  // 处理本地仓库收货确认
+  const handleLocalWarehouseReceiptConfirm = (data: any) => {
+    console.log("Local Warehouse Receipt Confirm:", data)
+    // 实际应用中应该调用API完成收货
+    // 成功提示已在弹窗内显示，这里不需要额外的提示
+    // 刷新数据
+    setShowLocalWarehouseReceiptDialog(false)
+    setCurrentPOForReceipt(null)
+    
+    // 更新PO状态（模拟）
+    setFilteredData(prev => prev.map(po => {
+      if (po.id === data.poId) {
+        const totalReceivedQty = data.items.reduce((sum: number, item: any) => sum + item.receivedQty, 0)
+        const newReceivedQty = po.receivedQty + totalReceivedQty
+        const isFullyReceived = newReceivedQty >= po.totalOrderQty
+        
+        return {
+          ...po,
+          receivedQty: newReceivedQty,
+          status: isFullyReceived ? POStatus.COMPLETED : POStatus.PARTIAL_RECEIPT,
+          receivingStatus: isFullyReceived ? ReceivingStatus.FULLY_RECEIVED : ReceivingStatus.PARTIAL_RECEIVED,
+          updated: new Date().toISOString(),
+        }
+      }
+      return po
+    }))
+  }
 
   // 主状态配置（PO Status）
   const statusConfig = {
@@ -658,6 +812,13 @@ export default function POPage() {
       accessorKey: "warehouseName",
       width: "180px",
       defaultVisible: true,
+      cell: (row) => {
+        const warehouseInfo = warehouseMap[row.warehouseName] || { type: "THIRD_PARTY" as const }
+        if (warehouseInfo.type === "LOCAL_WAREHOUSE") {
+          return t('localWarehouse') || "本地仓库"
+        }
+        return row.warehouseName
+      },
     },
     {
       id: "totalOrderQty",
@@ -845,61 +1006,106 @@ export default function POPage() {
       width: "240px",
       defaultVisible: true,
       cell: (row) => {
+        // 判断仓库类型
+        const warehouseInfo = warehouseMap[row.warehouseName] || { type: "THIRD_PARTY" as const }
+        const isLocalWarehouse = warehouseInfo.type === "LOCAL_WAREHOUSE"
+        
         // Define available actions based on status
         const getAvailableActions = () => {
           switch (row.status) {
             case POStatus.NEW:
               return [
-                { label: t('send'), icon: <Send className="h-3 w-3" />, action: () => console.log("Send to supplier", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('cancel'), icon: <X className="h-3 w-3" />, action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
+                { label: t('send'), action: () => console.log("Send to supplier", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createReceipt'), action: () => {
+                  // 本地仓库：打开弹窗，一步完成入库和收货
+                  // 第三方仓库：跳转到入库请求创建页面
+                  if (isLocalWarehouse) {
+                    setCurrentPOForReceipt(row)
+                    setShowLocalWarehouseReceiptDialog(true)
+                  } else {
+                    router.push(`/purchase/receipts/create?poId=${row.id}`)
+                  }
+                }, variant: undefined, disabled: undefined },
+                { label: t('cancel'), action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
               ]
             case POStatus.IN_TRANSIT:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('markArrived'), icon: <MapPin className="h-3 w-3" />, action: () => console.log("Mark arrived", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('markArrived'), action: () => {
+                  // 标记送达：更新PO状态和运输状态
+                  setFilteredData(prev => prev.map(po => {
+                    if (po.id === row.id) {
+                      return {
+                        ...po,
+                        status: POStatus.WAITING_FOR_RECEIVING,
+                        shippingStatus: ShippingStatus.ARRIVED,
+                        updated: new Date().toISOString(),
+                      }
+                    }
+                    return po
+                  }))
+                  // 实际应用中应该调用API更新状态
+                  console.log("Mark arrived", row.orderNo)
+                }, variant: undefined, disabled: undefined },
               ]
             case POStatus.WAITING_FOR_RECEIVING:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createReceipt'), action: () => {
+                  // 本地仓库：打开弹窗，一步完成入库和收货
+                  // 第三方仓库：跳转到入库请求创建页面
+                  if (isLocalWarehouse) {
+                    setCurrentPOForReceipt(row)
+                    setShowLocalWarehouseReceiptDialog(true)
+                  } else {
+                    router.push(`/purchase/receipts/create?poId=${row.id}`)
+                  }
+                }, variant: undefined, disabled: undefined },
               ]
             case POStatus.RECEIVING:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('completeReceipt'), icon: <FileCheck className="h-3 w-3" />, action: () => console.log("Complete receipt", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
               ]
             case POStatus.PARTIAL_RECEIPT:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), icon: <Truck className="h-3 w-3" />, action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), icon: <Package className="h-3 w-3" />, action: () => console.log("Create receipt", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('createReceipt'), action: () => {
+                  // 本地仓库：打开弹窗，一步完成入库和收货
+                  // 第三方仓库：跳转到入库请求创建页面
+                  if (isLocalWarehouse) {
+                    setCurrentPOForReceipt(row)
+                    setShowLocalWarehouseReceiptDialog(true)
+                  } else {
+                    router.push(`/purchase/receipts/create?poId=${row.id}`)
+                  }
+                }, variant: undefined, disabled: undefined },
               ]
             case POStatus.COMPLETED:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('copy'), action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
               ]
             case POStatus.CANCELLED:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('reopen'), icon: <RotateCcw className="h-3 w-3" />, action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('reopen'), action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('copy'), action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
               ]
             case POStatus.EXCEPTION:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('reopen'), icon: <RotateCcw className="h-3 w-3" />, action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('copy'), icon: <Copy className="h-3 w-3" />, action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
-                { label: t('viewReason'), icon: <AlertCircle className="h-3 w-3" />, action: () => console.log("View exception reason", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('reopen'), action: () => console.log("Reopen PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('copy'), action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('viewReason'), action: () => console.log("View exception reason", row.orderNo), variant: undefined, disabled: undefined },
               ]
             default:
               return [
-                { label: t('view'), icon: <Eye className="h-3 w-3" />, action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
+                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
               ]
           }
         }
@@ -907,19 +1113,20 @@ export default function POPage() {
         const actions = getAvailableActions()
 
         return (
-          <div className="flex gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
             {actions.map((action, index) => (
-              <Button
+              <button
                 key={index}
-                variant={action.variant === "destructive" ? "destructive" : "outline"}
-                size="sm"
                 onClick={action.action}
                 disabled={action.disabled}
-                className="text-xs px-2 py-1 h-7 flex items-center gap-1"
+                className={`text-xs hover:underline ${
+                  action.variant === "destructive" 
+                    ? "text-red-600 hover:text-red-800" 
+                    : "text-blue-600 hover:text-blue-800"
+                } ${action.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {action.icon}
                 {action.label}
-              </Button>
+              </button>
             ))}
           </div>
         )
@@ -979,7 +1186,23 @@ export default function POPage() {
         case POStatus.IN_TRANSIT:
           return [
             { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchMarkArrived'), action: () => console.log("Batch mark arrived", selectedRows) },
+            { label: t('batchMarkArrived'), action: () => {
+              // 批量标记送达：更新选中PO的状态和运输状态
+              setFilteredData(prev => prev.map(po => {
+                if (selectedRows.includes(po.id) && po.status === POStatus.IN_TRANSIT) {
+                  return {
+                    ...po,
+                    status: POStatus.WAITING_FOR_RECEIVING,
+                    shippingStatus: ShippingStatus.ARRIVED,
+                    updated: new Date().toISOString(),
+                  }
+                }
+                return po
+              }))
+              setSelectedRows([])
+              // 实际应用中应该调用API批量更新状态
+              console.log("Batch mark arrived", selectedRows)
+            } },
           ]
         case POStatus.WAITING_FOR_RECEIVING:
           return [
@@ -989,7 +1212,6 @@ export default function POPage() {
         case POStatus.RECEIVING:
           return [
             { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCompleteReceipt'), action: () => console.log("Batch complete receipt", selectedRows) },
           ]
         case POStatus.PARTIAL_RECEIPT:
           return [
@@ -1183,6 +1405,16 @@ export default function POPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 本地仓库收货弹窗 */}
+      {currentPOForReceipt && (
+        <LocalWarehouseReceiptDialog
+          open={showLocalWarehouseReceiptDialog}
+          onOpenChange={setShowLocalWarehouseReceiptDialog}
+          po={convertPOToPOInfo(currentPOForReceipt)}
+          onConfirm={handleLocalWarehouseReceiptConfirm}
+        />
+      )}
     </MainLayout>
   )
 }
