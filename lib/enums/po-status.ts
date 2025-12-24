@@ -10,7 +10,7 @@ export enum POStatus {
   WAITING_FOR_RECEIVING = 'WAITING_FOR_RECEIVING',
   RECEIVING = 'RECEIVING',
   PARTIAL_RECEIPT = 'PARTIAL_RECEIPT',
-  COMPLETED = 'COMPLETED',
+  CLOSED = 'CLOSED',
   CANCELLED = 'CANCELLED',
   EXCEPTION = 'EXCEPTION'
 }
@@ -64,10 +64,10 @@ export const PO_STATUS_STYLES: Record<POStatus, StatusStyle> = {
     color: 'orange',
     description: '部分收货完成'
   },
-  [POStatus.COMPLETED]: {
+  [POStatus.CLOSED]: {
     variant: 'success',
     color: 'green',
-    description: '全部收货完成'
+    description: '全部收货完成，已关闭'
   },
   [POStatus.CANCELLED]: {
     variant: 'default',
@@ -136,7 +136,7 @@ export const STATUS_LABELS = {
     cn: '运输中'
   },
   [POStatus.WAITING_FOR_RECEIVING]: {
-    en: 'Waiting for Receiving',
+    en: 'Pending Receipt',
     cn: '待收货'
   },
   [POStatus.RECEIVING]: {
@@ -147,9 +147,9 @@ export const STATUS_LABELS = {
     en: 'Partial Receipt',
     cn: '部分收货'
   },
-  [POStatus.COMPLETED]: {
-    en: 'Completed',
-    cn: '已完成'
+  [POStatus.CLOSED]: {
+    en: 'Closed',
+    cn: '已关闭'
   },
   [POStatus.CANCELLED]: {
     en: 'Cancelled',

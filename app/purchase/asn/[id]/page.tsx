@@ -1402,7 +1402,7 @@ export default function ShipmentDetailPage({ params }: ShipmentDetailPageProps) 
                                   PENDING: { label: t('PENDING'), color: "bg-gray-100 text-gray-800" },
                                   IN_RECEIVING: { label: t('IN_RECEIVING'), color: "bg-blue-100 text-blue-800" },
                                   PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "bg-orange-100 text-orange-800" },
-                                  COMPLETED: { label: t('COMPLETED'), color: "bg-green-100 text-green-800" },
+                                  CLOSED: { label: t('CLOSED'), color: "bg-green-100 text-green-800" },
                                   PARTIAL_DAMAGE: { label: t('PARTIAL_DAMAGE'), color: "bg-yellow-100 text-yellow-800" },
                                 }
                                 const qualityStatusConfig: Record<string, { label: string; color: string }> = {
@@ -1663,7 +1663,7 @@ export default function ShipmentDetailPage({ params }: ShipmentDetailPageProps) 
                 console.log("Create Receiving", { 
                   shipmentId: shipment.id,
                   quantities: createReceivingQuantities,
-                  status: "COMPLETED" // 创建即收货完成
+                  status: "CLOSED" // 创建即收货完成
                 })
                 setShowCreateReceivingDialog(false)
                 setCreateReceivingQuantities({})

@@ -154,7 +154,7 @@ const mockPODetail = {
       receiptDate: "2024-01-20T09:30:00Z",
       receivedQty: 50,
       receivedBy: "张三",
-      receiptStatus: "COMPLETED",
+      receiptStatus: "CLOSED",
       notes: "部分收货，剩余货物预计明日到达",
       relatedShipment: "SHP202401150001",
       warehouseLocation: "A区-01-001",
@@ -168,7 +168,7 @@ const mockPODetail = {
       receiptDate: "2024-01-18T14:15:00Z",
       receivedQty: 25,
       receivedBy: "李四",
-      receiptStatus: "COMPLETED",
+      receiptStatus: "CLOSED",
       notes: "货物状态良好，已入库",
       relatedShipment: "SHP202401120001",
       warehouseLocation: "A区-01-002",
@@ -286,7 +286,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
     SHIPPED: { label: "已发货", color: "bg-purple-50 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400" },
     IN_TRANSIT: { label: "运输中", color: "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" },
     ARRIVED_AT_WAREHOUSE: { label: "已到仓", color: "bg-green-50 text-green-600 dark:bg-green-900/50 dark:text-green-400" },
-    SHIPMENT_COMPLETED: { label: "发货完成", color: "bg-teal-50 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400" },
+    SHIPMENT_CLOSED: { label: "发运已关闭", color: "bg-teal-50 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400" },
   }
 
   const receivingStatusConfig = {
@@ -718,7 +718,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>总计 {summaryData.totalLines} 个商品行</span>
                           <span>•</span>
-                          <span>已完成 {summaryData.completedLines} 行</span>
+                          <span>已关闭 {summaryData.completedLines} 行</span>
                         </div>
                       </div>
                     </CardHeader>
@@ -806,7 +806,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                                     {isCompleted ? (
                                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700">
                                         <CheckCircle className="h-3 w-3 mr-1" />
-                                        完成
+                                        已关闭
                                       </Badge>
                                     ) : item.receivedQty > 0 ? (
                                       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700">
@@ -1026,7 +1026,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                               const receiptStatusConfig = {
                                 PENDING: { label: "待收货", color: "bg-yellow-100 text-yellow-800" },
                                 IN_PROGRESS: { label: "收货中", color: "bg-blue-100 text-blue-800" },
-                                COMPLETED: { label: "收货完成", color: "bg-green-100 text-green-800" },
+                                CLOSED: { label: "已关闭", color: "bg-green-100 text-green-800" },
                                 PARTIAL_DAMAGE: { label: "部分损坏", color: "bg-orange-100 text-orange-800" },
                                 REJECTED: { label: "已拒收", color: "bg-red-100 text-red-800" },
                               }
@@ -1110,7 +1110,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                                 APPROVED: { label: "已批准", color: "bg-green-100 text-green-800" },
                                 REJECTED: { label: "已拒绝", color: "bg-red-100 text-red-800" },
                                 IN_TRANSIT: { label: "退货中", color: "bg-blue-100 text-blue-800" },
-                                COMPLETED: { label: "退货完成", color: "bg-teal-100 text-teal-800" },
+                                CLOSED: { label: "已关闭", color: "bg-teal-100 text-teal-800" },
                               }
                               
                               const reasonConfig = {
@@ -1130,7 +1130,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                               const refundStatusConfig = {
                                 PENDING: { label: "待退款", color: "bg-yellow-100 text-yellow-800" },
                                 PROCESSING: { label: "退款中", color: "bg-blue-100 text-blue-800" },
-                                COMPLETED: { label: "已退款", color: "bg-green-100 text-green-800" },
+                                CLOSED: { label: "已关闭", color: "bg-green-100 text-green-800" },
                                 FAILED: { label: "退款失败", color: "bg-red-100 text-red-800" },
                               }
                               

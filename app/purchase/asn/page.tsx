@@ -11,7 +11,7 @@ import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/component
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
-  ExternalLink, Package, Truck, XCircle 
+  ExternalLink, Package, Truck, XCircle, MoreVertical
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -201,10 +201,10 @@ export default function ShipmentPage() {
 
   // 状态配置
   const statusConfig = {
-    [ShippingStatus.SHIPPED]: { label: t('SHIPPED'), color: "bg-blue-100 text-blue-800" },
-    [ShippingStatus.IN_TRANSIT]: { label: t('IN_TRANSIT'), color: "bg-indigo-100 text-indigo-800" },
-    [ShippingStatus.ARRIVED]: { label: t('ARRIVED'), color: "bg-green-100 text-green-800" },
-    [ShippingStatus.SHIPPING_EXCEPTION]: { label: t('SHIPPING_EXCEPTION'), color: "bg-red-100 text-red-800" },
+    [ShippingStatus.SHIPPED]: { label: t('SHIPPED'), color: "text-blue-600" },
+    [ShippingStatus.IN_TRANSIT]: { label: t('IN_TRANSIT'), color: "text-blue-600" },
+    [ShippingStatus.ARRIVED]: { label: t('ARRIVED'), color: "text-green-600" },
+    [ShippingStatus.SHIPPING_EXCEPTION]: { label: t('SHIPPING_EXCEPTION'), color: "text-red-600" },
   }
 
   // 运输类型配置
@@ -483,12 +483,24 @@ export default function ShipmentPage() {
       ),
     },
     {
+      id: "status",
+      header: t('status'),
+      width: "120px",
+      defaultVisible: true,
+      cell: (row) => {
+        const config = statusConfig[row.status]
+        return (
+          <span className={config.color}>{config.label}</span>
+        )
+      },
+    },
+    {
       id: "shipmentType",
       header: t('shipmentType'),
       width: "100px",
       defaultVisible: true,
       cell: (row) => (
-        <Badge variant="outline">{shipmentTypeConfig[row.shipmentType]}</Badge>
+        <span className="text-gray-600">{shipmentTypeConfig[row.shipmentType]}</span>
       ),
     },
     {
@@ -499,18 +511,6 @@ export default function ShipmentPage() {
       cell: (row) => (
         <span className="text-sm">{modeConfig[row.mode]}</span>
       ),
-    },
-    {
-      id: "status",
-      header: t('status'),
-      width: "120px",
-      defaultVisible: true,
-      cell: (row) => {
-        const config = statusConfig[row.status]
-        return (
-          <Badge className={config.color}>{config.label}</Badge>
-        )
-      },
     },
     {
       id: "carrier",
@@ -627,51 +627,38 @@ export default function ShipmentPage() {
     {
       id: "actions",
       header: t('actions'),
-      width: "200px",
+      width: "80px",
       defaultVisible: true,
       cell: (row) => {
         const actions = getAvailableActions(row)
-        const primaryActions = actions.slice(0, 2)
-        const moreActions = actions.slice(2)
+        
+        if (actions.length === 0) {
+          return null
+        }
 
         return (
-          <div className="flex items-center gap-2">
-            {primaryActions.map((action, idx) => (
-              <Button
-                key={idx}
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  action.action()
-                }}
-              >
-                {action.label}
-              </Button>
-            ))}
-            {moreActions.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    更多
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {moreActions.map((action, idx) => (
-                    <DropdownMenuItem
-                      key={idx}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        action.action()
-                      }}
-                    >
-                      {action.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {actions.map((action, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      action.action()
+                    }}
+                    className="text-sm"
+                  >
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )
       },
@@ -741,8 +728,8 @@ export default function ShipmentPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('shipments')}</h1>
-            <p className="text-muted-foreground">{t('manageShipments')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('shipments')}</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageShipments')}</p>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -756,7 +743,7 @@ export default function ShipmentPage() {
             {/* Batch Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={selectedRows.length === 0}>
+                <Button size="sm" disabled={selectedRows.length === 0} className="text-sm font-normal">
                   <Package className="mr-2 h-4 w-4" />
                   {t('batchActions')}
                 </Button>
@@ -805,7 +792,7 @@ export default function ShipmentPage() {
             {/* New Shipment */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-          <Button>
+          <Button size="sm" className="text-sm font-normal">
             <Plus className="mr-2 h-4 w-4" />
                   {t('newShipment')}
           </Button>
@@ -900,9 +887,9 @@ export default function ShipmentPage() {
                   <div>
                     <Label>{t('status')}</Label>
                     <div>
-                      <Badge className={statusConfig[currentShipment.status].color}>
+                      <span className={statusConfig[currentShipment.status].color}>
                         {statusConfig[currentShipment.status].label}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
                   <div>
@@ -1273,7 +1260,7 @@ export default function ShipmentPage() {
                 console.log("Create Receiving", { 
                   shipmentId: currentShipment?.id,
                   quantities: createReceivingQuantities,
-                  status: "COMPLETED" // 创建即收货完成
+                  status: "CLOSED" // 创建即收货完成
                 })
                 setShowCreateReceivingDialog(false)
                 setCreateReceivingQuantities({})

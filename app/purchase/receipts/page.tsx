@@ -11,7 +11,7 @@ import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/component
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
-  ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle
+  ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle, MoreVertical
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -46,7 +46,7 @@ interface Receipt {
   inYardTime?: string // 进场时间
   warehouse: string
   warehouseId: string
-  status: "NEW" | "PENDING" | "IN_RECEIVING" | "PARTIALLY_RECEIVED" | "COMPLETED" | "EXCEPTION" | "CANCELLED"
+  status: "NEW" | "PENDING" | "IN_RECEIVING" | "PARTIALLY_RECEIVED" | "CLOSED" | "EXCEPTION" | "CANCELLED"
   receivedBy?: string
   receivedDate?: string
   expectedQty: number
@@ -66,7 +66,7 @@ const mockReceipts: Receipt[] = [
   {
     id: "1",
     receiptNo: "RCP-2024-001",
-    actualReceiptNo: "RN-2024-001",
+    actualReceiptNo: "RC-2024-001",
     inboundReceiptNo: "IN-2024-001",
     receiptType: "REGULAR",
     source: "MANUAL",
@@ -92,7 +92,7 @@ const mockReceipts: Receipt[] = [
   {
     id: "2",
     receiptNo: "RCP-2024-002",
-    actualReceiptNo: "RN-2024-002",
+    actualReceiptNo: "RC-2024-002",
     inboundReceiptNo: "IN-2024-002",
     receiptType: "TRANSLOAD",
     source: "EDI",
@@ -111,7 +111,7 @@ const mockReceipts: Receipt[] = [
     inYardTime: "2024-01-18T10:15:00Z",
     warehouse: "New York Warehouse",
     warehouseId: "WH002",
-    status: "COMPLETED",
+    status: "CLOSED",
     receivedBy: "Jane Doe",
     receivedDate: "2024-01-18T14:15:00Z",
     expectedQty: 200,
@@ -127,7 +127,7 @@ const mockReceipts: Receipt[] = [
   {
     id: "3",
     receiptNo: "RCP-2024-003",
-    actualReceiptNo: "RN-2024-003",
+    actualReceiptNo: "RC-2024-003",
     inboundReceiptNo: "IN-2024-003",
     receiptType: "RETURN_FROM_END_USER",
     source: "SYSTEM_AUTO",
@@ -243,7 +243,276 @@ const mockReceipts: Receipt[] = [
     created: "2024-01-24T09:00:00Z",
     updated: "2024-01-24T10:00:00Z",
   },
+  // 本地仓库 - NEW状态 (EDI来源)
+  {
+    id: "7",
+    receiptNo: "RCP-2024-007",
+    actualReceiptNo: undefined,
+    inboundReceiptNo: "IN-2024-007",
+    receiptType: "REGULAR",
+    source: "EDI",
+    supplier: "EDI Suppliers Inc.",
+    poNo: "PO-2024-005",
+    poIds: ["PO-005"],
+    warehouse: "Main Warehouse - Los Angeles",
+    warehouseId: "WH001",
+    status: "NEW",
+    expectedQty: 90,
+    receivedQty: 0,
+    totalLines: 3,
+    completedLines: 0,
+    created: "2024-01-25T08:00:00Z",
+    updated: "2024-01-25T08:00:00Z",
+  },
+  // 本地仓库 - CLOSED状态
+  {
+    id: "8",
+    receiptNo: "RCP-2024-008",
+    actualReceiptNo: "RC-2024-008",
+    inboundReceiptNo: "IN-2024-008",
+    receiptType: "REGULAR",
+    source: "MANUAL",
+    supplier: "Complete Suppliers Ltd.",
+    poNo: "PO-2024-006",
+    poIds: ["PO-006"],
+    warehouse: "Chicago Warehouse",
+    warehouseId: "WH003",
+    status: "CLOSED",
+    receivedBy: "Alice Brown",
+    receivedDate: "2024-01-26T16:00:00Z",
+    expectedQty: 180,
+    receivedQty: 180,
+    totalLines: 6,
+    completedLines: 6,
+    damageQty: 0,
+    rejectedQty: 0,
+    warehouseLocation: "C区-03-001",
+    created: "2024-01-26T10:00:00Z",
+    updated: "2024-01-26T16:00:00Z",
+  },
+  // 本地仓库 - EXCEPTION状态
+  {
+    id: "9",
+    receiptNo: "RCP-2024-009",
+    actualReceiptNo: "RC-2024-009",
+    inboundReceiptNo: "IN-2024-009",
+    receiptType: "REGULAR",
+    source: "MANUAL",
+    supplier: "Exception Suppliers Inc.",
+    poNo: "PO-2024-007",
+    poIds: ["PO-007"],
+    warehouse: "Main Warehouse - Los Angeles",
+    warehouseId: "WH001",
+    status: "EXCEPTION",
+    receivedBy: "Bob Wilson",
+    receivedDate: "2024-01-27T14:00:00Z",
+    expectedQty: 200,
+    receivedQty: 195,
+    totalLines: 5,
+    completedLines: 4,
+    damageQty: 3,
+    rejectedQty: 2,
+    warehouseLocation: "A区-01-003",
+    notes: "数量差异：缺少5件，损坏3件，拒收2件",
+    created: "2024-01-27T09:00:00Z",
+    updated: "2024-01-27T14:00:00Z",
+  },
+  // 第三方仓库 - NEW状态
+  {
+    id: "10",
+    receiptNo: "RCP-2024-010",
+    actualReceiptNo: undefined,
+    inboundReceiptNo: "IN-2024-010",
+    receiptType: "REGULAR",
+    source: "MANUAL",
+    supplier: "Third Party Supplier A",
+    poNo: "PO-2024-008",
+    poIds: ["PO-008"],
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "NEW",
+    expectedQty: 150,
+    receivedQty: 0,
+    totalLines: 4,
+    completedLines: 0,
+    created: "2024-01-28T09:00:00Z",
+    updated: "2024-01-28T09:00:00Z",
+  },
+  // 第三方仓库 - PENDING状态
+  {
+    id: "11",
+    receiptNo: "RCP-2024-011",
+    actualReceiptNo: undefined,
+    inboundReceiptNo: "IN-2024-011",
+    receiptType: "TRANSLOAD",
+    source: "EDI",
+    supplier: "Third Party Supplier B",
+    shipmentNo: "SHIP-2024-011",
+    shipmentId: "11",
+    poNo: "PO-2024-009",
+    poIds: ["PO-009"],
+    transportMode: "FTL",
+    carrier: "XPO Logistics",
+    trackingNumber: "XPO123456",
+    appointmentTime: "2024-01-29T10:00:00Z",
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "PENDING",
+    expectedQty: 220,
+    receivedQty: 0,
+    totalLines: 7,
+    completedLines: 0,
+    created: "2024-01-29T08:00:00Z",
+    updated: "2024-01-29T08:00:00Z",
+  },
+  // 第三方仓库 - IN_RECEIVING状态
+  {
+    id: "12",
+    receiptNo: "RCP-2024-012",
+    actualReceiptNo: "RC-2024-012",
+    inboundReceiptNo: "IN-2024-012",
+    receiptType: "REGULAR",
+    source: "SYSTEM_AUTO",
+    supplier: "Third Party Supplier C",
+    shipmentNo: "SHIP-2024-012",
+    shipmentId: "12",
+    poNo: "PO-2024-010",
+    poIds: ["PO-010"],
+    transportMode: "LTL",
+    carrier: "Old Dominion",
+    trackingNumber: "OD987654",
+    inYardTime: "2024-01-30T09:00:00Z",
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "IN_RECEIVING",
+    receivedBy: "David Lee",
+    receivedDate: "2024-01-30T10:00:00Z",
+    expectedQty: 160,
+    receivedQty: 100,
+    totalLines: 5,
+    completedLines: 3,
+    damageQty: 0,
+    rejectedQty: 0,
+    warehouseLocation: "B区-02-002",
+    created: "2024-01-30T08:00:00Z",
+    updated: "2024-01-30T10:00:00Z",
+  },
+  // 第三方仓库 - PARTIALLY_RECEIVED状态
+  {
+    id: "13",
+    receiptNo: "RCP-2024-013",
+    actualReceiptNo: "RC-2024-013",
+    inboundReceiptNo: "IN-2024-013",
+    receiptType: "INVENTORY_RECEIPT",
+    source: "MANUAL",
+    supplier: "Third Party Supplier D",
+    poNo: "PO-2024-011",
+    poIds: ["PO-011"],
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "PARTIALLY_RECEIVED",
+    receivedBy: "Emma Davis",
+    receivedDate: "2024-01-31T11:00:00Z",
+    expectedQty: 140,
+    receivedQty: 90,
+    totalLines: 4,
+    completedLines: 2,
+    damageQty: 1,
+    rejectedQty: 0,
+    warehouseLocation: "B区-02-003",
+    notes: "部分货物已收货",
+    created: "2024-01-31T09:00:00Z",
+    updated: "2024-01-31T11:00:00Z",
+  },
+  // 第三方仓库 - CLOSED状态
+  {
+    id: "14",
+    receiptNo: "RCP-2024-014",
+    actualReceiptNo: "RC-2024-014",
+    inboundReceiptNo: "IN-2024-014",
+    receiptType: "REGULAR",
+    source: "EDI",
+    supplier: "Third Party Supplier E",
+    shipmentNo: "SHIP-2024-014",
+    shipmentId: "14",
+    poNo: "PO-2024-012",
+    poIds: ["PO-012"],
+    transportMode: "EXPRESS",
+    carrier: "FedEx",
+    trackingNumber: "FEDEX456789",
+    appointmentTime: "2024-02-01T09:00:00Z",
+    inYardTime: "2024-02-01T09:15:00Z",
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "CLOSED",
+    receivedBy: "Frank Miller",
+    receivedDate: "2024-02-01T15:30:00Z",
+    expectedQty: 110,
+    receivedQty: 110,
+    totalLines: 3,
+    completedLines: 3,
+    damageQty: 0,
+    rejectedQty: 0,
+    warehouseLocation: "B区-02-004",
+    created: "2024-02-01T08:00:00Z",
+    updated: "2024-02-01T15:30:00Z",
+  },
+  // 第三方仓库 - EXCEPTION状态
+  {
+    id: "15",
+    receiptNo: "RCP-2024-015",
+    actualReceiptNo: "RC-2024-015",
+    inboundReceiptNo: "IN-2024-015",
+    receiptType: "RETURN_FROM_END_USER",
+    source: "SYSTEM_AUTO",
+    supplier: "Third Party Supplier F",
+    poNo: "PO-2024-013",
+    poIds: ["PO-013"],
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "EXCEPTION",
+    receivedBy: "Grace Taylor",
+    receivedDate: "2024-02-02T13:00:00Z",
+    expectedQty: 130,
+    receivedQty: 125,
+    totalLines: 4,
+    completedLines: 3,
+    damageQty: 4,
+    rejectedQty: 1,
+    warehouseLocation: "B区-02-005",
+    notes: "退货异常：损坏4件，拒收1件",
+    created: "2024-02-02T10:00:00Z",
+    updated: "2024-02-02T13:00:00Z",
+  },
+  // 第三方仓库 - CANCELLED状态
+  {
+    id: "16",
+    receiptNo: "RCP-2024-016",
+    actualReceiptNo: undefined,
+    inboundReceiptNo: "IN-2024-016",
+    receiptType: "REGULAR",
+    source: "MANUAL",
+    supplier: "Third Party Supplier G",
+    poNo: "PO-2024-014",
+    poIds: ["PO-014"],
+    warehouse: "New York Warehouse",
+    warehouseId: "WH002",
+    status: "CANCELLED",
+    expectedQty: 75,
+    receivedQty: 0,
+    totalLines: 2,
+    completedLines: 0,
+    created: "2024-02-03T09:00:00Z",
+    updated: "2024-02-03T10:00:00Z",
+  },
 ]
+
+// 仓库类型映射
+const warehouseMap: Record<string, { id: string; name: string; type: "LOCAL_WAREHOUSE" | "THIRD_PARTY" }> = {
+  "Main Warehouse - Los Angeles": { id: "WH001", name: "Main Warehouse - Los Angeles", type: "LOCAL_WAREHOUSE" },
+  "New York Warehouse": { id: "WH002", name: "New York Warehouse", type: "THIRD_PARTY" },
+  "Chicago Warehouse": { id: "WH003", name: "Chicago Warehouse", type: "LOCAL_WAREHOUSE" },
+}
 
 export default function ReceiptsPage() {
   const { t } = useI18n()
@@ -279,29 +548,29 @@ export default function ReceiptsPage() {
 
   // 状态配置
   const statusConfig = {
-    NEW: { label: t('NEW'), color: "bg-purple-100 text-purple-800" },
-    PENDING: { label: t('PENDING'), color: "bg-gray-100 text-gray-800" },
-    IN_RECEIVING: { label: t('IN_RECEIVING'), color: "bg-blue-100 text-blue-800" },
-    PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "bg-orange-100 text-orange-800" },
-    COMPLETED: { label: t('COMPLETED'), color: "bg-green-100 text-green-800" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "bg-red-100 text-red-800" },
-    CANCELLED: { label: t('CANCELLED'), color: "bg-gray-200 text-gray-600" },
+    NEW: { label: t('NEW'), color: "text-gray-600" },
+    PENDING: { label: t('PENDING'), color: "text-gray-600" },
+    IN_RECEIVING: { label: t('IN_RECEIVING'), color: "text-blue-600" },
+    PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "text-orange-600" },
+    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
   }
 
   // 来源配置
   const sourceConfig = {
-    MANUAL: { label: t('manual'), color: "bg-blue-100 text-blue-800" },
-    EDI: { label: t('edi'), color: "bg-green-100 text-green-800" },
-    SYSTEM_AUTO: { label: t('systemAuto'), color: "bg-purple-100 text-purple-800" },
+    MANUAL: { label: t('manual'), color: "text-gray-600" },
+    EDI: { label: t('edi'), color: "text-gray-600" },
+    SYSTEM_AUTO: { label: t('systemAuto'), color: "text-gray-600" },
   }
 
   // 单据类型配置
   const receiptTypeConfig = {
-    REGULAR: { label: t('regularReceipt'), color: "bg-gray-100 text-gray-800" },
-    TRANSLOAD: { label: t('transload'), color: "bg-blue-100 text-blue-800" },
-    RETURN_FROM_END_USER: { label: t('returnFromEndUser'), color: "bg-orange-100 text-orange-800" },
-    INVENTORY_RECEIPT: { label: t('inventoryReceipt'), color: "bg-purple-100 text-purple-800" },
-    CUSTOMER_TRANSFER: { label: t('customerTransfer'), color: "bg-green-100 text-green-800" },
+    REGULAR: { label: t('regularReceipt'), color: "text-gray-600" },
+    TRANSLOAD: { label: t('transload'), color: "text-gray-600" },
+    RETURN_FROM_END_USER: { label: t('returnFromEndUser'), color: "text-gray-600" },
+    INVENTORY_RECEIPT: { label: t('inventoryReceipt'), color: "text-gray-600" },
+    CUSTOMER_TRANSFER: { label: t('customerTransfer'), color: "text-gray-600" },
   }
 
   // 筛选器配置
@@ -315,7 +584,7 @@ export default function ReceiptsPage() {
         { id: "pending", label: t('PENDING'), value: "PENDING" },
         { id: "in_receiving", label: t('IN_RECEIVING'), value: "IN_RECEIVING" },
         { id: "partially_received", label: t('PARTIALLY_RECEIVED'), value: "PARTIALLY_RECEIVED" },
-        { id: "completed", label: t('COMPLETED'), value: "COMPLETED" },
+        { id: "closed", label: t('CLOSED'), value: "CLOSED" },
         { id: "exception", label: t('EXCEPTION'), value: "EXCEPTION" },
         { id: "cancelled", label: t('CANCELLED'), value: "CANCELLED" },
       ],
@@ -384,7 +653,7 @@ export default function ReceiptsPage() {
   // 高级搜索字段配置
   const advancedSearchFields: SearchField[] = [
     { id: "receiptNo", label: t('inboundRequestNo'), placeholder: "e.g., RCP-2024-001" },
-    { id: "actualReceiptNo", label: t('receiptNo'), placeholder: "e.g., RN-2024-001" },
+    { id: "actualReceiptNo", label: t('receiptNo'), placeholder: "e.g., RC-2024-001" },
     { id: "title", label: t('title'), placeholder: "e.g., ABC Company" },
     { id: "relatedNo", label: t('relatedNo'), placeholder: "e.g., REF-001" },
     { id: "shipmentNo", label: t('shipmentNo'), placeholder: "e.g., SHIP-2024-001" },
@@ -405,7 +674,7 @@ export default function ReceiptsPage() {
       PENDING: 0,
       IN_RECEIVING: 0,
       PARTIALLY_RECEIVED: 0,
-      COMPLETED: 0,
+      CLOSED: 0,
       EXCEPTION: 0,
       CANCELLED: 0,
     }
@@ -669,7 +938,7 @@ export default function ReceiptsPage() {
     // 在实际应用中，这里应该调用API更新数据
     setFilteredData(prev => prev.map(r => {
       if (r.id === currentReceipt.id) {
-        const newStatus = isFullyReceived ? "COMPLETED" : (newReceivedQty > 0 ? "PARTIALLY_RECEIVED" : (r.status === "NEW" ? "PENDING" : r.status))
+        const newStatus = isFullyReceived ? "CLOSED" : (newReceivedQty > 0 ? "PARTIALLY_RECEIVED" : (r.status === "NEW" ? "PENDING" : r.status))
         return {
           ...r,
           receivedQty: newReceivedQty,
@@ -687,7 +956,7 @@ export default function ReceiptsPage() {
         const newReceivedQty = r.receivedQty + totalReceivingQty
         const isFullyReceived = newReceivedQty >= r.expectedQty
         r.receivedQty = newReceivedQty
-        r.status = isFullyReceived ? "COMPLETED" : (newReceivedQty > 0 ? "PARTIALLY_RECEIVED" : (r.status === "NEW" ? "PENDING" : r.status))
+        r.status = isFullyReceived ? "CLOSED" : (newReceivedQty > 0 ? "PARTIALLY_RECEIVED" : (r.status === "NEW" ? "PENDING" : r.status))
         r.receivedBy = "Current User"
         r.receivedDate = new Date().toISOString()
       }
@@ -713,23 +982,46 @@ export default function ReceiptsPage() {
     router.push(`/purchase/receipts/create?copyFrom=${receipt.id}`)
   }
 
-  // 获取可用操作（根据状态）
+  // 获取可用操作（根据状态、仓库类型和来源）
   const getAvailableActions = (receipt: Receipt) => {
+    // 判断仓库类型
+    const warehouseInfo = warehouseMap[receipt.warehouse] || { type: "THIRD_PARTY" as const }
+    const isLocalWarehouse = warehouseInfo.type === "LOCAL_WAREHOUSE"
+    
+    // 判断是否为手动创建
+    const isManual = receipt.source === "MANUAL"
+    
     switch (receipt.status) {
       case "NEW":
-        return [
+        const newActions = [
           { label: t('edit'), action: () => handleEdit(receipt) },
-          { label: t('pushToWarehouse'), action: () => handlePushToWarehouse(receipt) },
-          { label: t('receiving'), action: () => handleCompleteReceiving(receipt) },
-          { label: t('cancel'), action: () => handleCancelReceipt(receipt) },
         ]
+        
+        // 只有手动创建的才显示"推送到仓库"
+        if (isManual) {
+          newActions.push({ label: t('pushToWarehouse'), action: () => handlePushToWarehouse(receipt) })
+        }
+        
+        // 只有本地仓库才显示"收货"
+        if (isLocalWarehouse) {
+          newActions.push({ label: t('receiving'), action: () => handleCompleteReceiving(receipt) })
+        }
+        
+        newActions.push({ label: t('cancel'), action: () => handleCancelReceipt(receipt) })
+        return newActions
+        
       case "PENDING":
       case "IN_RECEIVING":
       case "PARTIALLY_RECEIVED":
-        return [
-          { label: t('receiving'), action: () => handleCompleteReceiving(receipt) },
-        ]
-      case "COMPLETED":
+        // 只有本地仓库才显示"收货"
+        if (isLocalWarehouse) {
+          return [
+            { label: t('receiving'), action: () => handleCompleteReceiving(receipt) },
+          ]
+        }
+        return []
+        
+      case "CLOSED":
         return [
           { label: t('copy'), action: () => handleCopyReceipt(receipt) },
         ]
@@ -766,11 +1058,22 @@ export default function ReceiptsPage() {
       ),
     },
     {
+      id: "status",
+      header: t('status'),
+      width: "140px",
+      defaultVisible: true,
+      cell: (row) => (
+        <span className={statusConfig[row.status].color}>
+          {statusConfig[row.status].label}
+        </span>
+      ),
+    },
+    {
       id: "inboundReceiptNo",
       header: t('inboundReceiptNo'),
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.actualReceiptNo || <span className="text-muted-foreground">-</span>, // 第一个入库单号：RN开头的值
+      cell: (row) => row.actualReceiptNo || <span className="text-muted-foreground">-</span>, // 第一个入库单号：RC开头的值
     },
     {
       id: "actualReceiptNo",
@@ -785,9 +1088,9 @@ export default function ReceiptsPage() {
       width: "140px",
       defaultVisible: true,
       cell: (row) => (
-        <Badge className={receiptTypeConfig[row.receiptType].color}>
+        <span className={receiptTypeConfig[row.receiptType].color}>
           {receiptTypeConfig[row.receiptType].label}
-        </Badge>
+        </span>
       ),
     },
     {
@@ -796,9 +1099,9 @@ export default function ReceiptsPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <Badge className={sourceConfig[row.source].color}>
+        <span className={sourceConfig[row.source].color}>
           {sourceConfig[row.source].label}
-        </Badge>
+        </span>
       ),
     },
     {
@@ -899,17 +1202,6 @@ export default function ReceiptsPage() {
       ) : <span className="text-muted-foreground">-</span>,
     },
     {
-      id: "status",
-      header: t('status'),
-      width: "140px",
-      defaultVisible: true,
-      cell: (row) => (
-        <Badge className={statusConfig[row.status].color}>
-          {statusConfig[row.status].label}
-        </Badge>
-      ),
-    },
-    {
       id: "expectedQty",
       header: t('expectedQty'),
       width: "120px",
@@ -979,61 +1271,38 @@ export default function ReceiptsPage() {
     {
       id: "actions",
       header: t('actions'),
-      width: "150px",
+      width: "80px",
       defaultVisible: true,
       cell: (row) => {
         const actions = getAvailableActions(row)
+        
+        if (actions.length === 0) {
+          return null
+        }
+
         return (
-          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-            {actions.slice(0, 2).map((action, idx) => (
-              <button
-                key={idx}
-                className="text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer bg-transparent border-0 p-0 text-left"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  action.action()
-                }}
-              >
-                {action.label}
-              </button>
-            ))}
-            {actions.slice(2, 4).map((action, idx) => (
-              <button
-                key={idx + 2}
-                className="text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer bg-transparent border-0 p-0 text-left"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  action.action()
-                }}
-              >
-                {action.label}
-              </button>
-            ))}
-            {actions.length > 4 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button 
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer bg-transparent border-0 p-0 text-left"
-                    onClick={(e) => e.stopPropagation()}
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {actions.map((action, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      action.action()
+                    }}
+                    className="text-sm"
                   >
-                    {t('moreActions')}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {actions.slice(4).map((action, idx) => (
-                    <DropdownMenuItem 
-                      key={idx} 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        action.action()
-                      }}
-                    >
-                      {action.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )
       },
@@ -1071,13 +1340,13 @@ export default function ReceiptsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('receipts')}</h1>
-            <p className="text-muted-foreground">{t('manageReceipts')}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('receipts')}</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageReceipts')}</p>
           </div>
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button>
+                <Button size="sm" className="text-sm font-normal">
                   <FilePlus className="mr-2 h-4 w-4" />
                   {t('newReceipt')}
                 </Button>
@@ -1094,11 +1363,11 @@ export default function ReceiptsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="text-sm font-normal">
               <Download className="mr-2 h-4 w-4" />
               {t('download')}
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="text-sm font-normal">
               <Upload className="mr-2 h-4 w-4" />
               {t('upload')}
             </Button>
@@ -1123,8 +1392,8 @@ export default function ReceiptsPage() {
             <TabsTrigger value="partially_received">
               {t('PARTIALLY_RECEIVED')} ({statusCounts.PARTIALLY_RECEIVED})
             </TabsTrigger>
-            <TabsTrigger value="completed">
-              {t('COMPLETED')} ({statusCounts.COMPLETED})
+            <TabsTrigger value="closed">
+              {t('CLOSED')} ({statusCounts.CLOSED})
             </TabsTrigger>
             <TabsTrigger value="exception">
               {t('EXCEPTION')} ({statusCounts.EXCEPTION})

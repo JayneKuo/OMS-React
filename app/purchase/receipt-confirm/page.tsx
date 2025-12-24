@@ -11,7 +11,7 @@ import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/component
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
-  ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle, RefreshCw
+  ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle, RefreshCw, MoreVertical
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -208,16 +208,16 @@ export default function ReceiptConfirmPage() {
 
   // 状态配置
   const statusConfig = {
-    CLOSED: { label: t('CLOSED'), color: "bg-green-100 text-green-800" },
-    PARTIAL: { label: t('PARTIALLY_RECEIVED'), color: "bg-orange-100 text-orange-800" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "bg-red-100 text-red-800" },
+    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
+    PARTIAL: { label: t('PARTIALLY_RECEIVED'), color: "text-orange-600" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
   }
 
   // 收货类型配置
   const receiptTypeConfig = {
-    REGULAR_RECEIPT: { label: t('REGULAR_RECEIPT'), color: "bg-blue-100 text-blue-800" },
-    RETURN: { label: t('RETURN'), color: "bg-orange-100 text-orange-800" },
-    XDOCK: { label: t('XDOCK'), color: "bg-purple-100 text-purple-800" },
+    REGULAR_RECEIPT: { label: t('REGULAR_RECEIPT'), color: "text-gray-600" },
+    RETURN: { label: t('RETURN'), color: "text-gray-600" },
+    XDOCK: { label: t('XDOCK'), color: "text-gray-600" },
   }
 
   // 筛选器配置
@@ -401,6 +401,17 @@ export default function ReceiptConfirmPage() {
       ),
     },
     {
+      id: "status",
+      header: t('status'),
+      width: "120px",
+      defaultVisible: true,
+      cell: (row) => (
+        <span className={statusConfig[row.status]?.color || "text-gray-600"}>
+          {statusConfig[row.status]?.label || row.status}
+        </span>
+      ),
+    },
+    {
       id: "referenceNo",
       header: t('referenceNo') || "Reference No",
       width: "150px",
@@ -431,20 +442,9 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <Badge className={receiptTypeConfig[row.receiptType]?.color || "bg-gray-100 text-gray-800"}>
+        <span className={receiptTypeConfig[row.receiptType]?.color || "text-gray-600"}>
           {receiptTypeConfig[row.receiptType]?.label || row.receiptType}
-        </Badge>
-      ),
-    },
-    {
-      id: "status",
-      header: t('status'),
-      width: "120px",
-      defaultVisible: true,
-      cell: (row) => (
-        <Badge className={statusConfig[row.status]?.color || "bg-gray-100 text-gray-800"}>
-          {statusConfig[row.status]?.label || row.status}
-        </Badge>
+        </span>
       ),
     },
     {
@@ -558,49 +558,38 @@ export default function ReceiptConfirmPage() {
     {
       id: "actions",
       header: t('actions'),
-      width: "120px",
+      width: "80px",
       defaultVisible: true,
       cell: (row) => {
         const actions = getAvailableActions(row)
+        
+        if (actions.length === 0) {
+          return null
+        }
+
         return (
-          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-            {actions.slice(0, 2).map((action, idx) => (
-              <button
-                key={idx}
-                className="text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer bg-transparent border-0 p-0 text-left"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  action.action()
-                }}
-              >
-                {action.label}
-              </button>
-            ))}
-            {actions.length > 2 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button 
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-sm cursor-pointer bg-transparent border-0 p-0 text-left"
-                    onClick={(e) => e.stopPropagation()}
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {actions.map((action, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      action.action()
+                    }}
+                    className="text-sm"
                   >
-                    {t('moreActions')}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {actions.slice(2).map((action, idx) => (
-                    <DropdownMenuItem 
-                      key={idx} 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        action.action()
-                      }}
-                    >
-                      {action.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )
       },
@@ -652,12 +641,12 @@ export default function ReceiptConfirmPage() {
   return (
     <TooltipProvider>
       <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{t('receiptConfirm')}</h1>
-              <p className="text-muted-foreground">{t('manageReceiptConfirms') || '管理收货确认单据'}</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('receiptConfirm')}</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageReceiptConfirms') || '管理收货确认单据'}</p>
             </div>
             <div className="flex items-center gap-2">
               <Tooltip>

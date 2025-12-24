@@ -83,7 +83,7 @@ interface ReceiptDetail {
   railCarNumber?: string
   operator?: string
   internalShipmentNo?: string
-  status: "NEW" | "PENDING" | "IN_RECEIVING" | "PARTIALLY_RECEIVED" | "COMPLETED" | "EXCEPTION"
+  status: "NEW" | "PENDING" | "IN_RECEIVING" | "PARTIALLY_RECEIVED" | "CLOSED" | "EXCEPTION"
   receivedBy?: string
   receivedDate?: string
   created: string
@@ -290,7 +290,7 @@ const mockReceiptDetail: ReceiptDetail = {
     {
       receiptConfirmNo: "RC-2024-001",
       receiptConfirmId: "RC-001",
-      status: "COMPLETED",
+      status: "CLOSED",
       receivedQty: 80,
       receivedDate: "2024-01-20T10:30:00Z",
       receivedBy: "张三",
@@ -327,7 +327,7 @@ export default function ReceiptDetailPage({ params }: ReceiptDetailPageProps) {
     PENDING: { label: t('PENDING'), color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200" },
     IN_RECEIVING: { label: t('IN_RECEIVING'), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200" },
     PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200" },
-    COMPLETED: { label: t('COMPLETED'), color: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" },
+    CLOSED: { label: t('CLOSED'), color: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" },
     EXCEPTION: { label: t('EXCEPTION'), color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200" },
   }
 
@@ -359,7 +359,7 @@ export default function ReceiptDetailPage({ params }: ReceiptDetailPageProps) {
         return [
           { label: t('receiving'), icon: <Package className="h-4 w-4" />, action: () => handleOpenReceivingDialog() },
         ]
-      case "COMPLETED":
+      case "CLOSED":
         return [
           { label: t('download'), icon: <Download className="h-4 w-4" />, action: () => console.log("Download receipt") },
         ]

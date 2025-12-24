@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Download, Send, XCircle, Upload, FileDown, FilePlus, AlertTriangle } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Download, Send, XCircle, Upload, FileDown, FilePlus, AlertTriangle, MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { PRActionConfirmDialog } from "@/components/purchase/pr-action-confirm-dialog"
 import { SimplePODialog } from "@/components/purchase/simple-po-dialog"
@@ -432,15 +432,22 @@ const statusPriority = {
 }
 
 const getPriorityConfig = (t: any) => ({
-  NORMAL: { label: t('normal'), color: "bg-gray-50 text-gray-700 border-gray-200" },
-  URGENT: { label: t('urgent'), color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  VERY_URGENT: { label: t('veryUrgent'), color: "bg-red-50 text-red-700 border-red-200" },
+  NORMAL: { label: t('normal'), color: "text-gray-600" },
+  URGENT: { label: t('urgent'), color: "text-orange-600" },
+  VERY_URGENT: { label: t('veryUrgent'), color: "text-red-600" },
 })
 
 const getPOGeneratedConfig = (t: any) => ({
-  NOT_GENERATED: { label: t('notGeneratedPO'), color: "bg-gray-50 text-gray-700 border-gray-200" },
-  PARTIALLY_GENERATED: { label: t('partiallyGeneratedPO'), color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-  FULLY_GENERATED: { label: t('fullyGeneratedPO'), color: "bg-green-50 text-green-700 border-green-200" },
+  NOT_GENERATED: { label: t('notGeneratedPO'), color: "text-gray-600" },
+  PARTIALLY_GENERATED: { label: t('partiallyGeneratedPO'), color: "text-orange-600" },
+  FULLY_GENERATED: { label: t('fullyGeneratedPO'), color: "text-green-600" },
+})
+
+const getPRTypeConfig = (t: any) => ({
+  "常规采购": { label: t('regularPurchase'), color: "text-gray-600" },
+  "项目采购": { label: t('projectPurchase'), color: "text-gray-600" },
+  "备货": { label: t('stockReplenishment'), color: "text-gray-600" },
+  "内部调拨": { label: t('internalTransfer'), color: "text-gray-600" },
 })
 
 function PRPageContent() {
@@ -449,20 +456,21 @@ function PRPageContent() {
 
   // Status configuration with translations - memoized to respond to language changes
   const statusConfig = React.useMemo(() => ({
-    DRAFT: { label: t('DRAFT'), color: "bg-gray-100 text-gray-800" },
-    SUBMITTED: { label: t('SUBMITTED'), color: "bg-blue-100 text-blue-800" },
-    APPROVING: { label: t('APPROVING'), color: "bg-yellow-100 text-yellow-800" },
-    APPROVED: { label: t('APPROVED'), color: "bg-green-100 text-green-800" },
-    REJECTED: { label: t('REJECTED'), color: "bg-red-100 text-red-800" },
-    CANCELLED: { label: t('CANCELLED'), color: "bg-gray-100 text-gray-800" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "bg-orange-100 text-orange-800" },
-    PARTIAL_PO: { label: t('PARTIAL_PO'), color: "bg-purple-100 text-purple-800" },
-    FULL_PO: { label: t('FULL_PO'), color: "bg-indigo-100 text-indigo-800" },
-    CLOSED: { label: t('CLOSED'), color: "bg-slate-100 text-slate-800" },
+    DRAFT: { label: t('DRAFT'), color: "text-gray-600" },
+    SUBMITTED: { label: t('SUBMITTED'), color: "text-blue-600" },
+    APPROVING: { label: t('APPROVING'), color: "text-blue-600" },
+    APPROVED: { label: t('APPROVED'), color: "text-green-600" },
+    REJECTED: { label: t('REJECTED'), color: "text-red-600" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
+    PARTIAL_PO: { label: t('PARTIAL_PO'), color: "text-orange-600" },
+    FULL_PO: { label: t('FULL_PO'), color: "text-green-600" },
+    CLOSED: { label: t('CLOSED'), color: "text-gray-500" },
   }), [t])
   
   const priorityConfig = React.useMemo(() => getPriorityConfig(t), [t])
   const poGeneratedConfig = React.useMemo(() => getPOGeneratedConfig(t), [t])
+  const prTypeConfig = React.useMemo(() => getPRTypeConfig(t), [t])
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = React.useState<AdvancedSearchValues>({})
@@ -738,12 +746,12 @@ function PRPageContent() {
       cell: (row) => {
         const config = statusConfig[row.status as keyof typeof statusConfig]
         if (!config) {
-          return <Badge className="bg-gray-100 text-gray-800">未知状态</Badge>
+          return <span className="text-gray-600">未知状态</span>
         }
         return (
-          <Badge className={config.color}>
+          <span className={config.color}>
             {config.label}
-          </Badge>
+          </span>
         )
       },
     },
@@ -772,6 +780,17 @@ function PRPageContent() {
       accessorKey: "prType",
       width: "120px",
       defaultVisible: true,
+      cell: (row) => {
+        const config = prTypeConfig[row.prType as keyof typeof prTypeConfig]
+        if (!config) {
+          return <span className="text-gray-600">{row.prType}</span>
+        }
+        return (
+          <span className={config.color}>
+            {config.label}
+          </span>
+        )
+      },
     },
     {
       id: "priority",
@@ -781,9 +800,9 @@ function PRPageContent() {
       cell: (row) => {
         const config = priorityConfig[row.priority]
         return (
-          <Badge variant="outline" className={config.color}>
+          <span className={config.color}>
             {config.label}
-          </Badge>
+          </span>
         )
       },
     },
@@ -871,9 +890,9 @@ function PRPageContent() {
       cell: (row) => {
         const config = poGeneratedConfig[row.poGenerated]
         return (
-          <Badge variant="outline" className={config.color}>
+          <span className={config.color}>
             {config.label}
-          </Badge>
+          </span>
         )
       },
     },
@@ -959,7 +978,7 @@ function PRPageContent() {
     {
       id: "actions",
       header: t('actions'),
-      width: "200px",
+      width: "80px",
       defaultVisible: true,
       cell: (row) => {
         // Define available actions based on status
@@ -1032,29 +1051,42 @@ function PRPageContent() {
 
         const actions = getAvailableActions()
 
+        if (actions.length === 0) {
+          return null
+        }
+
         return (
-          <div className="flex gap-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
-            {actions.map((action, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  if (action.prId) {
-                    // 如果是生成PO操作，设置当前PR并打开对话框
-                    setCurrentPRForPO(row)
-                    setShowPODialog(true)
-                  } else {
-                    action.action()
-                  }
-                }}
-                className={`text-xs hover:underline ${
-                  action.variant === "destructive" 
-                    ? "text-red-600 hover:text-red-800" 
-                    : "text-blue-600 hover:text-blue-800"
-                }`}
-              >
-                {action.label}
-              </button>
-            ))}
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {actions.map((action, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={() => {
+                      if (action.prId) {
+                        // 如果是生成PO操作，设置当前PR并打开对话框
+                        setCurrentPRForPO(row)
+                        setShowPODialog(true)
+                      } else {
+                        action.action()
+                      }
+                    }}
+                    className={`text-sm ${
+                      action.variant === "destructive" 
+                        ? "text-red-600 focus:text-red-600 focus:bg-red-50" 
+                        : ""
+                    }`}
+                  >
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )
       },
@@ -1139,14 +1171,14 @@ function PRPageContent() {
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
               {language === 'zh' ? '采购申请' : 'Purchase Request'}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {language === 'zh' ? 
                 '创建和管理采购申请，支持审批流程和PO生成，实现采购需求的标准化管理' : 
                 'Create and manage purchase requests with approval workflows and PO generation for standardized procurement management'
@@ -1158,7 +1190,9 @@ function PRPageContent() {
           <div className="flex gap-2">
             <Button 
               variant="outline" 
+              size="sm"
               onClick={() => console.log("Export", selectedRows.length > 0 ? selectedRows : "all")}
+              className="text-sm font-normal"
             >
               <Download className="mr-2 h-4 w-4" />
               {selectedRows.length > 0 ? `${t('export')} (${selectedRows.length})` : t('export')}
@@ -1167,7 +1201,7 @@ function PRPageContent() {
             {/* Batch Actions Dropdown - Always visible */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={selectedRows.length === 0}>
+                <Button size="sm" disabled={selectedRows.length === 0} className="text-sm font-normal">
                   <Package className="mr-2 h-4 w-4" />
                   {t('batchActions')}
                 </Button>

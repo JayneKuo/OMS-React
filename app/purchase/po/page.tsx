@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy, MapPin, FileCheck } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy, MapPin, FileCheck, MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useI18n } from "@/components/i18n-provider"
@@ -152,7 +152,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP003",
     destination: "West Fulfillment Center - Seattle",
     warehouseName: "West FC",
-    status: POStatus.COMPLETED,
+    status: POStatus.CLOSED,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -468,7 +468,7 @@ export default function POPage() {
         return {
           ...po,
           receivedQty: newReceivedQty,
-          status: isFullyReceived ? POStatus.COMPLETED : POStatus.PARTIAL_RECEIPT,
+          status: isFullyReceived ? POStatus.CLOSED : POStatus.PARTIAL_RECEIPT,
           receivingStatus: isFullyReceived ? ReceivingStatus.FULLY_RECEIVED : ReceivingStatus.PARTIAL_RECEIVED,
           updated: new Date().toISOString(),
         }
@@ -477,86 +477,86 @@ export default function POPage() {
     }))
   }
 
-  // 主状态配置（PO Status）
+  // 主状态配置（PO Status）- 纯文本样式
   const statusConfig = {
-    NEW: { label: t('NEW'), color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
-    IN_TRANSIT: { label: t('IN_TRANSIT'), color: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200" },
-    WAITING_FOR_RECEIVING: { label: t('WAITING_FOR_RECEIVING'), color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200" },
-    RECEIVING: { label: t('RECEIVING'), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200" },
-    PARTIAL_RECEIPT: { label: t('PARTIAL_RECEIPT'), color: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200" },
-    COMPLETED: { label: t('COMPLETED'), color: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" },
-    CANCELLED: { label: t('CANCELLED'), color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200" },
+    NEW: { label: t('NEW'), color: "text-gray-600" },
+    IN_TRANSIT: { label: t('IN_TRANSIT'), color: "text-blue-600" },
+    WAITING_FOR_RECEIVING: { label: t('WAITING_FOR_RECEIVING'), color: "text-blue-600" },
+    RECEIVING: { label: t('RECEIVING'), color: "text-blue-600" },
+    PARTIAL_RECEIPT: { label: t('PARTIAL_RECEIPT'), color: "text-orange-600" },
+    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
   }
 
-  // 运输状态配置（Shipping Status）- 基于实际触发事件
+  // 运输状态配置（Shipping Status）- 纯文本样式
   const shippingStatusConfig = {
     NOT_SHIPPED: { 
       label: t('NOT_SHIPPED'), 
-      color: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+      color: "text-gray-600",
       description: t('noASNCreated')
     },
     ASN_CREATED: { 
       label: t('ASN_CREATED'), 
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400",
+      color: "text-blue-600",
       description: t('asnCreatedNotShipped')
     },
     SHIPPED: { 
       label: t('SHIPPED'), 
-      color: "bg-purple-50 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400",
+      color: "text-blue-600",
       description: t('asnMarkedShipped')
     },
     IN_TRANSIT: { 
       label: t('IN_TRANSIT'), 
-      color: "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400",
+      color: "text-blue-600",
       description: t('carrierEventInTransit')
     },
     ARRIVED_AT_WAREHOUSE: { 
       label: t('ARRIVED_AT_WAREHOUSE'), 
-      color: "bg-green-50 text-green-600 dark:bg-green-900/50 dark:text-green-400",
+      color: "text-green-600",
       description: t('arrivedAtWarehouse')
     },
-    SHIPMENT_COMPLETED: { 
-      label: t('SHIPMENT_COMPLETED'), 
-      color: "bg-teal-50 text-teal-600 dark:bg-teal-900/50 dark:text-teal-400",
+    SHIPMENT_CLOSED: { 
+      label: t('SHIPMENT_CLOSED'), 
+      color: "text-gray-500",
       description: t('allASNCompleted')
     },
   }
 
-  // 收货状态配置（Receiving Status）- 基于实际触发事件
+  // 收货状态配置（Receiving Status）- 纯文本样式
   const receivingStatusConfig = {
     NOT_RECEIVED: { 
       label: t('NOT_RECEIVED'), 
-      color: "bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+      color: "text-gray-600",
       description: t('noReceiptRecords')
     },
     IN_RECEIVING: { 
       label: t('IN_RECEIVING'), 
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400",
+      color: "text-blue-600",
       description: t('warehouseStartedReceiving')
     },
     PARTIALLY_RECEIVED: { 
       label: t('PARTIALLY_RECEIVED'), 
-      color: "bg-orange-50 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400",
+      color: "text-orange-600",
       description: t('partialLinesReceived')
     },
     FULLY_RECEIVED: { 
       label: t('FULLY_RECEIVED'), 
-      color: "bg-green-50 text-green-600 dark:bg-green-900/50 dark:text-green-400",
+      color: "text-green-600",
       description: t('allLinesReceived')
     },
     OVER_RECEIVED: { 
       label: t('OVER_RECEIVED'), 
-      color: "bg-red-50 text-red-600 dark:bg-red-900/50 dark:text-red-400",
+      color: "text-red-600",
       description: t('overReceivedAbnormal')
     },
   }
 
   // 来源配置
   const dataSourceConfig = {
-    MANUAL: { label: t('MANUAL'), color: "bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" },
-    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "bg-green-50 text-green-700 dark:bg-green-900/50 dark:text-green-300" },
-    API_IMPORT: { label: t('API_IMPORT'), color: "bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300" },
+    MANUAL: { label: t('MANUAL'), color: "text-gray-600" },
+    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "text-gray-600" },
+    API_IMPORT: { label: t('API_IMPORT'), color: "text-gray-600" },
   }
 
   // Define filter configurations based on optimized PO system
@@ -571,7 +571,7 @@ export default function POPage() {
         { id: "waiting_for_receiving", label: t('WAITING_FOR_RECEIVING'), value: POStatus.WAITING_FOR_RECEIVING },
         { id: "receiving", label: t('RECEIVING'), value: POStatus.RECEIVING },
         { id: "partial_receipt", label: t('PARTIAL_RECEIPT'), value: POStatus.PARTIAL_RECEIPT },
-        { id: "completed", label: t('COMPLETED'), value: POStatus.COMPLETED },
+        { id: "closed", label: t('CLOSED'), value: POStatus.CLOSED },
         { id: "cancelled", label: t('CANCELLED'), value: POStatus.CANCELLED },
         { id: "exception", label: t('EXCEPTION'), value: POStatus.EXCEPTION },
       ],
@@ -656,7 +656,7 @@ export default function POPage() {
       [POStatus.WAITING_FOR_RECEIVING]: 0,
       [POStatus.RECEIVING]: 0,
       [POStatus.PARTIAL_RECEIPT]: 0,
-      [POStatus.COMPLETED]: 0,
+      [POStatus.CLOSED]: 0,
       [POStatus.CANCELLED]: 0,
       [POStatus.EXCEPTION]: 0,
     }
@@ -742,6 +742,15 @@ export default function POPage() {
       ),
     },
     {
+      id: "status",
+      header: t('status'),
+      width: "140px",
+      defaultVisible: true,
+      cell: (row) => (
+        <StatusBadge status={row.status} language="cn" />
+      ),
+    },
+    {
       id: "originalPoNo",
       header: t('originalPoNo'),
       accessorKey: "originalPoNo",
@@ -757,15 +766,6 @@ export default function POPage() {
       accessorKey: "referenceNo",
       width: "150px",
       defaultVisible: true,
-    },
-    {
-      id: "status",
-      header: t('status'),
-      width: "140px",
-      defaultVisible: true,
-      cell: (row) => (
-        <StatusBadge status={row.status} language="cn" />
-      ),
     },
     {
       id: "shippingStatus",
@@ -856,10 +856,8 @@ export default function POPage() {
       width: "100px",
       defaultVisible: false,
       cell: (row) => (
-        <div className="text-center">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-            {row.asnCount}
-          </Badge>
+        <div className="text-center text-gray-600">
+          {row.asnCount}
         </div>
       ),
     },
@@ -871,9 +869,9 @@ export default function POPage() {
       cell: (row) => {
         const config = dataSourceConfig[row.dataSource]
         return (
-          <Badge variant="outline" className={config.color}>
+          <span className={config.color}>
             {config.label}
-          </Badge>
+          </span>
         )
       },
     },
@@ -908,16 +906,16 @@ export default function POPage() {
       width: "200px",
       defaultVisible: false,
       cell: (row) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 text-xs text-gray-600">
           {row.prNos.slice(0, 2).map((prNo, index) => (
-            <Badge key={index} variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-700">
+            <span key={index}>
               {prNo}
-            </Badge>
+            </span>
           ))}
           {row.prNos.length > 2 && (
-            <Badge variant="outline" className="bg-gray-50 text-gray-600 text-xs dark:bg-gray-800 dark:text-gray-400">
+            <span>
               +{row.prNos.length - 2}
-            </Badge>
+            </span>
           )}
         </div>
       ),
@@ -997,7 +995,7 @@ export default function POPage() {
     {
       id: "actions",
       header: t('actions'),
-      width: "240px",
+      width: "80px",
       defaultVisible: true,
       cell: (row) => {
         // 判断仓库类型
@@ -1079,7 +1077,7 @@ export default function POPage() {
                   }
                 }, variant: undefined, disabled: undefined },
               ]
-            case POStatus.COMPLETED:
+            case POStatus.CLOSED:
               return [
                 { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('copy'), action: () => console.log("Copy as new PO", row.orderNo), variant: undefined, disabled: undefined },
@@ -1106,22 +1104,35 @@ export default function POPage() {
 
         const actions = getAvailableActions()
 
+        if (actions.length === 0) {
+          return null
+        }
+
         return (
-          <div className="flex gap-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
-            {actions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.action}
-                disabled={action.disabled}
-                className={`text-xs hover:underline ${
-                  action.variant === "destructive" 
-                    ? "text-red-600 hover:text-red-800" 
-                    : "text-blue-600 hover:text-blue-800"
-                } ${action.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {action.label}
-              </button>
-            ))}
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {actions.map((action, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    onClick={action.action}
+                    disabled={action.disabled}
+                    className={`text-sm ${
+                      action.variant === "destructive" 
+                        ? "text-red-600 focus:text-red-600 focus:bg-red-50" 
+                        : ""
+                    }`}
+                  >
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )
       },
@@ -1233,19 +1244,21 @@ export default function POPage() {
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('purchaseOrders')}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('purchaseOrders')}</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {t('managePurchaseOrders')}
             </p>
           </div>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
+              size="sm"
               onClick={() => console.log("Export", selectedRows.length > 0 ? selectedRows : "all")}
+              className="text-sm font-normal"
             >
               <Download className="mr-2 h-4 w-4" />
               {selectedRows.length > 0 ? `${t('export')} (${selectedRows.length})` : t('export')}
@@ -1254,7 +1267,7 @@ export default function POPage() {
             {/* Batch Actions Dropdown - Always visible */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={selectedRows.length === 0}>
+                <Button size="sm" disabled={selectedRows.length === 0} className="text-sm font-normal">
                   <Package className="mr-2 h-4 w-4" />
                   {t('batchActions')}
                 </Button>
@@ -1356,8 +1369,8 @@ export default function POPage() {
             <TabsTrigger value={POStatus.PARTIAL_RECEIPT}>
               {t('PARTIAL_RECEIPT')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.PARTIAL_RECEIPT] || 0}</Badge>
             </TabsTrigger>
-            <TabsTrigger value={POStatus.COMPLETED}>
-              {t('COMPLETED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.COMPLETED] || 0}</Badge>
+            <TabsTrigger value={POStatus.CLOSED}>
+              {t('CLOSED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CLOSED] || 0}</Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.CANCELLED}>
               {t('CANCELLED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CANCELLED] || 0}</Badge>
