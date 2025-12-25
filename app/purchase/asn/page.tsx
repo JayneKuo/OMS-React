@@ -201,10 +201,10 @@ export default function ShipmentPage() {
 
   // 状态配置
   const statusConfig = {
-    [ShippingStatus.SHIPPED]: { label: t('SHIPPED'), color: "text-blue-600" },
-    [ShippingStatus.IN_TRANSIT]: { label: t('IN_TRANSIT'), color: "text-blue-600" },
-    [ShippingStatus.ARRIVED]: { label: t('ARRIVED'), color: "text-green-600" },
-    [ShippingStatus.SHIPPING_EXCEPTION]: { label: t('SHIPPING_EXCEPTION'), color: "text-red-600" },
+    [ShippingStatus.SHIPPED]: { label: t('SHIPPED'), color: "text-primary" },
+    [ShippingStatus.IN_TRANSIT]: { label: t('IN_TRANSIT'), color: "text-primary" },
+    [ShippingStatus.ARRIVED]: { label: t('ARRIVED'), color: "text-success" },
+    [ShippingStatus.SHIPPING_EXCEPTION]: { label: t('SHIPPING_EXCEPTION'), color: "text-destructive" },
   }
 
   // 运输类型配置
@@ -490,7 +490,7 @@ export default function ShipmentPage() {
       cell: (row) => {
         const config = statusConfig[row.status]
         return (
-          <span className={config.color}>{config.label}</span>
+          <span className={`${config.color} text-sm`}>{config.label}</span>
         )
       },
     },
@@ -500,7 +500,7 @@ export default function ShipmentPage() {
       width: "100px",
       defaultVisible: true,
       cell: (row) => (
-        <span className="text-gray-600">{shipmentTypeConfig[row.shipmentType]}</span>
+        <span className="text-text-secondary text-sm">{shipmentTypeConfig[row.shipmentType]}</span>
       ),
     },
     {
@@ -641,7 +641,7 @@ export default function ShipmentPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                  <MoreVertical className="h-4 w-4 text-text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -728,8 +728,8 @@ export default function ShipmentPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('shipments')}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageShipments')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t('shipments')}</h1>
+            <p className="text-sm text-text-secondary mt-sm">{t('manageShipments')}</p>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -887,7 +887,7 @@ export default function ShipmentPage() {
                   <div>
                     <Label>{t('status')}</Label>
                     <div>
-                      <span className={statusConfig[currentShipment.status].color}>
+                      <span className={`${statusConfig[currentShipment.status].color} text-sm`}>
                         {statusConfig[currentShipment.status].label}
                       </span>
                     </div>

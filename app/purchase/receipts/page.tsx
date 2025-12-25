@@ -548,29 +548,29 @@ export default function ReceiptsPage() {
 
   // 状态配置
   const statusConfig = {
-    NEW: { label: t('NEW'), color: "text-gray-600" },
-    PENDING: { label: t('PENDING'), color: "text-gray-600" },
-    IN_RECEIVING: { label: t('IN_RECEIVING'), color: "text-blue-600" },
-    PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "text-orange-600" },
-    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
-    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
+    NEW: { label: t('NEW'), color: "text-text-secondary" },
+    PENDING: { label: t('PENDING'), color: "text-text-secondary" },
+    IN_RECEIVING: { label: t('IN_RECEIVING'), color: "text-primary" },
+    PARTIALLY_RECEIVED: { label: t('PARTIALLY_RECEIVED'), color: "text-warning" },
+    CLOSED: { label: t('CLOSED'), color: "text-success" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-destructive" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-text-secondary" },
   }
 
   // 来源配置
   const sourceConfig = {
-    MANUAL: { label: t('manual'), color: "text-gray-600" },
-    EDI: { label: t('edi'), color: "text-gray-600" },
-    SYSTEM_AUTO: { label: t('systemAuto'), color: "text-gray-600" },
+    MANUAL: { label: t('manual'), color: "text-text-secondary" },
+    EDI: { label: t('edi'), color: "text-text-secondary" },
+    SYSTEM_AUTO: { label: t('systemAuto'), color: "text-text-secondary" },
   }
 
   // 单据类型配置
   const receiptTypeConfig = {
-    REGULAR: { label: t('regularReceipt'), color: "text-gray-600" },
-    TRANSLOAD: { label: t('transload'), color: "text-gray-600" },
-    RETURN_FROM_END_USER: { label: t('returnFromEndUser'), color: "text-gray-600" },
-    INVENTORY_RECEIPT: { label: t('inventoryReceipt'), color: "text-gray-600" },
-    CUSTOMER_TRANSFER: { label: t('customerTransfer'), color: "text-gray-600" },
+    REGULAR: { label: t('regularReceipt'), color: "text-text-secondary" },
+    TRANSLOAD: { label: t('transload'), color: "text-text-secondary" },
+    RETURN_FROM_END_USER: { label: t('returnFromEndUser'), color: "text-text-secondary" },
+    INVENTORY_RECEIPT: { label: t('inventoryReceipt'), color: "text-text-secondary" },
+    CUSTOMER_TRANSFER: { label: t('customerTransfer'), color: "text-text-secondary" },
   }
 
   // 筛选器配置
@@ -1063,7 +1063,7 @@ export default function ReceiptsPage() {
       width: "140px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={statusConfig[row.status].color}>
+        <span className={`${statusConfig[row.status].color} text-sm`}>
           {statusConfig[row.status].label}
         </span>
       ),
@@ -1088,7 +1088,7 @@ export default function ReceiptsPage() {
       width: "140px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={receiptTypeConfig[row.receiptType].color}>
+        <span className={`${receiptTypeConfig[row.receiptType].color} text-sm`}>
           {receiptTypeConfig[row.receiptType].label}
         </span>
       ),
@@ -1099,7 +1099,7 @@ export default function ReceiptsPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={sourceConfig[row.source].color}>
+        <span className={`${sourceConfig[row.source].color} text-sm`}>
           {sourceConfig[row.source].label}
         </span>
       ),
@@ -1285,7 +1285,7 @@ export default function ReceiptsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                  <MoreVertical className="h-4 w-4 text-text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -1340,8 +1340,8 @@ export default function ReceiptsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('receipts')}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageReceipts')}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t('receipts')}</h1>
+            <p className="text-sm text-text-secondary mt-sm">{t('manageReceipts')}</p>
           </div>
           <div className="flex gap-2">
             <DropdownMenu>

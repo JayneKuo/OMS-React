@@ -432,40 +432,40 @@ const statusPriority = {
 }
 
 const getPriorityConfig = (t: any) => ({
-  NORMAL: { label: t('normal'), color: "text-gray-600" },
-  URGENT: { label: t('urgent'), color: "text-orange-600" },
-  VERY_URGENT: { label: t('veryUrgent'), color: "text-red-600" },
+  NORMAL: { label: t('normal'), color: "text-text-secondary" },
+  URGENT: { label: t('urgent'), color: "text-warning" },
+  VERY_URGENT: { label: t('veryUrgent'), color: "text-destructive" },
 })
 
 const getPOGeneratedConfig = (t: any) => ({
-  NOT_GENERATED: { label: t('notGeneratedPO'), color: "text-gray-600" },
-  PARTIALLY_GENERATED: { label: t('partiallyGeneratedPO'), color: "text-orange-600" },
-  FULLY_GENERATED: { label: t('fullyGeneratedPO'), color: "text-green-600" },
+  NOT_GENERATED: { label: t('notGeneratedPO'), color: "text-text-secondary" },
+  PARTIALLY_GENERATED: { label: t('partiallyGeneratedPO'), color: "text-warning" },
+  FULLY_GENERATED: { label: t('fullyGeneratedPO'), color: "text-success" },
 })
 
 const getPRTypeConfig = (t: any) => ({
-  "常规采购": { label: t('regularPurchase'), color: "text-gray-600" },
-  "项目采购": { label: t('projectPurchase'), color: "text-gray-600" },
-  "备货": { label: t('stockReplenishment'), color: "text-gray-600" },
-  "内部调拨": { label: t('internalTransfer'), color: "text-gray-600" },
+  "常规采购": { label: t('regularPurchase'), color: "text-text-secondary" },
+  "项目采购": { label: t('projectPurchase'), color: "text-text-secondary" },
+  "备货": { label: t('stockReplenishment'), color: "text-text-secondary" },
+  "内部调拨": { label: t('internalTransfer'), color: "text-text-secondary" },
 })
 
 function PRPageContent() {
   const router = useRouter()
   const { t, language, setLanguage } = useI18n()
 
-  // Status configuration with translations - memoized to respond to language changes
+  // Status configuration with translations - using design system colors
   const statusConfig = React.useMemo(() => ({
-    DRAFT: { label: t('DRAFT'), color: "text-gray-600" },
-    SUBMITTED: { label: t('SUBMITTED'), color: "text-blue-600" },
-    APPROVING: { label: t('APPROVING'), color: "text-blue-600" },
-    APPROVED: { label: t('APPROVED'), color: "text-green-600" },
-    REJECTED: { label: t('REJECTED'), color: "text-red-600" },
-    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
-    PARTIAL_PO: { label: t('PARTIAL_PO'), color: "text-orange-600" },
-    FULL_PO: { label: t('FULL_PO'), color: "text-green-600" },
-    CLOSED: { label: t('CLOSED'), color: "text-gray-500" },
+    DRAFT: { label: t('DRAFT'), color: "text-text-secondary" },
+    SUBMITTED: { label: t('SUBMITTED'), color: "text-primary" },
+    APPROVING: { label: t('APPROVING'), color: "text-primary" },
+    APPROVED: { label: t('APPROVED'), color: "text-success" },
+    REJECTED: { label: t('REJECTED'), color: "text-destructive" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-text-secondary" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-destructive" },
+    PARTIAL_PO: { label: t('PARTIAL_PO'), color: "text-warning" },
+    FULL_PO: { label: t('FULL_PO'), color: "text-success" },
+    CLOSED: { label: t('CLOSED'), color: "text-text-secondary" },
   }), [t])
   
   const priorityConfig = React.useMemo(() => getPriorityConfig(t), [t])
@@ -746,10 +746,10 @@ function PRPageContent() {
       cell: (row) => {
         const config = statusConfig[row.status as keyof typeof statusConfig]
         if (!config) {
-          return <span className="text-gray-600">未知状态</span>
+          return <span className="text-text-secondary text-sm">未知状态</span>
         }
         return (
-          <span className={config.color}>
+          <span className={`${config.color} text-sm`}>
             {config.label}
           </span>
         )
@@ -783,7 +783,7 @@ function PRPageContent() {
       cell: (row) => {
         const config = prTypeConfig[row.prType as keyof typeof prTypeConfig]
         if (!config) {
-          return <span className="text-gray-600">{row.prType}</span>
+          return <span className="text-text-secondary text-sm">{row.prType}</span>
         }
         return (
           <span className={config.color}>
@@ -866,9 +866,9 @@ function PRPageContent() {
       defaultVisible: false,
       cell: (row) => (
         row.exceptions.length > 0 ? (
-          <div className="flex items-center gap-1 text-red-600" title={row.exceptions.join(", ")}>
+          <div className="flex items-center gap-xs text-destructive text-xs" title={row.exceptions.join(", ")}>
             <AlertTriangle className="h-4 w-4" />
-            <span className="text-xs">{row.exceptions.length}</span>
+            <span>{row.exceptions.length}</span>
           </div>
         ) : (
           <span className="text-muted-foreground">-</span>
@@ -952,21 +952,21 @@ function PRPageContent() {
                 <div key={index} className="text-xs">
                   <div className="flex items-center gap-1">
                     <span className="font-medium">{po.poNo}</span>
-                    <Badge className={`text-xs ${
-                      po.status === "CONFIRMED" ? "bg-green-100 text-green-700" :
-                      po.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-gray-100 text-gray-700"
+                    <span className={`text-xs ${
+                      po.status === "CONFIRMED" ? "text-success" :
+                      po.status === "PENDING" ? "text-warning" :
+                      "text-text-secondary"
                     }`}>
                       {po.status === "CONFIRMED" ? t('confirmed') :
                        po.status === "PENDING" ? t('pending') : t('unknown')}
-                    </Badge>
+                    </span>
                   </div>
                   <div className="text-muted-foreground">
                     USD {po.amount.toLocaleString()}
                   </div>
                 </div>
               ))}
-              <div className="text-xs text-blue-600 cursor-pointer hover:underline">
+              <div className="text-xs text-primary cursor-pointer hover:underline">
                 {t('viewAll')} ({mockPOs.length})
               </div>
             </div>
@@ -1060,7 +1060,7 @@ function PRPageContent() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                  <MoreVertical className="h-4 w-4 text-text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -1078,7 +1078,7 @@ function PRPageContent() {
                     }}
                     className={`text-sm ${
                       action.variant === "destructive" 
-                        ? "text-red-600 focus:text-red-600 focus:bg-red-50" 
+                        ? "text-destructive focus:text-destructive focus:bg-destructive/10" 
                         : ""
                     }`}
                   >
@@ -1175,10 +1175,10 @@ function PRPageContent() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
               {language === 'zh' ? '采购申请' : 'Purchase Request'}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-text-secondary mt-sm">
               {language === 'zh' ? 
                 '创建和管理采购申请，支持审批流程和PO生成，实现采购需求的标准化管理' : 
                 'Create and manage purchase requests with approval workflows and PO generation for standardized procurement management'

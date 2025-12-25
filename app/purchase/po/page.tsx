@@ -477,86 +477,86 @@ export default function POPage() {
     }))
   }
 
-  // 主状态配置（PO Status）- 纯文本样式
+  // 主状态配置（PO Status）- 使用设计系统颜色
   const statusConfig = {
-    NEW: { label: t('NEW'), color: "text-gray-600" },
-    IN_TRANSIT: { label: t('IN_TRANSIT'), color: "text-blue-600" },
-    WAITING_FOR_RECEIVING: { label: t('WAITING_FOR_RECEIVING'), color: "text-blue-600" },
-    RECEIVING: { label: t('RECEIVING'), color: "text-blue-600" },
-    PARTIAL_RECEIPT: { label: t('PARTIAL_RECEIPT'), color: "text-orange-600" },
-    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
-    CANCELLED: { label: t('CANCELLED'), color: "text-gray-600" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
+    NEW: { label: t('NEW'), color: "text-text-secondary" },
+    IN_TRANSIT: { label: t('IN_TRANSIT'), color: "text-primary" },
+    WAITING_FOR_RECEIVING: { label: t('WAITING_FOR_RECEIVING'), color: "text-primary" },
+    RECEIVING: { label: t('RECEIVING'), color: "text-primary" },
+    PARTIAL_RECEIPT: { label: t('PARTIAL_RECEIPT'), color: "text-warning" },
+    CLOSED: { label: t('CLOSED'), color: "text-success" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-text-secondary" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-destructive" },
   }
 
-  // 运输状态配置（Shipping Status）- 纯文本样式
+  // 运输状态配置（Shipping Status）- 使用设计系统颜色
   const shippingStatusConfig = {
     NOT_SHIPPED: { 
       label: t('NOT_SHIPPED'), 
-      color: "text-gray-600",
+      color: "text-text-secondary",
       description: t('noASNCreated')
     },
     ASN_CREATED: { 
       label: t('ASN_CREATED'), 
-      color: "text-blue-600",
+      color: "text-primary",
       description: t('asnCreatedNotShipped')
     },
     SHIPPED: { 
       label: t('SHIPPED'), 
-      color: "text-blue-600",
+      color: "text-primary",
       description: t('asnMarkedShipped')
     },
     IN_TRANSIT: { 
       label: t('IN_TRANSIT'), 
-      color: "text-blue-600",
+      color: "text-primary",
       description: t('carrierEventInTransit')
     },
     ARRIVED_AT_WAREHOUSE: { 
       label: t('ARRIVED_AT_WAREHOUSE'), 
-      color: "text-green-600",
+      color: "text-success",
       description: t('arrivedAtWarehouse')
     },
     SHIPMENT_CLOSED: { 
       label: t('SHIPMENT_CLOSED'), 
-      color: "text-gray-500",
+      color: "text-text-secondary",
       description: t('allASNCompleted')
     },
   }
 
-  // 收货状态配置（Receiving Status）- 纯文本样式
+  // 收货状态配置（Receiving Status）- 使用设计系统颜色
   const receivingStatusConfig = {
     NOT_RECEIVED: { 
       label: t('NOT_RECEIVED'), 
-      color: "text-gray-600",
+      color: "text-text-secondary",
       description: t('noReceiptRecords')
     },
     IN_RECEIVING: { 
       label: t('IN_RECEIVING'), 
-      color: "text-blue-600",
+      color: "text-primary",
       description: t('warehouseStartedReceiving')
     },
     PARTIALLY_RECEIVED: { 
       label: t('PARTIALLY_RECEIVED'), 
-      color: "text-orange-600",
+      color: "text-warning",
       description: t('partialLinesReceived')
     },
     FULLY_RECEIVED: { 
       label: t('FULLY_RECEIVED'), 
-      color: "text-green-600",
+      color: "text-success",
       description: t('allLinesReceived')
     },
     OVER_RECEIVED: { 
       label: t('OVER_RECEIVED'), 
-      color: "text-red-600",
+      color: "text-destructive",
       description: t('overReceivedAbnormal')
     },
   }
 
   // 来源配置
   const dataSourceConfig = {
-    MANUAL: { label: t('MANUAL'), color: "text-gray-600" },
-    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "text-gray-600" },
-    API_IMPORT: { label: t('API_IMPORT'), color: "text-gray-600" },
+    MANUAL: { label: t('MANUAL'), color: "text-text-secondary" },
+    PR_CONVERSION: { label: t('PR_CONVERSION'), color: "text-text-secondary" },
+    API_IMPORT: { label: t('API_IMPORT'), color: "text-text-secondary" },
   }
 
   // Define filter configurations based on optimized PO system
@@ -856,7 +856,7 @@ export default function POPage() {
       width: "100px",
       defaultVisible: false,
       cell: (row) => (
-        <div className="text-center text-gray-600">
+        <div className="text-center text-text-secondary text-sm">
           {row.asnCount}
         </div>
       ),
@@ -869,7 +869,7 @@ export default function POPage() {
       cell: (row) => {
         const config = dataSourceConfig[row.dataSource]
         return (
-          <span className={config.color}>
+          <span className={`${config.color} text-sm`}>
             {config.label}
           </span>
         )
@@ -906,7 +906,7 @@ export default function POPage() {
       width: "200px",
       defaultVisible: false,
       cell: (row) => (
-        <div className="flex flex-wrap gap-1 text-xs text-gray-600">
+        <div className="flex flex-wrap gap-xs text-xs text-text-secondary">
           {row.prNos.slice(0, 2).map((prNo, index) => (
             <span key={index}>
               {prNo}
@@ -927,7 +927,7 @@ export default function POPage() {
       defaultVisible: false,
       cell: (row) => (
         row.exceptions.length > 0 ? (
-          <div className="flex items-center gap-1 text-red-600">
+          <div className="flex items-center gap-xs text-destructive text-xs">
             <AlertCircle className="h-4 w-4" />
             <span className="text-xs">{row.exceptions.length}</span>
           </div>
@@ -1113,7 +1113,7 @@ export default function POPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                  <MoreVertical className="h-4 w-4 text-text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -1124,7 +1124,7 @@ export default function POPage() {
                     disabled={action.disabled}
                     className={`text-sm ${
                       action.variant === "destructive" 
-                        ? "text-red-600 focus:text-red-600 focus:bg-red-50" 
+                        ? "text-destructive focus:text-destructive focus:bg-destructive/10" 
                         : ""
                     }`}
                   >
@@ -1248,8 +1248,8 @@ export default function POPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('purchaseOrders')}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t('purchaseOrders')}</h1>
+            <p className="text-sm text-text-secondary mt-sm">
               {t('managePurchaseOrders')}
             </p>
           </div>

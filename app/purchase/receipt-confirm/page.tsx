@@ -208,16 +208,16 @@ export default function ReceiptConfirmPage() {
 
   // 状态配置
   const statusConfig = {
-    CLOSED: { label: t('CLOSED'), color: "text-green-600" },
-    PARTIAL: { label: t('PARTIALLY_RECEIVED'), color: "text-orange-600" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "text-red-600" },
+    CLOSED: { label: t('CLOSED'), color: "text-success" },
+    PARTIAL: { label: t('PARTIALLY_RECEIVED'), color: "text-warning" },
+    EXCEPTION: { label: t('EXCEPTION'), color: "text-destructive" },
   }
 
   // 收货类型配置
   const receiptTypeConfig = {
-    REGULAR_RECEIPT: { label: t('REGULAR_RECEIPT'), color: "text-gray-600" },
-    RETURN: { label: t('RETURN'), color: "text-gray-600" },
-    XDOCK: { label: t('XDOCK'), color: "text-gray-600" },
+    REGULAR_RECEIPT: { label: t('REGULAR_RECEIPT'), color: "text-text-secondary" },
+    RETURN: { label: t('RETURN'), color: "text-text-secondary" },
+    XDOCK: { label: t('XDOCK'), color: "text-text-secondary" },
   }
 
   // 筛选器配置
@@ -406,7 +406,7 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={statusConfig[row.status]?.color || "text-gray-600"}>
+        <span className={`${statusConfig[row.status]?.color || "text-text-secondary"} text-sm`}>
           {statusConfig[row.status]?.label || row.status}
         </span>
       ),
@@ -442,7 +442,7 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={receiptTypeConfig[row.receiptType]?.color || "text-gray-600"}>
+        <span className={`${receiptTypeConfig[row.receiptType]?.color || "text-text-secondary"} text-sm`}>
           {receiptTypeConfig[row.receiptType]?.label || row.receiptType}
         </span>
       ),
@@ -572,7 +572,7 @@ export default function ReceiptConfirmPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-600" />
+                  <MoreVertical className="h-4 w-4 text-text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -645,8 +645,8 @@ export default function ReceiptConfirmPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">{t('receiptConfirm')}</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('manageReceiptConfirms') || '管理收货确认单据'}</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{t('receiptConfirm')}</h1>
+              <p className="text-sm text-text-secondary mt-sm">{t('manageReceiptConfirms') || '管理收货确认单据'}</p>
             </div>
             <div className="flex items-center gap-2">
               <Tooltip>

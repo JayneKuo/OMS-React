@@ -35,6 +35,18 @@ const config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -61,6 +73,22 @@ const config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        text: {
+          primary: "hsl(var(--text-primary))",
+          regular: "hsl(var(--text-regular))",
+          secondary: "hsl(var(--text-secondary))",
+          placeholder: "hsl(var(--text-placeholder))",
+          disabled: "hsl(var(--text-disabled))",
+        },
+      },
+      spacing: {
+        xs: "4px",
+        sm: "8px",
+        md: "16px",
+        lg: "24px",
+        xl: "32px",
+        "2xl": "48px",
+        "3xl": "64px",
       },
       borderRadius: {
         lg: "var(--radius)",

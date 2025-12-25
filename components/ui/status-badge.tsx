@@ -16,12 +16,12 @@ const statusBadgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-gray-600",
-        processing: "text-blue-600",
-        success: "text-green-600",
-        warning: "text-orange-600",
-        error: "text-red-600",
-        outline: "text-gray-600",
+        default: "text-text-secondary",
+        processing: "text-primary",
+        success: "text-success",
+        warning: "text-warning",
+        error: "text-destructive",
+        outline: "text-text-secondary",
       },
     },
     defaultVariants: {
