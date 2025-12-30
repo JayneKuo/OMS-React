@@ -389,6 +389,79 @@ export default function RealLayoutDemo() {
               </div>
             )}
 
+            {/* Batch Operations Bar */}
+            {selectedRows.length > 0 && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium">
+                        已选择 <span className="text-primary">{selectedRows.length}</span> 项
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedRows([])}
+                        className="h-8 text-xs"
+                      >
+                        取消选择
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={() => toast.success("批量导出成功", { description: `已导出 ${selectedRows.length} 条订单数据` })}
+                      >
+                        <Download className="h-4 w-4" />
+                        批量导出
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={() => toast.success("批量发送成功", { description: `已向 ${selectedRows.length} 个客户发送订单` })}
+                      >
+                        <Send className="h-4 w-4" />
+                        批量发送
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            更多操作
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => toast.info("批量编辑", { description: "正在打开批量编辑对话框..." })}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            批量编辑
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info("批量打印", { description: `正在准备打印 ${selectedRows.length} 个订单...` })}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            批量打印
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.warning("批量归档", { description: "归档后订单将移至历史记录" })}>
+                            <Package className="mr-2 h-4 w-4" />
+                            批量归档
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => toast.error("批量删除失败", { description: "部分订单已发货，无法删除" })}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            批量删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Data Table */}
             <div className="relative">
               <Card>
