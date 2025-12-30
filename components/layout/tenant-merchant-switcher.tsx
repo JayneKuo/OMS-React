@@ -139,8 +139,8 @@ export const TenantMerchantSwitcher = React.forwardRef<
                         <button
                           key={tenant.id}
                           onClick={() => handleTenantSelect(tenant)}
-                          className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent ${
-                            isSelected ? "bg-accent" : ""
+                          className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/20 ${
+                            isSelected ? "bg-primary/10 border border-primary/20 text-primary" : ""
                           }`}
                         >
                           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
@@ -222,8 +222,8 @@ export const TenantMerchantSwitcher = React.forwardRef<
                         <button
                           key={merchant.id}
                           onClick={() => handleMerchantSelect(merchant)}
-                          className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent ${
-                            isSelected ? "bg-accent" : ""
+                          className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/20 ${
+                            isSelected ? "bg-primary/10 border border-primary/20 text-primary" : ""
                           }`}
                         >
                           <Store className="h-4 w-4 text-muted-foreground shrink-0" />

@@ -255,6 +255,159 @@
   Spacing Unit: 8px
 
   ---
+  10. Real Implementation Patterns
+
+  Based on actual OMS React implementation
+
+  Page Layout Structure
+
+  /* List Page Layout */
+  - Container: space-y-6 (24px vertical spacing)
+  - Page Title: text-3xl (24px) font-semibold tracking-tight
+  - Description: text-sm (14px) text-muted-foreground mt-2 (8px)
+  - Action Buttons: size="sm" gap-2 (8px)
+
+  /* Detail Page Layout */
+  - Header Card: p-6 (24px) border rounded-lg
+  - Title: text-3xl (24px) font-bold
+  - Meta Info: text-sm (14px) gap-2 (8px) mt-2 (8px)
+  - Icon Size: h-4 w-4 (16px)
+  - Cards Grid: gap-6 (24px) grid-cols-1 md:grid-cols-2 xl:grid-cols-4
+
+  Navigation & Selection States
+
+  /* Sidebar Menu */
+  - Active: bg-primary text-primary-foreground (purple bg + white text)
+  - Hover: hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+  - Disabled: opacity-50 cursor-not-allowed
+  - Padding: px-3 py-2 (12px 8px)
+  - Gap: gap-3 (12px)
+
+  /* Tabs */
+  - Container: bg-muted p-1 rounded-md
+  - Active Tab: bg-primary text-primary-foreground (purple bg + white text)
+  - Inactive Tab: text-muted-foreground
+  - Tab Padding: px-3 py-1.5 (12px 6px)
+  - Badge in Tab (Active): bg-transparent text-primary-foreground border-0
+  - Badge in Tab (Inactive): bg-secondary text-secondary-foreground
+
+  Badges & Tags
+
+  /* Status Badges */
+  - Success: bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400
+  - Warning: bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400
+  - Info: bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400
+  - Danger: bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400
+
+  /* Filter Badges */
+  - Style: bg-primary/10 text-primary border border-primary/20
+  - Hover: hover:bg-primary/20
+  - With Close Button: gap-1 with X icon (h-3 w-3)
+
+  Data Tables
+
+  /* Table Structure */
+  - Container: Card with pt-6 (24px)
+  - Header: bg-muted/50 text-sm (14px) font-medium p-3 (12px)
+  - Body: text-xs (12px) p-3 (12px)
+  - Row Hover: hover:bg-muted/50
+  - Border: border rounded-lg
+
+  /* Column Widths */
+  - Order Number: 150px
+  - Customer Name: 200px
+  - Status: 120px
+  - Amount: 120px
+  - Date: 120px
+  - Actions: 80px
+
+  Cards & Info Display
+
+  /* Info Cards */
+  - Padding: pt-6 (24px) space-y-3 (12px)
+  - Title: text-sm (14px) font-medium with icon h-4 w-4 (16px)
+  - Label: text-xs (12px) text-muted-foreground
+  - Value: text-xs (12px) font-medium
+  - Icon Color: text-primary
+
+  /* Card Grid */
+  - Gap: gap-6 (24px)
+  - Responsive: grid-cols-1 md:grid-cols-2 xl:grid-cols-4
+
+  Buttons & Actions
+
+  /* Button Sizes */
+  - Small: size="sm" (h-9 px-3)
+  - Icon: size="icon" (h-9 w-9)
+  - Default: h-10 px-4
+
+  /* Button Variants */
+  - Primary: bg-primary text-primary-foreground hover:bg-primary/90
+  - Outline: border border-input hover:bg-accent
+  - Ghost: hover:bg-accent hover:text-accent-foreground
+  - Destructive: bg-destructive text-destructive-foreground
+
+  Forms & Inputs
+
+  /* Input Fields */
+  - Height: h-10 (40px)
+  - Padding: px-3 py-2 (12px 8px)
+  - Border: border border-input rounded-md
+  - Focus: focus-visible:ring-2 focus-visible:ring-ring
+
+  /* Filter Bar */
+  - Search: flex-1 with search icon
+  - Filter Buttons: gap-2 (8px)
+  - Active Filters: flex gap-2 (8px) flex-wrap
+
+  Spacing Patterns
+
+  /* Common Gaps */
+  - Tight: gap-2 (8px) - buttons, inline elements
+  - Normal: gap-3 (12px) - form fields, list items
+  - Comfortable: gap-4 (16px) - sections
+  - Spacious: gap-6 (24px) - major sections, cards
+
+  /* Vertical Spacing */
+  - space-y-2 (8px) - tight lists
+  - space-y-3 (12px) - form groups
+  - space-y-4 (16px) - content sections
+  - space-y-6 (24px) - page sections
+
+  Dark Mode Patterns
+
+  /* Background Colors */
+  - Page: bg-background (white / black)
+  - Card: bg-card (white / gray-950)
+  - Muted: bg-muted (gray-100 / gray-800)
+  - Accent: bg-accent (gray-100 / gray-800)
+
+  /* Text Colors */
+  - Primary: text-foreground (#181818 / #ffffff)
+  - Secondary: text-muted-foreground (#666666 / #999999)
+  - Disabled: opacity-50
+
+  /* Border Colors */
+  - Default: border-border (gray-200 / gray-800)
+  - Input: border-input (gray-200 / gray-800)
+
+  Accessibility
+
+  /* Focus States */
+  - Ring: focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+  - Outline: focus-visible:outline-none
+
+  /* Interactive Elements */
+  - Minimum Touch Target: 40px (h-10)
+  - Icon Buttons: h-9 w-9 (36px)
+  - Hover States: Always include hover:bg-* or hover:text-*
+
+  /* Color Contrast */
+  - Text on Background: Minimum 4.5:1
+  - Large Text: Minimum 3:1
+  - Interactive Elements: Minimum 3:1
+
+  ---
   9. Quick Checklist
 
   Before shipping any UI:
@@ -262,11 +415,14 @@
   - Logo has proper clear space
   - Colors use CSS variables
   - Typography follows scale
-  - Spacing uses consistent tokens
+  - Spacing uses consistent tokens (8px increments)
   - Dark mode supported
   - Semantic colors applied correctly
   - Images meet resolution requirements
   - Accessibility checked
+  - Selection states use primary color (purple)
+  - Hover states defined for interactive elements
+  - Focus states visible for keyboard navigation
 
   ---
   Guide compiled from Item Design System (design.item.com) — December 2025

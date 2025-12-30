@@ -31,7 +31,7 @@ export function TenantSwitcherSimple() {
   return (
     <Button
       variant="ghost"
-      className="h-auto flex-col items-start px-3 py-2 hover:bg-accent"
+      className="h-auto flex-col items-start px-3 py-2 hover:bg-primary-hover/20 transition-colors"
     >
       <div className="flex items-center gap-2 w-full">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">

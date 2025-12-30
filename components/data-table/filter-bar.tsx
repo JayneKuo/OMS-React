@@ -309,7 +309,7 @@ export function FilterBar({
                     filteredOptions.map((option) => (
                       <label
                         key={option.id}
-                        className="flex items-center gap-2 px-2 py-2 hover:bg-accent rounded-sm cursor-pointer"
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 rounded-sm cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -364,7 +364,7 @@ export function FilterBar({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 px-2 text-xs hover:bg-accent"
+                    className="h-7 px-2 text-xs hover:bg-primary-hover/10"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -391,7 +391,7 @@ export function FilterBar({
                       onDrop={(e) => handleDrop(e, column.id)}
                       className={cn(
                         "flex items-center gap-2 px-2 py-2 rounded-sm cursor-move transition-colors",
-                        "hover:bg-accent",
+                        "hover:bg-primary-hover/10",
                         draggedColumn === column.id && "opacity-50",
                         dragOverColumn === column.id && "border-t-2 border-primary"
                       )}
@@ -449,11 +449,11 @@ export function FilterBar({
           <span className="text-sm text-muted-foreground">Active filters:</span>
           
           {searchValue && (
-            <Badge variant="secondary" className="gap-1">
+            <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
               Search: {searchValue}
               <button
                 onClick={() => handleSearchChange("")}
-                className="ml-1 hover:text-foreground"
+                className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -461,11 +461,11 @@ export function FilterBar({
           )}
 
           {activeFilters.map((filter, index) => (
-            <Badge key={`${filter.filterId}-${filter.optionId}-${index}`} variant="secondary" className="gap-1">
+            <Badge key={`${filter.filterId}-${filter.optionId}-${index}`} className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
               {filter.filterLabel}: {filter.optionLabel}
               <button
                 onClick={() => handleRemoveFilter(filter)}
-                className="ml-1 hover:text-foreground"
+                className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -476,7 +476,7 @@ export function FilterBar({
             variant="ghost"
             size="sm"
             onClick={handleClearAll}
-            className="h-6 px-2 text-xs"
+            className="h-6 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
           >
             Clear all
           </Button>

@@ -103,16 +103,16 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-accent">
+              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-primary-hover/10 transition-colors">
                 Create New Order
               </button>
-              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-accent">
+              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-primary-hover/10 transition-colors">
                 Add Product
               </button>
-              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-accent">
+              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-primary-hover/10 transition-colors">
                 Process Returns
               </button>
-              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-accent">
+              <button className="w-full rounded-md border p-3 text-left text-sm hover:bg-primary-hover/10 transition-colors">
                 View Reports
               </button>
             </CardContent>

@@ -86,7 +86,7 @@ export function WorkspaceSwitcher() {
       <Button
         variant="ghost"
         onClick={() => setOpen(!open)}
-        className="h-auto flex-col items-start px-3 py-2 hover:bg-accent"
+        className="h-auto flex-col items-start px-3 py-2 hover:bg-primary-hover/20 transition-colors"
       >
         <div className="flex items-center gap-2 w-full">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
@@ -153,8 +153,8 @@ export function WorkspaceSwitcher() {
                             <button
                               key={ws.id}
                               onClick={() => handleSelect(ws)}
-                              className={`w-full flex items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent ${
-                                isSelected ? "bg-accent" : ""
+                              className={`w-full flex items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-primary-hover/20 ${
+                                isSelected ? "bg-primary/10 border border-primary/20 text-primary" : ""
                               }`}
                             >
                               <Store className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -181,7 +181,7 @@ export function WorkspaceSwitcher() {
 
             {/* Footer */}
             <div className="border-t p-2">
-              <button className="w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
+              <button className="w-full flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-primary-hover/20 transition-colors">
                 <Plus className="h-4 w-4" />
                 Add Workspace
               </button>

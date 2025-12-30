@@ -130,7 +130,7 @@ export function HeaderSimple() {
             </Link>
             <button
               onClick={() => setSwitcherOpen(!switcherOpen)}
-              className="flex items-center gap-2 hover:bg-accent rounded-md px-2 py-1 transition-colors"
+              className="flex items-center gap-2 hover:bg-primary-hover/10 rounded-md px-2 py-1 transition-colors"
             >
               <div className="flex flex-col -space-y-0.5">
                 <span className="text-xs text-muted-foreground text-left whitespace-nowrap">
@@ -183,8 +183,8 @@ export function HeaderSimple() {
                                 <button
                                   key={tenant.id}
                                   onClick={() => handleTenantSelect(tenant)}
-                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent ${
-                                    isSelected ? "bg-accent" : ""
+                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 ${
+                                    isSelected ? "bg-primary-hover/10" : ""
                                   }`}
                                 >
                                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
@@ -241,8 +241,8 @@ export function HeaderSimple() {
                                 <button
                                   key={merchant.id}
                                   onClick={() => handleMerchantSelect(merchant)}
-                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent ${
-                                    isSelected ? "bg-accent" : ""
+                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 ${
+                                    isSelected ? "bg-primary-hover/10" : ""
                                   }`}
                                 >
                                   <Store className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -290,7 +290,7 @@ export function HeaderSimple() {
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    : "text-muted-foreground hover:bg-primary-hover/10 hover:text-foreground"
                 )}
               >
                 {item.title}
@@ -367,7 +367,7 @@ export function HeaderSimple() {
                         onMouseEnter={() => setLanguageMenuOpen(true)}
                         onMouseLeave={() => setLanguageMenuOpen(false)}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-accent rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
                             <Globe className="h-4 w-4" />
                             <span>{t('language')}</span>
@@ -395,8 +395,8 @@ export function HeaderSimple() {
                                     setLanguageMenuOpen(false)
                                     setUserMenuOpen(false)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent flex items-center justify-between ${
-                                    i18nLanguage === lang.code ? "text-primary font-medium bg-accent" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center justify-between ${
+                                    i18nLanguage === lang.code ? "text-primary font-medium bg-primary-hover/10" : ""
                                   }`}
                                 >
                                   {lang.display}
@@ -414,7 +414,7 @@ export function HeaderSimple() {
                         onMouseEnter={() => setTimezoneMenuOpen(true)}
                         onMouseLeave={() => setTimezoneMenuOpen(false)}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-accent rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             <span>{t('timezone')}</span>
@@ -438,8 +438,8 @@ export function HeaderSimple() {
                                     // Store in localStorage for persistence
                                     localStorage.setItem("oms-timezone", tz)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent flex items-center justify-between ${
-                                    timezone === tz ? "text-primary font-medium bg-accent" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center justify-between ${
+                                    timezone === tz ? "text-primary font-medium bg-primary-hover/10" : ""
                                   }`}
                                 >
                                   {tz}
@@ -457,7 +457,7 @@ export function HeaderSimple() {
                         onMouseEnter={() => setThemeMenuOpen(true)}
                         onMouseLeave={() => setThemeMenuOpen(false)}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-accent rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
                             {theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
                             <span>{t('theme')}</span>
@@ -483,8 +483,8 @@ export function HeaderSimple() {
                                     setTheme(themeOption.value)
                                     setThemeMenuOpen(false)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-accent flex items-center gap-2 ${
-                                    theme === themeOption.value ? "text-primary font-medium bg-accent" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center gap-2 ${
+                                    theme === themeOption.value ? "text-primary font-medium bg-primary-hover/10" : ""
                                   }`}
                                 >
                                   <themeOption.icon className="h-3 w-3" />
@@ -499,8 +499,24 @@ export function HeaderSimple() {
 
                       <Separator className="my-2" />
 
+                      {/* UI Guidelines */}
+                      <button 
+                        className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-primary rounded transition-colors"
+                        onClick={() => {
+                          window.open('/ui-guidelines', '_blank')
+                          setUserMenuOpen(false)
+                        }}
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        UI Design Guidelines
+                      </button>
+
+                      <Separator className="my-2" />
+
                       {/* Logout */}
-                      <button className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground rounded">
+                      <button className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-foreground rounded">
                         <LogOut className="h-4 w-4" />
                         {t('logout')}
                       </button>

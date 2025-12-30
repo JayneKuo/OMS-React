@@ -54,6 +54,23 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
         <nav className="flex flex-col space-y-1">
           {items.map((item) => {
             const isActive = pathname === item.href
+            const isDisabled = item.href === "#"
+            
+            if (isDisabled) {
+              return (
+                <div
+                  key={item.title}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm font-medium flex items-center gap-3 cursor-not-allowed opacity-50",
+                    collapsed ? "justify-center" : ""
+                  )}
+                  title={collapsed ? item.title : undefined}
+                >
+                  {item.icon && <span className="shrink-0">{item.icon}</span>}
+                  {!collapsed && <span className="truncate">{item.title}</span>}
+                </div>
+              )
+            }
             
             return (
               <Link
@@ -63,7 +80,7 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
                   "rounded-md px-3 py-2 text-sm font-medium transition-colors flex items-center gap-3",
                   collapsed ? "justify-center" : "",
                   isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
                 title={collapsed ? item.title : undefined}
