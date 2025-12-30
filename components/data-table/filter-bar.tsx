@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export interface FilterOption {
   id: string
@@ -309,13 +310,11 @@ export function FilterBar({
                     filteredOptions.map((option) => (
                       <label
                         key={option.id}
-                        className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 rounded-sm cursor-pointer"
+                        className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={isFilterActive(filter.id, option.id)}
-                          onChange={() => handleFilterToggle(filter, option)}
-                          className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          onCheckedChange={() => handleFilterToggle(filter, option)}
                         />
                         <span className="text-sm flex-1">{option.label}</span>
                       </label>
@@ -364,7 +363,7 @@ export function FilterBar({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 px-2 text-xs hover:bg-primary-hover/10"
+                    className="h-7 px-2 text-xs"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -391,19 +390,17 @@ export function FilterBar({
                       onDrop={(e) => handleDrop(e, column.id)}
                       className={cn(
                         "flex items-center gap-2 px-2 py-2 rounded-sm cursor-move transition-colors",
-                        "hover:bg-primary-hover/10",
+                        "hover:bg-primary-hover/10 hover:text-primary",
                         draggedColumn === column.id && "opacity-50",
                         dragOverColumn === column.id && "border-t-2 border-primary"
                       )}
                     >
                       <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <label className="flex items-center gap-2 flex-1 cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={column.visible}
-                          onChange={() => handleColumnToggle(column.id)}
+                          onCheckedChange={() => handleColumnToggle(column.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-4 w-4 rounded border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         />
                         <span className="text-sm flex-1">{column.label}</span>
                       </label>

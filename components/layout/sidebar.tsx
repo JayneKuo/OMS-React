@@ -81,7 +81,7 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
                   collapsed ? "justify-center" : "",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-primary-hover/10 hover:text-primary"
                 )}
                 title={collapsed ? item.title : undefined}
               >

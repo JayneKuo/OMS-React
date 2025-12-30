@@ -17,6 +17,7 @@ import { I18nProvider, useI18n } from "@/components/i18n-provider"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
 // Import the shared sidebar items
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
@@ -1288,37 +1289,136 @@ function PRPageContent() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">
-              {t('all')} <Badge variant="secondary" className="ml-2">{statusCounts.all}</Badge>
+              {t('all')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "all" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.all}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="DRAFT">
-              {t('DRAFT')} <Badge variant="secondary" className="ml-2">{statusCounts.DRAFT}</Badge>
+              {t('DRAFT')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "DRAFT" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.DRAFT}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="SUBMITTED">
-              {t('SUBMITTED')} <Badge variant="secondary" className="ml-2">{statusCounts.SUBMITTED}</Badge>
+              {t('SUBMITTED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "SUBMITTED" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.SUBMITTED}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="APPROVING">
-              {t('APPROVING')} <Badge variant="secondary" className="ml-2">{statusCounts.APPROVING}</Badge>
+              {t('APPROVING')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "APPROVING" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.APPROVING}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="APPROVED">
-              {t('APPROVED')} <Badge variant="secondary" className="ml-2">{statusCounts.APPROVED}</Badge>
+              {t('APPROVED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "APPROVED" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.APPROVED}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="REJECTED">
-              {t('REJECTED')} <Badge variant="secondary" className="ml-2">{statusCounts.REJECTED}</Badge>
+              {t('REJECTED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "REJECTED" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.REJECTED}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="CANCELLED">
-              {t('CANCELLED')} <Badge variant="secondary" className="ml-2">{statusCounts.CANCELLED}</Badge>
+              {t('CANCELLED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "CANCELLED" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.CANCELLED}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="EXCEPTION">
-              {t('EXCEPTION')} <Badge variant="secondary" className="ml-2">{statusCounts.EXCEPTION}</Badge>
+              {t('EXCEPTION')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "EXCEPTION" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.EXCEPTION}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="PARTIAL_PO">
-              {t('PARTIAL_PO')} <Badge variant="secondary" className="ml-2">{statusCounts.PARTIAL_PO}</Badge>
+              {t('PARTIAL_PO')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "PARTIAL_PO" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.PARTIAL_PO}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="FULL_PO">
-              {t('FULL_PO')} <Badge variant="secondary" className="ml-2">{statusCounts.FULL_PO}</Badge>
+              {t('FULL_PO')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "FULL_PO" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.FULL_PO}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="CLOSED">
-              {t('CLOSED')} <Badge variant="secondary" className="ml-2">{statusCounts.CLOSED}</Badge>
+              {t('CLOSED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "CLOSED" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.CLOSED}
+              </Badge>
             </TabsTrigger>
           </TabsList>
         </Tabs>

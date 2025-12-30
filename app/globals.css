@@ -17,8 +17,8 @@
     --secondary-foreground: 240 6% 10%;
     --muted: 0 0% 90%;
     --muted-foreground: 0 0% 40%;
-    --accent: 24 95% 53%; /* #F97316 - Orange */
-    --accent-foreground: 0 0% 100%;
+    --accent: 267 54% 65%; /* #9561D0 - Light purple for hover states */
+    --accent-foreground: 0 0% 9%;
     --destructive: 354 83% 48%; /* #F0283C - Red */
     --destructive-foreground: 348 100% 98%;
     --success: 142 71% 29%; /* #15803D - Green */
@@ -63,7 +63,7 @@
     --secondary-foreground: 0 0% 93%;
     --muted: 210 3% 13%;
     --muted-foreground: 0 0% 60%;
-    --accent: 24 95% 53%; /* #F97316 - Orange */
+    --accent: 267 38% 43%; /* #6C38AD - Dark purple for hover states */
     --accent-foreground: 0 0% 100%;
     --destructive: 354 86% 55%; /* #F0283C - Red */
     --destructive-foreground: 0 89% 7%;

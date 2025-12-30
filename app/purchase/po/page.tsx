@@ -17,6 +17,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
 import { LocalWarehouseReceiptDialog } from "@/components/purchase/local-warehouse-receipt-dialog"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
+import { cn } from "@/lib/utils"
 
 // PO Data Interface based on the optimized status system
 interface PurchaseOrder {
@@ -1352,31 +1353,112 @@ export default function POPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">
-              {t('all')} <Badge variant="secondary" className="ml-2">{statusCounts.all}</Badge>
+              {t('all')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === "all" && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts.all}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.NEW}>
-              {t('NEW')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.NEW] || 0}</Badge>
+              {t('NEW')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.NEW && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.NEW] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.IN_TRANSIT}>
-              {t('IN_TRANSIT')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.IN_TRANSIT] || 0}</Badge>
+              {t('IN_TRANSIT')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.IN_TRANSIT && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.IN_TRANSIT] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.WAITING_FOR_RECEIVING}>
-              {t('WAITING_FOR_RECEIVING')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.WAITING_FOR_RECEIVING] || 0}</Badge>
+              {t('WAITING_FOR_RECEIVING')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.WAITING_FOR_RECEIVING && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.WAITING_FOR_RECEIVING] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.RECEIVING}>
-              {t('RECEIVING')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.RECEIVING] || 0}</Badge>
+              {t('RECEIVING')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.RECEIVING && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.RECEIVING] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.PARTIAL_RECEIPT}>
-              {t('PARTIAL_RECEIPT')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.PARTIAL_RECEIPT] || 0}</Badge>
+              {t('PARTIAL_RECEIPT')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.PARTIAL_RECEIPT && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.PARTIAL_RECEIPT] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.CLOSED}>
-              {t('CLOSED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CLOSED] || 0}</Badge>
+              {t('CLOSED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.CLOSED && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.CLOSED] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.CANCELLED}>
-              {t('CANCELLED')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.CANCELLED] || 0}</Badge>
+              {t('CANCELLED')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.CANCELLED && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.CANCELLED] || 0}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.EXCEPTION}>
-              {t('EXCEPTION')} <Badge variant="secondary" className="ml-2">{statusCounts[POStatus.EXCEPTION] || 0}</Badge>
+              {t('EXCEPTION')} 
+              <Badge 
+                variant="secondary" 
+                className={cn(
+                  "ml-2",
+                  activeTab === POStatus.EXCEPTION && "bg-primary-foreground/20 text-primary-foreground border-0"
+                )}
+              >
+                {statusCounts[POStatus.EXCEPTION] || 0}
+              </Badge>
             </TabsTrigger>
           </TabsList>
         </Tabs>
