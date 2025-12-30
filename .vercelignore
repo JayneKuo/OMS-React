@@ -1,0 +1,15 @@
+# 排除测试页面
+app/color-fix-test
+app/tenant-switcher-test
+app/theme-color-test
+app/ui-guidelines-new
+app/*-test
+app/test-*
+
+# 排除文档
+*.md
+!README.md
+
+# 排除开发文件
+.vscode
+.idea

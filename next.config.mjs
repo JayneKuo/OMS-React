@@ -4,7 +4,7 @@ const nextConfig = {
   experimental: {
     turbo: {
       // 启用 Turbopack (更快的打包器)
-    }
+    },
   },
   // 减少编译时间
   swcMinify: true,
@@ -18,7 +18,21 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: false,
-  }
+  },
+  // 忽略预渲染错误
+  staticPageGenerationTimeout: 1000,
+  // Webpack 配置
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
