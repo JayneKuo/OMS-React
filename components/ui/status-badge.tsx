@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { 
   POStatus, 
@@ -11,28 +11,7 @@ import {
 } from "@/lib/enums/po-status"
 import { useI18n } from "@/components/i18n-provider"
 
-const statusBadgeVariants = cva(
-  "inline-flex items-center text-sm transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "text-text-secondary",
-        processing: "text-primary",
-        success: "text-success",
-        warning: "text-warning",
-        error: "text-destructive",
-        outline: "text-text-secondary",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
-
-export interface StatusBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof statusBadgeVariants> {
+export interface StatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   status: POStatus | ShippingStatus | ReceivingStatus
   language?: 'en' | 'cn'
   showIcon?: boolean
@@ -57,12 +36,18 @@ const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
           return t('RECEIVING')
         case POStatus.PARTIAL_RECEIPT:
           return t('PARTIAL_RECEIPT')
+        case POStatus.CLOSED:
+          return t('CLOSED')
         case POStatus.COMPLETED:
           return t('COMPLETED')
         case POStatus.CANCELLED:
           return t('CANCELLED')
         case POStatus.EXCEPTION:
           return t('EXCEPTION')
+        case ShippingStatus.NOT_SHIPPED:
+          return t('NOT_SHIPPED')
+        case ShippingStatus.ASN_CREATED:
+          return t('ASN_CREATED')
         case ShippingStatus.SHIPPED:
           return t('SHIPPED')
         case ShippingStatus.IN_TRANSIT:
@@ -75,14 +60,34 @@ const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
           return t('NOT_RECEIVED')
         case ReceivingStatus.PARTIAL_RECEIVED:
           return t('PARTIAL_RECEIVED')
+        case ReceivingStatus.FULLY_RECEIVED:
+          return t('FULLY_RECEIVED')
         case ReceivingStatus.RECEIVED:
           return t('RECEIVED')
+        case ReceivingStatus.OVER_RECEIVED:
+          return t('OVER_RECEIVED')
         default:
           return status
       }
     }
     
     const statusLabel = getStatusLabel()
+    
+    // 根据状态变体获取对应的Badge样式类
+    const getBadgeClassName = () => {
+      switch (statusStyle.variant) {
+        case 'success':
+          return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+        case 'warning':
+          return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+        case 'processing':
+          return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+        case 'error':
+          return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+        default:
+          return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+      }
+    }
     
     // 根据状态获取对应的图标
     const getStatusIcon = () => {
@@ -117,18 +122,18 @@ const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
     }
 
     return (
-      <div
-        className={cn(statusBadgeVariants({ variant: statusStyle.variant }), className)}
+      <Badge
+        className={cn(getBadgeClassName(), "text-xs", className)}
         ref={ref}
         title={statusStyle.description}
         {...props}
       >
         {getStatusIcon()}
         {statusLabel}
-      </div>
+      </Badge>
     )
   }
 )
 StatusBadge.displayName = "StatusBadge"
 
-export { StatusBadge, statusBadgeVariants }
+export { StatusBadge }

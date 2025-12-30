@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
   ExternalLink, Package, Truck, XCircle, MoreVertical
@@ -479,7 +481,10 @@ export default function ShipmentPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="font-medium">{row.shipmentNo}</div>
+        <OrderNumberCell 
+          orderNumber={row.shipmentNo} 
+          onClick={() => router.push(`/purchase/asn/${row.id}`)}
+        />
       ),
     },
     {
@@ -487,12 +492,9 @@ export default function ShipmentPage() {
       header: t('status'),
       width: "120px",
       defaultVisible: true,
-      cell: (row) => {
-        const config = statusConfig[row.status]
-        return (
-          <span className={`${config.color} text-sm`}>{config.label}</span>
-        )
-      },
+      cell: (row) => (
+        <StatusBadge status={row.status} language="cn" />
+      ),
     },
     {
       id: "shipmentType",
@@ -565,14 +567,14 @@ export default function ShipmentPage() {
       width: "200px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="text-sm">
+        <div className="flex flex-wrap gap-1 text-xs">
           {row.relatedPOs.map((po, idx) => (
-            <span key={idx} className="text-blue-600 hover:underline cursor-pointer" onClick={(e) => {
-              e.stopPropagation()
-              router.push(`/purchase/po/${po}`)
-            }}>
-              {po}{idx < row.relatedPOs.length - 1 ? ", " : ""}
-            </span>
+            <OrderNumberCell 
+              key={idx}
+              orderNumber={po} 
+              onClick={() => router.push(`/purchase/po/${po}`)}
+              className="text-xs"
+            />
           ))}
         </div>
       ),
@@ -583,15 +585,15 @@ export default function ShipmentPage() {
       width: "200px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="text-sm">
+        <div className="flex flex-wrap gap-1 text-xs">
           {row.relatedReceiptNos.length > 0 ? (
             row.relatedReceiptNos.map((receipt, idx) => (
-              <span key={idx} className="text-blue-600 hover:underline cursor-pointer" onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/purchase/receipts/${receipt}`)
-              }}>
-                {receipt}{idx < row.relatedReceiptNos.length - 1 ? ", " : ""}
-              </span>
+              <OrderNumberCell 
+                key={idx}
+                orderNumber={receipt} 
+                onClick={() => router.push(`/purchase/receipts/${receipt}`)}
+                className="text-xs"
+              />
             ))
           ) : (
             <span className="text-muted-foreground">-</span>

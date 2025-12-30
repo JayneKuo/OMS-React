@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
   ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle, RefreshCw, MoreVertical
@@ -395,9 +397,10 @@ export default function ReceiptConfirmPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <Button variant="link" className="h-auto p-0 font-medium" onClick={() => handleView(row)}>
-          {row.receiptReferenceNo || row.receiptConfirmNo}
-        </Button>
+        <OrderNumberCell 
+          orderNumber={row.receiptReferenceNo || row.receiptConfirmNo || ""} 
+          onClick={() => handleView(row)}
+        />
       ),
     },
     {
@@ -406,9 +409,14 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={`${statusConfig[row.status]?.color || "text-text-secondary"} text-sm`}>
+        <Badge className={`text-xs ${
+          row.status === 'CLOSED' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+          row.status === 'PARTIAL' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+          row.status === 'EXCEPTION' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+          'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+        }`}>
           {statusConfig[row.status]?.label || row.status}
-        </span>
+        </Badge>
       ),
     },
     {
@@ -416,7 +424,9 @@ export default function ReceiptConfirmPage() {
       header: t('referenceNo') || "Reference No",
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.referenceNo || <span className="text-muted-foreground">-</span>,
+      cell: (row) => row.referenceNo ? (
+        <OrderNumberCell orderNumber={row.referenceNo} />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "receiptNo",
@@ -424,17 +434,20 @@ export default function ReceiptConfirmPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => row.receiptNo ? (
-        <Button variant="link" className="h-auto p-0" onClick={() => router.push(`/purchase/receipts/${row.receiptId}`)}>
-          {row.receiptNo}
-        </Button>
-      ) : <span className="text-muted-foreground">-</span>,
+        <OrderNumberCell 
+          orderNumber={row.receiptNo} 
+          onClick={() => router.push(`/purchase/receipts/${row.receiptId}`)}
+        />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "inboundReceiptNo",
       header: t('inboundReceiptNo'),
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.inboundReceiptNo || <span className="text-muted-foreground">-</span>,
+      cell: (row) => row.inboundReceiptNo ? (
+        <OrderNumberCell orderNumber={row.inboundReceiptNo} />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "receiptType",
@@ -442,7 +455,7 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={`${receiptTypeConfig[row.receiptType]?.color || "text-text-secondary"} text-sm`}>
+        <span className="text-xs text-muted-foreground">
           {receiptTypeConfig[row.receiptType]?.label || row.receiptType}
         </span>
       ),
@@ -452,28 +465,28 @@ export default function ReceiptConfirmPage() {
       header: t('warehouse'),
       width: "200px",
       defaultVisible: true,
-      cell: (row) => row.warehouse || `Facility ${row.facility}`,
+      cell: (row) => <span className="text-xs">{row.warehouse || `Facility ${row.facility}`}</span>,
     },
     {
       id: "customer",
       header: t('customer'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.customer || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.customer || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "carrierName",
       header: t('carrierName'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.carrierName || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.carrierName || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "containerNo",
       header: t('containerNo'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.containerNo || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.containerNo || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "poNo",
@@ -481,10 +494,11 @@ export default function ReceiptConfirmPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => row.poNo ? (
-        <Button variant="link" className="h-auto p-0" onClick={() => router.push(`/purchase/po/${row.poNo}`)}>
-          {row.poNo}
-        </Button>
-      ) : <span className="text-muted-foreground">-</span>,
+        <OrderNumberCell 
+          orderNumber={row.poNo} 
+          onClick={() => router.push(`/purchase/po/${row.poNo}`)}
+        />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "shippingMethod",
@@ -499,7 +513,7 @@ export default function ReceiptConfirmPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={row.totalReceivedQty && row.totalExpectedQty && row.totalReceivedQty >= row.totalExpectedQty ? "font-medium text-green-600" : ""}>
+        <span className={`text-xs ${row.totalReceivedQty && row.totalExpectedQty && row.totalReceivedQty >= row.totalExpectedQty ? "font-medium text-green-600" : ""}`}>
           {row.totalReceivedQty?.toLocaleString() || 0}
         </span>
       ),
@@ -509,21 +523,21 @@ export default function ReceiptConfirmPage() {
       header: t('expectedQty'),
       width: "120px",
       defaultVisible: true,
-      cell: (row) => row.totalExpectedQty?.toLocaleString() || 0,
+      cell: (row) => <span className="text-xs">{row.totalExpectedQty?.toLocaleString() || 0}</span>,
     },
     {
       id: "receivedBy",
       header: t('receivedBy'),
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.receivedBy || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.receivedBy || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "receivedTime",
       header: t('receivedTime'),
       width: "180px",
       defaultVisible: true,
-      cell: (row) => row.receivedTime ? new Date(row.receivedTime).toLocaleString() : (row.receivedDate ? new Date(row.receivedDate).toLocaleString() : "-"),
+      cell: (row) => <span className="text-xs">{row.receivedTime ? new Date(row.receivedTime).toLocaleString() : (row.receivedDate ? new Date(row.receivedDate).toLocaleString() : "-")}</span>,
     },
     {
       id: "inYardTime",

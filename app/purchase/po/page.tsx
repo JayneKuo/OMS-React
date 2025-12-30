@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
 import { LocalWarehouseReceiptDialog } from "@/components/purchase/local-warehouse-receipt-dialog"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
@@ -737,9 +738,10 @@ export default function POPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="font-medium cursor-pointer hover:text-blue-600" onClick={() => router.push(`/purchase/po/${row.id}`)}>
-          {row.orderNo}
-        </div>
+        <OrderNumberCell 
+          orderNumber={row.orderNo} 
+          onClick={() => router.push(`/purchase/po/${row.id}`)}
+        />
       ),
     },
     {
@@ -758,7 +760,10 @@ export default function POPage() {
       width: "160px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="text-muted-foreground">{row.originalPoNo}</div>
+        <OrderNumberCell 
+          orderNumber={row.originalPoNo} 
+          className="text-muted-foreground"
+        />
       ),
     },
     {
@@ -1264,63 +1269,6 @@ export default function POPage() {
               <Download className="mr-2 h-4 w-4" />
               {selectedRows.length > 0 ? `${t('export')} (${selectedRows.length})` : t('export')}
             </Button>
-            
-            {/* Batch Actions Dropdown - Always visible */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" disabled={selectedRows.length === 0} className="text-sm font-normal">
-                  <Package className="mr-2 h-4 w-4" />
-                  {t('batchActions')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {selectedRows.length === 0 ? (
-                  <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                    {t('selectRowsToSeeActions')}
-                  </div>
-                ) : (
-                  <>
-                    {selectedStatuses.length === 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('status')}: {statusConfig[selectedStatuses[0] as keyof typeof statusConfig]?.label}
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    {selectedStatuses.length > 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('mixedStatus')} ({selectedStatuses.length} {t('types')})
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    {availableBatchActions.length > 0 ? (
-                      availableBatchActions.map((action, index) => (
-                        <DropdownMenuItem
-                          key={index}
-                          onClick={action.action}
-                          className={action.variant === "destructive" ? "text-destructive" : ""}
-                        >
-                          {action.label}
-                        </DropdownMenuItem>
-                      ))
-                    ) : (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        {t('noAvailableActions')}
-                      </div>
-                    )}
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {selectedRows.length > 0 && (
-              <Button variant="outline" onClick={() => setSelectedRows([])}>
-                {t('clearSelection')}
-              </Button>
-            )}
 
             {/* New PO Dropdown */}
             <DropdownMenu>
@@ -1474,6 +1422,75 @@ export default function POPage() {
           advancedSearchFields={advancedSearchFields}
           onAdvancedSearch={setAdvancedSearchValues}
         />
+
+        {/* Batch Operations Bar */}
+        {selectedRows.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium">
+                    {t('selected')} <span className="text-primary">{selectedRows.length}</span> {t('items')}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedRows([])}
+                    className="h-8 text-xs"
+                  >
+                    {t('clearSelection')}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => console.log("Batch export", selectedRows)}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('batchExport')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => console.log("Batch print", selectedRows)}
+                  >
+                    <FileText className="h-4 w-4" />
+                    {t('batchPrint')}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        {t('moreActions')}
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => console.log("Batch cancel", selectedRows)}>
+                        <X className="mr-2 h-4 w-4" />
+                        {t('batchCancel')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => console.log("Batch close", selectedRows)}>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        {t('batchClose')}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => console.log("Batch delete", selectedRows)}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        {t('batchDelete')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Data Table */}
         <Card>

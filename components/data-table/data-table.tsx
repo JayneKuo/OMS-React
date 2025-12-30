@@ -130,7 +130,7 @@ export function DataTable<T extends { id?: string | number }>({
             <TableHeader>
               <TableRow>
                 {hasSelection && (
-                  <TableHead className="sticky left-0 bg-background z-10 w-[50px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+                  <TableHead className="sticky left-0 bg-inherit z-10 w-[50px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
                     <Checkbox
                       checked={isAllSelected}
                       onCheckedChange={handleSelectAll}
@@ -152,7 +152,7 @@ export function DataTable<T extends { id?: string | number }>({
                         width: column.width,
                         left: isFirst ? leftOffset : undefined,
                       }}
-                      className={isSticky ? `sticky ${isLast ? 'right-0' : ''} bg-background z-10 shadow-[${isFirst ? '2px' : '-2px'}_0_4px_-2px_rgba(0,0,0,0.1)]` : ''}
+                      className={isSticky ? `sticky ${isLast ? 'right-0' : ''} bg-inherit z-10 shadow-[${isFirst ? '2px' : '-2px'}_0_4px_-2px_rgba(0,0,0,0.1)]` : ''}
                     >
                       {column.header}
                     </TableHead>
@@ -183,7 +183,7 @@ export function DataTable<T extends { id?: string | number }>({
                       data-state={isSelected ? "selected" : undefined}
                     >
                       {hasSelection && row.id && (
-                        <TableCell className="sticky left-0 bg-background z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="sticky left-0 bg-inherit z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={(checked) => handleSelectRow(row.id!, !!checked)}
@@ -203,7 +203,7 @@ export function DataTable<T extends { id?: string | number }>({
                             style={{
                               left: isFirst ? leftOffset : undefined,
                             }}
-                            className={isSticky ? `sticky ${isLast ? 'right-0' : ''} bg-background z-10 shadow-[${isFirst ? '2px' : '-2px'}_0_4px_-2px_rgba(0,0,0,0.1)]` : ''}
+                            className={isSticky ? `sticky ${isLast ? 'right-0' : ''} bg-inherit z-10 shadow-[${isFirst ? '2px' : '-2px'}_0_4px_-2px_rgba(0,0,0,0.1)]` : ''}
                             onClick={() => onRowClick?.(row)}
                           >
                             {column.cell

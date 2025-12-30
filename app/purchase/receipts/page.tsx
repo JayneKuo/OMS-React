@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter, ColumnConfig } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { 
   Plus, Download, Upload, FileDown, FilePlus, 
   ExternalLink, Package, Truck, XCircle, Edit, Eye, CheckCircle, MoreVertical
@@ -1052,9 +1054,10 @@ export default function ReceiptsPage() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <Button variant="link" className="h-auto p-0 font-medium" onClick={() => handleView(row)}>
-          {row.receiptNo}
-        </Button>
+        <OrderNumberCell 
+          orderNumber={row.receiptNo} 
+          onClick={() => handleView(row)}
+        />
       ),
     },
     {
@@ -1063,9 +1066,15 @@ export default function ReceiptsPage() {
       width: "140px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={`${statusConfig[row.status].color} text-sm`}>
+        <Badge className={`text-xs ${
+          row.status === 'CLOSED' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+          row.status === 'PARTIALLY_RECEIVED' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+          row.status === 'IN_RECEIVING' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+          row.status === 'EXCEPTION' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+          'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+        }`}>
           {statusConfig[row.status].label}
-        </span>
+        </Badge>
       ),
     },
     {
@@ -1073,14 +1082,18 @@ export default function ReceiptsPage() {
       header: t('inboundReceiptNo'),
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.actualReceiptNo || <span className="text-muted-foreground">-</span>, // 第一个入库单号：RC开头的值
+      cell: (row) => row.inboundReceiptNo ? (
+        <OrderNumberCell orderNumber={row.inboundReceiptNo} />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "actualReceiptNo",
       header: t('receiptNo'),
       width: "150px",
       defaultVisible: true,
-      cell: (row) => row.actualReceiptNo || <span className="text-muted-foreground">-</span>, // 收货单号
+      cell: (row) => row.actualReceiptNo ? (
+        <OrderNumberCell orderNumber={row.actualReceiptNo} />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "receiptType",
@@ -1088,7 +1101,7 @@ export default function ReceiptsPage() {
       width: "140px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={`${receiptTypeConfig[row.receiptType].color} text-sm`}>
+        <span className="text-xs text-muted-foreground">
           {receiptTypeConfig[row.receiptType].label}
         </span>
       ),
@@ -1099,7 +1112,7 @@ export default function ReceiptsPage() {
       width: "120px",
       defaultVisible: true,
       cell: (row) => (
-        <span className={`${sourceConfig[row.source].color} text-sm`}>
+        <span className="text-xs text-muted-foreground">
           {sourceConfig[row.source].label}
         </span>
       ),
@@ -1109,21 +1122,23 @@ export default function ReceiptsPage() {
       header: t('title'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.title || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.title || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "relatedNo",
       header: t('relatedNo'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.relatedNo || <span className="text-muted-foreground">-</span>,
+      cell: (row) => row.relatedNo ? (
+        <OrderNumberCell orderNumber={row.relatedNo} className="text-xs" />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "supplier",
       header: t('supplierName'),
       width: "200px",
       defaultVisible: true,
-      cell: (row) => row.supplier || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.supplier || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "poNo",
@@ -1137,14 +1152,12 @@ export default function ReceiptsPage() {
             {poNos.map((poNo, idx) => {
               const poId = row.poIds?.[idx] || row.poId
               return (
-                <Button 
+                <OrderNumberCell 
                   key={idx}
-                  variant="link" 
-                  className="h-auto p-0 text-xs" 
+                  orderNumber={poNo} 
                   onClick={() => poId && router.push(`/purchase/po/${poId}`)}
-                >
-                  {poNo}
-                </Button>
+                  className="text-xs"
+                />
               )
             })}
           </div>
@@ -1157,38 +1170,40 @@ export default function ReceiptsPage() {
       width: "150px",
       defaultVisible: false,
       cell: (row) => row.shipmentNo ? (
-        <Button variant="link" className="h-auto p-0" onClick={() => row.shipmentId && router.push(`/purchase/asn/${row.shipmentId}`)}>
-          {row.shipmentNo}
-        </Button>
-      ) : <span className="text-muted-foreground">-</span>,
+        <OrderNumberCell 
+          orderNumber={row.shipmentNo} 
+          onClick={() => row.shipmentId && router.push(`/purchase/asn/${row.shipmentId}`)}
+          className="text-xs"
+        />
+      ) : <span className="text-muted-foreground text-xs">-</span>,
     },
     {
       id: "transportMode",
       header: t('transportMode'),
       width: "140px",
       defaultVisible: false,
-      cell: (row) => row.transportMode ? t(row.transportMode.toLowerCase()) : <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.transportMode ? t(row.transportMode.toLowerCase()) : <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "carrier",
       header: t('carrier'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.carrier || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.carrier || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "trackingNumber",
       header: t('trackingNo'),
       width: "150px",
       defaultVisible: false,
-      cell: (row) => row.trackingNumber || <span className="text-muted-foreground">-</span>,
+      cell: (row) => <span className="text-xs">{row.trackingNumber || <span className="text-muted-foreground">-</span>}</span>,
     },
     {
       id: "warehouse",
       header: t('warehouse'),
       width: "200px",
       defaultVisible: true,
-      cell: (row) => row.warehouse,
+      cell: (row) => <span className="text-xs">{row.warehouse}</span>,
     },
     {
       id: "autoReceiving",
@@ -1196,7 +1211,7 @@ export default function ReceiptsPage() {
       width: "120px",
       defaultVisible: false,
       cell: (row) => row.autoReceiving ? (
-        <Badge className={row.autoReceiving === "YES" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+        <Badge className={`text-xs ${row.autoReceiving === "YES" ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"}`}>
           {row.autoReceiving === "YES" ? t('yes') : t('no')}
         </Badge>
       ) : <span className="text-muted-foreground">-</span>,

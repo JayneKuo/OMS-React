@@ -15,6 +15,7 @@ import { PRActionConfirmDialog } from "@/components/purchase/pr-action-confirm-d
 import { SimplePODialog } from "@/components/purchase/simple-po-dialog"
 import { I18nProvider, useI18n } from "@/components/i18n-provider"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
@@ -736,7 +737,10 @@ function PRPageContent() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <div className="font-medium">{row.prNo}</div>
+        <OrderNumberCell 
+          orderNumber={row.prNo} 
+          onClick={() => router.push(`/purchase/pr/${row.id}`)}
+        />
       ),
     },
     {
@@ -747,12 +751,34 @@ function PRPageContent() {
       cell: (row) => {
         const config = statusConfig[row.status as keyof typeof statusConfig]
         if (!config) {
-          return <span className="text-text-secondary text-sm">未知状态</span>
+          return <span className="text-text-secondary text-xs">未知状态</span>
         }
+        
+        // 根据状态类型返回对应颜色的Badge
+        const getBadgeColor = () => {
+          switch (row.status) {
+            case 'APPROVED':
+            case 'FULL_PO':
+            case 'CLOSED':
+              return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+            case 'APPROVING':
+            case 'PARTIAL_PO':
+              return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+            case 'REJECTED':
+            case 'CANCELLED':
+            case 'EXCEPTION':
+              return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+            case 'DRAFT':
+            case 'SUBMITTED':
+            default:
+              return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+          }
+        }
+        
         return (
-          <span className={`${config.color} text-sm`}>
+          <Badge className={`text-xs ${getBadgeColor()}`}>
             {config.label}
-          </span>
+          </Badge>
         )
       },
     },
@@ -762,6 +788,7 @@ function PRPageContent() {
       accessorKey: "department",
       width: "150px",
       defaultVisible: true,
+      cell: (row) => <span className="text-xs">{row.department}</span>,
     },
     {
       id: "requester",
@@ -770,7 +797,7 @@ function PRPageContent() {
       defaultVisible: true,
       cell: (row) => (
         <div title={`工号: ${row.requesterNo}`}>
-          <div className="font-medium">{row.requester}</div>
+          <div className="font-medium text-xs">{row.requester}</div>
           <div className="text-xs text-muted-foreground">{row.requesterNo}</div>
         </div>
       ),
@@ -784,10 +811,10 @@ function PRPageContent() {
       cell: (row) => {
         const config = prTypeConfig[row.prType as keyof typeof prTypeConfig]
         if (!config) {
-          return <span className="text-text-secondary text-sm">{row.prType}</span>
+          return <span className="text-text-secondary text-xs">{row.prType}</span>
         }
         return (
-          <span className={config.color}>
+          <span className={`${config.color} text-xs`}>
             {config.label}
           </span>
         )
@@ -801,7 +828,7 @@ function PRPageContent() {
       cell: (row) => {
         const config = priorityConfig[row.priority]
         return (
-          <span className={config.color}>
+          <span className={`${config.color} text-xs`}>
             {config.label}
           </span>
         )
@@ -815,9 +842,9 @@ function PRPageContent() {
       cell: (row) => (
         <div>
           {row.targetWarehouses.length === 1 ? (
-            <span className="text-sm">{row.targetWarehouses[0]}</span>
+            <span className="text-xs">{row.targetWarehouses[0]}</span>
           ) : (
-            <span title={row.targetWarehouses.join(", ")} className="text-sm">
+            <span title={row.targetWarehouses.join(", ")} className="text-xs">
               {t('multiWarehouse')}（{row.targetWarehouses.length}）
             </span>
           )}
@@ -1198,65 +1225,6 @@ function PRPageContent() {
               <Download className="mr-2 h-4 w-4" />
               {selectedRows.length > 0 ? `${t('export')} (${selectedRows.length})` : t('export')}
             </Button>
-            
-            {/* Batch Actions Dropdown - Always visible */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" disabled={selectedRows.length === 0} className="text-sm font-normal">
-                  <Package className="mr-2 h-4 w-4" />
-                  {t('batchActions')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {selectedRows.length === 0 ? (
-                  <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                    {t('selectRowsToSeeActions')}
-                  </div>
-                ) : (
-                  <>
-                    {selectedStatuses.length === 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('statusLabel')}: {statusConfig[selectedStatuses[0] as keyof typeof statusConfig]?.label}
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    {selectedStatuses.length > 1 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {t('mixedStatus')} ({selectedStatuses.length} {t('types')})
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                    {availableBatchActions.length > 0 ? (
-                      availableBatchActions.map((action, index) => (
-                        <DropdownMenuItem
-                          key={index}
-                          onClick={action.action}
-                          className={action.variant === "destructive" ? "text-destructive" : ""}
-                        >
-                          <span className="mr-2">{action.icon}</span>
-                          {action.label}
-                        </DropdownMenuItem>
-                      ))
-                    ) : (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        {t('noAvailableActions')}
-                      </div>
-                    )}
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {selectedRows.length > 0 && (
-              <Button variant="outline" onClick={() => setSelectedRows([])}>
-                <XCircle className="mr-2 h-4 w-4" />
-                {t('clearSelection')}
-              </Button>
-            )}
 
             {/* New PR Dropdown */}
             <DropdownMenu>
@@ -1434,6 +1402,115 @@ function PRPageContent() {
           advancedSearchFields={advancedSearchFields}
           onAdvancedSearch={setAdvancedSearchValues}
         />
+
+        {/* Batch Operations Bar */}
+        {selectedRows.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium">
+                    {t('selected')} <span className="text-primary">{selectedRows.length}</span> {t('items')}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedRows([])}
+                    className="h-8 text-xs"
+                  >
+                    {t('clearSelection')}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => console.log("Batch export", selectedRows)}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('batchExport')}
+                  </Button>
+                  {selectedStatuses.length === 1 && selectedStatuses[0] === "APPROVING" && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2"
+                        onClick={() => console.log("Batch approve", selectedRows)}
+                      >
+                        <Send className="h-4 w-4" />
+                        {t('batchApprove')}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2 text-destructive hover:text-destructive"
+                        onClick={() => console.log("Batch reject", selectedRows)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        {t('batchReject')}
+                      </Button>
+                    </>
+                  )}
+                  {selectedStatuses.length === 1 && selectedStatuses[0] === "APPROVED" && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => console.log("Batch generate PO", selectedRows)}
+                    >
+                      <Send className="h-4 w-4" />
+                      {t('batchGeneratePO')}
+                    </Button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        {t('moreActions')}
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {selectedStatuses.length === 1 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            {t('statusLabel')}: {statusConfig[selectedStatuses[0] as keyof typeof statusConfig]?.label}
+                          </div>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      {selectedStatuses.length > 1 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            {t('mixedStatus')} ({selectedStatuses.length} {t('types')})
+                          </div>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      {availableBatchActions.length > 0 ? (
+                        availableBatchActions.map((action, index) => (
+                          <DropdownMenuItem
+                            key={index}
+                            onClick={action.action}
+                            className={action.variant === "destructive" ? "text-destructive" : ""}
+                          >
+                            <span className="mr-2">{action.icon}</span>
+                            {action.label}
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                          {t('noAvailableActions')}
+                        </div>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Data Table */}
         <Card>

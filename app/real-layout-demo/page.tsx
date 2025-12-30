@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
+import { OrderNumberCell } from "@/components/ui/order-number-cell"
 import { 
   Download, Plus, Package, ArrowLeft, RefreshCw, Edit, Send,
   FileText, Building, Clock, MapPin, Phone, Truck, ShoppingCart, Home, User, Info, Sun, Moon,
@@ -161,12 +162,10 @@ export default function RealLayoutDemo() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <div 
-          className="font-medium cursor-pointer text-primary hover:underline" 
+        <OrderNumberCell 
+          orderNumber={row.orderNo} 
           onClick={() => setSelectedOrderId(row.id)}
-        >
-          {row.orderNo}
-        </div>
+        />
       ),
     },
     {
