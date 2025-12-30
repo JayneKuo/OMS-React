@@ -75,6 +75,11 @@ export function HeaderSimple() {
   const [tenantSearch, setTenantSearch] = React.useState("")
   const [merchantSearch, setMerchantSearch] = React.useState("")
   const [timezone, setTimezone] = React.useState("UTC")
+  
+  // Refs for submenu close delays
+  const languageCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const timezoneCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const themeCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Convert i18n language to display format
   const displayLanguage = i18nLanguage === 'zh' ? '中文简体' : 'English'
@@ -83,6 +88,15 @@ export function HeaderSimple() {
   React.useEffect(() => {
     const savedTimezone = localStorage.getItem("oms-timezone")
     if (savedTimezone) setTimezone(savedTimezone)
+  }, [])
+  
+  // Cleanup timers on unmount
+  React.useEffect(() => {
+    return () => {
+      if (languageCloseTimer.current) clearTimeout(languageCloseTimer.current)
+      if (timezoneCloseTimer.current) clearTimeout(timezoneCloseTimer.current)
+      if (themeCloseTimer.current) clearTimeout(themeCloseTimer.current)
+    }
   }, [])
 
   const filteredTenants = React.useMemo(() => {
@@ -339,13 +353,10 @@ export function HeaderSimple() {
               {userMenuOpen && (
                 <div className="fixed inset-0 z-50" onClick={() => setUserMenuOpen(false)}>
                   <div 
-                    className="absolute right-6 top-14 w-64 rounded-lg border bg-white shadow-lg"
+                    className="absolute right-6 top-14 w-64 rounded-lg border bg-popover shadow-lg"
                     onClick={(e) => e.stopPropagation()}
                     style={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e2e8f0', 
                       zIndex: 9999,
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
                     }}
                   >
                     <div className="p-3 border-b">
@@ -364,8 +375,13 @@ export function HeaderSimple() {
                       {/* Language - Hover to show submenu */}
                       <div 
                         className="relative"
-                        onMouseEnter={() => setLanguageMenuOpen(true)}
-                        onMouseLeave={() => setLanguageMenuOpen(false)}
+                        onMouseEnter={() => {
+                          if (languageCloseTimer.current) clearTimeout(languageCloseTimer.current)
+                          setLanguageMenuOpen(true)
+                        }}
+                        onMouseLeave={() => {
+                          languageCloseTimer.current = setTimeout(() => setLanguageMenuOpen(false), 200)
+                        }}
                       >
                         <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
@@ -379,7 +395,15 @@ export function HeaderSimple() {
                         </button>
                         {/* Submenu - positioned to the left */}
                         {languageMenuOpen && (
-                          <div className="absolute right-full top-0 mr-1 w-40 rounded-lg border bg-popover shadow-lg z-[60]">
+                          <div 
+                            className="absolute right-full top-0 mr-1 w-40 rounded-lg border bg-popover shadow-lg z-[60]"
+                            onMouseEnter={() => {
+                              if (languageCloseTimer.current) clearTimeout(languageCloseTimer.current)
+                            }}
+                            onMouseLeave={() => {
+                              languageCloseTimer.current = setTimeout(() => setLanguageMenuOpen(false), 200)
+                            }}
+                          >
                             <div className="p-1">
                               {[
                                 { code: 'en', display: 'English' },
@@ -411,8 +435,13 @@ export function HeaderSimple() {
                       {/* Timezone - Hover to show submenu */}
                       <div 
                         className="relative"
-                        onMouseEnter={() => setTimezoneMenuOpen(true)}
-                        onMouseLeave={() => setTimezoneMenuOpen(false)}
+                        onMouseEnter={() => {
+                          if (timezoneCloseTimer.current) clearTimeout(timezoneCloseTimer.current)
+                          setTimezoneMenuOpen(true)
+                        }}
+                        onMouseLeave={() => {
+                          timezoneCloseTimer.current = setTimeout(() => setTimezoneMenuOpen(false), 200)
+                        }}
                       >
                         <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
@@ -426,7 +455,15 @@ export function HeaderSimple() {
                         </button>
                         {/* Submenu - positioned to the left */}
                         {timezoneMenuOpen && (
-                          <div className="absolute right-full top-0 mr-1 w-48 rounded-lg border bg-popover shadow-lg z-[60]">
+                          <div 
+                            className="absolute right-full top-0 mr-1 w-48 rounded-lg border bg-popover shadow-lg z-[60]"
+                            onMouseEnter={() => {
+                              if (timezoneCloseTimer.current) clearTimeout(timezoneCloseTimer.current)
+                            }}
+                            onMouseLeave={() => {
+                              timezoneCloseTimer.current = setTimeout(() => setTimezoneMenuOpen(false), 200)
+                            }}
+                          >
                             <div className="p-1">
                               {["UTC", "Asia/Shanghai", "America/New_York", "Europe/London"].map((tz) => (
                                 <button
@@ -454,8 +491,13 @@ export function HeaderSimple() {
                       {/* Theme - Hover to show submenu */}
                       <div 
                         className="relative"
-                        onMouseEnter={() => setThemeMenuOpen(true)}
-                        onMouseLeave={() => setThemeMenuOpen(false)}
+                        onMouseEnter={() => {
+                          if (themeCloseTimer.current) clearTimeout(themeCloseTimer.current)
+                          setThemeMenuOpen(true)
+                        }}
+                        onMouseLeave={() => {
+                          themeCloseTimer.current = setTimeout(() => setThemeMenuOpen(false), 200)
+                        }}
                       >
                         <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
                           <div className="flex items-center gap-2">
@@ -469,7 +511,15 @@ export function HeaderSimple() {
                         </button>
                         {/* Submenu - positioned to the left */}
                         {themeMenuOpen && (
-                          <div className="absolute right-full top-0 mr-1 w-40 rounded-lg border bg-popover shadow-lg z-[60]">
+                          <div 
+                            className="absolute right-full top-0 mr-1 w-40 rounded-lg border bg-popover shadow-lg z-[60]"
+                            onMouseEnter={() => {
+                              if (themeCloseTimer.current) clearTimeout(themeCloseTimer.current)
+                            }}
+                            onMouseLeave={() => {
+                              themeCloseTimer.current = setTimeout(() => setThemeMenuOpen(false), 200)
+                            }}
+                          >
                             <div className="p-1">
                               {[
                                 { value: "light", label: t('light'), icon: Sun },
