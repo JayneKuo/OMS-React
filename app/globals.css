@@ -103,3 +103,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Toast Notifications */
+  [data-sonner-toast][data-type="success"] {
+    border-left: 4px solid hsl(var(--success)) !important;
+    background-color: hsl(var(--success) / 0.05) !important;
+  }
+  
+  [data-sonner-toast][data-type="error"] {
+    border-left: 4px solid hsl(var(--destructive)) !important;
+    background-color: hsl(var(--destructive) / 0.05) !important;
+  }
+  
+  [data-sonner-toast][data-type="warning"] {
+    border-left: 4px solid hsl(var(--warning)) !important;
+    background-color: hsl(var(--warning) / 0.05) !important;
+  }
+  
+  [data-sonner-toast][data-type="info"] {
+    border-left: 4px solid hsl(var(--info)) !important;
+    background-color: hsl(var(--info) / 0.05) !important;
+  }
+}

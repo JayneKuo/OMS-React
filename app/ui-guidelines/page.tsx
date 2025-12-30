@@ -1575,14 +1575,17 @@ export default function UIGuidelinesPage() {
                 <div className="space-y-3">
                   <h5 className="font-semibold text-sm">页面布局结构</h5>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
-                    <div className="text-muted-foreground">/* 列表页 */</div>
-                    <div>Container: space-y-6 (24px)</div>
-                    <div>Title: text-3xl (24px) font-semibold</div>
-                    <div>Description: text-sm (14px) mt-2 (8px)</div>
-                    <div>Buttons: size="sm" gap-2 (8px)</div>
-                    <div className="text-muted-foreground mt-2">/* 详情页 */</div>
-                    <div>Header: p-6 (24px) border rounded-lg</div>
-                    <div>Cards Grid: gap-6 (24px)</div>
+                    <div className="text-muted-foreground">/* 列表页布局 */</div>
+                    <div>Container: space-y-6 (24px vertical spacing)</div>
+                    <div>Page Title: text-3xl (24px) font-semibold tracking-tight</div>
+                    <div>Description: text-sm (14px) text-muted-foreground mt-2 (8px)</div>
+                    <div>Action Buttons: size="sm" gap-2 (8px)</div>
+                    <div className="text-muted-foreground mt-2">/* 详情页布局 */</div>
+                    <div>Header Card: p-6 (24px) border rounded-lg</div>
+                    <div>Title: text-3xl (24px) font-bold</div>
+                    <div>Meta Info: text-sm (14px) gap-2 (8px) mt-2 (8px)</div>
+                    <div>Icon Size: h-4 w-4 (16px)</div>
+                    <div>Cards Grid: gap-6 (24px) grid-cols-1 md:grid-cols-2 xl:grid-cols-4</div>
                   </div>
                 </div>
 
@@ -1591,11 +1594,18 @@ export default function UIGuidelinesPage() {
                   <h5 className="font-semibold text-sm">导航和选中状态</h5>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
                     <div className="text-muted-foreground">/* 侧边栏菜单 */</div>
-                    <div>Active: bg-primary text-primary-foreground</div>
+                    <div>Active: bg-primary text-primary-foreground (紫色背景+白字)</div>
+                    <div>Hover: hover:bg-sidebar-accent hover:text-sidebar-accent-foreground</div>
                     <div>Disabled: opacity-50 cursor-not-allowed</div>
-                    <div className="text-muted-foreground mt-2">/* Tabs */</div>
-                    <div>Active: bg-primary text-primary-foreground</div>
-                    <div>Badge (Active): bg-transparent text-primary-foreground</div>
+                    <div>Padding: px-3 py-2 (12px 8px)</div>
+                    <div>Gap: gap-3 (12px)</div>
+                    <div className="text-muted-foreground mt-2">/* Tabs 标签页 */</div>
+                    <div>Container: bg-muted p-1 rounded-md</div>
+                    <div>Active Tab: bg-primary text-primary-foreground (紫色背景+白字)</div>
+                    <div>Inactive Tab: text-muted-foreground</div>
+                    <div>Tab Padding: px-3 py-1.5 (12px 6px)</div>
+                    <div>Badge in Tab (Active): bg-transparent text-primary-foreground border-0</div>
+                    <div>Badge in Tab (Inactive): bg-secondary text-secondary-foreground</div>
                   </div>
                 </div>
 
@@ -1604,11 +1614,82 @@ export default function UIGuidelinesPage() {
                   <h5 className="font-semibold text-sm">Badges 和标签</h5>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
                     <div className="text-muted-foreground">/* 状态 Badges */</div>
-                    <div>Success: bg-green-100 text-green-800</div>
-                    <div>Warning: bg-yellow-100 text-yellow-800</div>
-                    <div>Danger: bg-red-100 text-red-800</div>
+                    <div>Success: bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400</div>
+                    <div>Warning: bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400</div>
+                    <div>Info: bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400</div>
+                    <div>Danger: bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400</div>
                     <div className="text-muted-foreground mt-2">/* 筛选 Badges */</div>
-                    <div>Style: bg-primary/10 text-primary border</div>
+                    <div>Style: bg-primary/10 text-primary border border-primary/20</div>
+                    <div>Hover: hover:bg-primary/20</div>
+                    <div>With Close Button: gap-1 with X icon (h-3 w-3)</div>
+                  </div>
+                </div>
+
+                {/* 数据表格 */}
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-sm">数据表格</h5>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 表格结构 */</div>
+                    <div>Container: Card with pt-6 (24px)</div>
+                    <div>Header: bg-muted/50 text-sm (14px) font-medium p-3 (12px)</div>
+                    <div>Body: text-xs (12px) p-3 (12px)</div>
+                    <div>Row Hover: hover:bg-muted/50</div>
+                    <div>Border: border rounded-lg</div>
+                    <div className="text-muted-foreground mt-2">/* 列宽度 */</div>
+                    <div>Order Number: 150px</div>
+                    <div>Customer Name: 200px</div>
+                    <div>Status: 120px</div>
+                    <div>Amount: 120px</div>
+                    <div>Date: 120px</div>
+                    <div>Actions: 80px</div>
+                  </div>
+                </div>
+
+                {/* 卡片和信息展示 */}
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-sm">卡片和信息展示</h5>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 信息卡片 */</div>
+                    <div>Padding: pt-6 (24px) space-y-3 (12px)</div>
+                    <div>Title: text-sm (14px) font-medium with icon h-4 w-4 (16px)</div>
+                    <div>Label: text-xs (12px) text-muted-foreground</div>
+                    <div>Value: text-xs (12px) font-medium</div>
+                    <div>Icon Color: text-primary</div>
+                    <div className="text-muted-foreground mt-2">/* 卡片网格 */</div>
+                    <div>Gap: gap-6 (24px)</div>
+                    <div>Responsive: grid-cols-1 md:grid-cols-2 xl:grid-cols-4</div>
+                  </div>
+                </div>
+
+                {/* 按钮和操作 */}
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-sm">按钮和操作</h5>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 按钮尺寸 */</div>
+                    <div>Small: size="sm" (h-9 px-3)</div>
+                    <div>Icon: size="icon" (h-9 w-9)</div>
+                    <div>Default: h-10 px-4</div>
+                    <div className="text-muted-foreground mt-2">/* 按钮变体 */</div>
+                    <div>Primary: bg-primary text-primary-foreground hover:bg-primary/90</div>
+                    <div>Outline: border border-input hover:bg-accent</div>
+                    <div>Ghost: hover:bg-accent hover:text-accent-foreground</div>
+                    <div>Destructive: bg-destructive text-destructive-foreground</div>
+                  </div>
+                </div>
+
+                {/* 表单和输入 */}
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-sm">表单和输入</h5>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 输入框 */</div>
+                    <div>Height: h-10 (40px)</div>
+                    <div>Padding: px-3 py-2 (12px 8px)</div>
+                    <div>Border: border border-input rounded-md</div>
+                    <div>Focus: focus-visible:ring-2 focus-visible:ring-ring</div>
+                    <div className="text-muted-foreground mt-2">/* 筛选栏 */</div>
+                    <div>Search: flex-1 with search icon</div>
+                    <div>Filter Buttons: gap-2 (8px)</div>
+                    <div>Active Filters: flex gap-2 (8px) flex-wrap</div>
                   </div>
                 </div>
 
@@ -1616,6 +1697,7 @@ export default function UIGuidelinesPage() {
                 <div className="space-y-3">
                   <h5 className="font-semibold text-sm">常用间距模式</h5>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 常用 Gaps */</div>
                     <div>gap-2 (8px) - 按钮、内联元素</div>
                     <div>gap-3 (12px) - 表单字段、列表项</div>
                     <div>gap-4 (16px) - 内容区块</div>
@@ -1623,17 +1705,45 @@ export default function UIGuidelinesPage() {
                     <div className="text-muted-foreground mt-2">/* 垂直间距 */</div>
                     <div>space-y-2 (8px) - 紧密列表</div>
                     <div>space-y-3 (12px) - 表单组</div>
+                    <div>space-y-4 (16px) - 内容区块</div>
                     <div>space-y-6 (24px) - 页面区块</div>
                   </div>
                 </div>
 
-                {/* 按钮和操作 */}
+                {/* 暗黑模式 */}
                 <div className="space-y-3">
-                  <h5 className="font-semibold text-sm">按钮尺寸</h5>
+                  <h5 className="font-semibold text-sm">暗黑模式模式</h5>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
-                    <div>Small: size="sm" (h-9 px-3)</div>
-                    <div>Icon: size="icon" (h-9 w-9)</div>
-                    <div>Default: h-10 px-4</div>
+                    <div className="text-muted-foreground">/* 背景颜色 */</div>
+                    <div>Page: bg-background (white / black)</div>
+                    <div>Card: bg-card (white / gray-950)</div>
+                    <div>Muted: bg-muted (gray-100 / gray-800)</div>
+                    <div>Accent: bg-accent (gray-100 / gray-800)</div>
+                    <div className="text-muted-foreground mt-2">/* 文本颜色 */</div>
+                    <div>Primary: text-foreground (#181818 / #ffffff)</div>
+                    <div>Secondary: text-muted-foreground (#666666 / #999999)</div>
+                    <div>Disabled: opacity-50</div>
+                    <div className="text-muted-foreground mt-2">/* 边框颜色 */</div>
+                    <div>Default: border-border (gray-200 / gray-800)</div>
+                    <div>Input: border-input (gray-200 / gray-800)</div>
+                  </div>
+                </div>
+
+                {/* 可访问性 */}
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-sm">可访问性</h5>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-xs font-mono">
+                    <div className="text-muted-foreground">/* 焦点状态 */</div>
+                    <div>Ring: focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2</div>
+                    <div>Outline: focus-visible:outline-none</div>
+                    <div className="text-muted-foreground mt-2">/* 交互元素 */</div>
+                    <div>Minimum Touch Target: 40px (h-10)</div>
+                    <div>Icon Buttons: h-9 w-9 (36px)</div>
+                    <div>Hover States: Always include hover:bg-* or hover:text-*</div>
+                    <div className="text-muted-foreground mt-2">/* 颜色对比度 */</div>
+                    <div>Text on Background: Minimum 4.5:1</div>
+                    <div>Large Text: Minimum 3:1</div>
+                    <div>Interactive Elements: Minimum 3:1</div>
                   </div>
                 </div>
               </CardContent>

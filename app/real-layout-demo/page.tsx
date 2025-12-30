@@ -18,6 +18,8 @@ import { useState, useMemo } from "react"
 import { useTheme } from "next-themes"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 // Mock order data
 const mockOrders = [
@@ -237,16 +239,19 @@ export default function RealLayoutDemo() {
               <Eye className="mr-2 h-4 w-4" />
               查看详情
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.info("编辑功能", { description: "正在打开编辑页面..." })}>
               <Edit className="mr-2 h-4 w-4" />
               编辑
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.success("发送成功", { description: `订单 ${row.orderNo} 已发送给客户` })}>
               <Send className="mr-2 h-4 w-4" />
               发送
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => toast.error("删除失败", { description: "您没有权限删除此订单" })}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               删除
             </DropdownMenuItem>
@@ -276,6 +281,7 @@ export default function RealLayoutDemo() {
 
   return (
     <TooltipProvider>
+      <Toaster />
       <MainLayout sidebarItems={sidebarItems} moduleName="订单管理">
         {!selectedOrderId ? (
           // List View
@@ -287,11 +293,11 @@ export default function RealLayoutDemo() {
                 <p className="text-sm text-muted-foreground mt-2">管理和跟踪所有订单信息</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => toast.info("导出任务已创建", { description: "正在准备导出文件，请稍候..." })}>
                   <Download className="mr-2 h-4 w-4" />
                   导出
                 </Button>
-                <Button size="sm">
+                <Button size="sm" onClick={() => toast.success("订单创建成功", { description: "订单 ORD-2024-1011 已成功创建" })}>
                   <Plus className="mr-2 h-4 w-4" />
                   新建订单
                 </Button>
@@ -447,9 +453,31 @@ export default function RealLayoutDemo() {
                   <Button variant="outline" size="sm">
                     <Edit className="h-4 w-4 mr-2" />编辑
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => toast.warning("请先保存当前修改", { description: "您有未保存的更改，请先保存后再发送" })}>
                     <Send className="h-4 w-4 mr-2" />发送
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        更多操作
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toast.success("订单已复制", { description: "订单信息已复制到剪贴板" })}>
+                        复制订单
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toast.info("正在生成PDF", { description: "文件生成中，请稍候..." })}>
+                        导出PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => toast.error("删除失败", { description: "该订单已发货，无法删除" })}
+                      >
+                        删除订单
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
               {showSpecs && (
@@ -714,6 +742,18 @@ export default function RealLayoutDemo() {
             </Button>
             <Button variant="outline" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                toast.success("操作成功", { description: "数据已成功保存到服务器" })
+                setTimeout(() => toast.error("操作失败", { description: "网络连接超时，请重试" }), 300)
+                setTimeout(() => toast.warning("注意事项", { description: "该操作将影响所有关联订单" }), 600)
+                setTimeout(() => toast.info("系统提示", { description: "新版本已发布，建议更新" }), 900)
+              }}
+            >
+              演示 Toast
             </Button>
           </div>
         </div>
