@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Search, X, ChevronDown, Filter, SlidersHorizontal, Settings2, SearchX, GripVertical } from "lucide-react"
-import { AdvancedSearchDialog, SearchField, AdvancedSearchValues } from "./advanced-search-dialog"
+import { Search, X, ChevronDown, Filter, SlidersHorizontal, Settings2, SearchX, GripVertical, ListFilter } from "lucide-react"
+import { AdvancedSearchDialog, SearchField, AdvancedSearchValues, AdvancedSearchFilter } from "./advanced-search-dialog"
+import { BatchSearchDialog } from "./batch-search-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -63,7 +64,11 @@ interface FilterBarProps {
   onColumnsChange?: (columns: ColumnConfig[]) => void
   // Advanced search
   advancedSearchFields?: SearchField[]
-  onAdvancedSearch?: (values: AdvancedSearchValues) => void
+  onAdvancedSearch?: (values: AdvancedSearchValues, filters: AdvancedSearchFilter[]) => void
+  // Batch search
+  enableBatchSearch?: boolean
+  batchSearchField?: string
+  onBatchSearch?: (orderNumbers: string[]) => void
   className?: string
 }
 
@@ -78,11 +83,16 @@ export function FilterBar({
   onColumnsChange,
   advancedSearchFields = [],
   onAdvancedSearch,
+  enableBatchSearch = false,
+  batchSearchField = "订单编号",
+  onBatchSearch,
   className,
 }: FilterBarProps) {
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
+  const [advancedSearchFilters, setAdvancedSearchFilters] = React.useState<AdvancedSearchFilter[]>([])
   const [showAdvanced, setShowAdvanced] = React.useState(false)
+  const [showBatchSearch, setShowBatchSearch] = React.useState(false)
   const [filterSearches, setFilterSearches] = React.useState<Record<string, string>>({})
 
   const handleSearchChange = (value: string) => {
@@ -138,11 +148,31 @@ export function FilterBar({
     })
   }
 
+  const handleRemoveAdvancedSearchFilter = (filter: AdvancedSearchFilter) => {
+    setAdvancedSearchFilters((prev) => {
+      const newFilters = prev.filter(f => f.fieldId !== filter.fieldId)
+      // 重新构建 values
+      const newValues: AdvancedSearchValues = {}
+      newFilters.forEach(f => {
+        newValues[f.fieldId] = f.value
+      })
+      onAdvancedSearch?.(newValues, newFilters)
+      return newFilters
+    })
+  }
+
+  const handleAdvancedSearch = (values: AdvancedSearchValues, filters: AdvancedSearchFilter[]) => {
+    setAdvancedSearchFilters(filters)
+    onAdvancedSearch?.(values, filters)
+  }
+
   const handleClearAll = () => {
     setActiveFilters([])
+    setAdvancedSearchFilters([])
     setSearchValue("")
     onSearchChange?.("")
     onFiltersChange?.([])
+    onAdvancedSearch?.({}, [])
   }
 
   const isFilterActive = (filterId: string, optionId: string) => {
@@ -334,15 +364,40 @@ export function FilterBar({
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
+          {/* Batch Search */}
+          {enableBatchSearch && onBatchSearch && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowBatchSearch(true)}
+              >
+                <ListFilter className="mr-2 h-4 w-4" />
+                批量搜索
+              </Button>
+              <BatchSearchDialog
+                open={showBatchSearch}
+                onOpenChange={setShowBatchSearch}
+                onSearch={onBatchSearch}
+                fieldLabel={batchSearchField}
+              />
+            </>
+          )}
+
           {/* Advanced Search */}
           {advancedSearchFields.length > 0 && onAdvancedSearch && (
             <AdvancedSearchDialog
               fields={advancedSearchFields}
-              onSearch={onAdvancedSearch}
+              onSearch={handleAdvancedSearch}
               trigger={
                 <Button variant="outline" size="sm">
                   <SearchX className="mr-2 h-4 w-4" />
-                  Advanced
+                  高级搜索
+                  {advancedSearchFilters.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                      {advancedSearchFilters.length}
+                    </Badge>
+                  )}
                 </Button>
               }
             />
@@ -441,13 +496,13 @@ export function FilterBar({
       </div>
 
       {/* Active Filters Pills */}
-      {(activeFilters.length > 0 || searchValue) && (
+      {(activeFilters.length > 0 || advancedSearchFilters.length > 0 || searchValue) && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground">Active filters:</span>
+          <span className="text-sm text-muted-foreground">已选筛选:</span>
           
           {searchValue && (
             <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-              Search: {searchValue}
+              搜索: {searchValue}
               <button
                 onClick={() => handleSearchChange("")}
                 className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
@@ -469,13 +524,25 @@ export function FilterBar({
             </Badge>
           ))}
 
+          {advancedSearchFilters.map((filter, index) => (
+            <Badge key={`advanced-${filter.fieldId}-${index}`} className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
+              {filter.fieldLabel}: {filter.displayValue}
+              <button
+                onClick={() => handleRemoveAdvancedSearchFilter(filter)}
+                className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClearAll}
             className="h-6 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
           >
-            Clear all
+            清除全部
           </Button>
         </div>
       )}

@@ -363,6 +363,7 @@ export default function POPage() {
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = React.useState<AdvancedSearchValues>({})
+  const [advancedSearchFilters, setAdvancedSearchFilters] = React.useState<any[]>([])
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   const [filteredData, setFilteredData] = React.useState<PurchaseOrder[]>(mockPOs)
@@ -641,9 +642,25 @@ export default function POPage() {
 
   // Advanced search field configurations
   const advancedSearchFields: SearchField[] = [
-    { id: "orderNo", label: t('poNo'), placeholder: "e.g., PO202403150001" },
-    { id: "originalPoNo", label: t('originalPoNo'), placeholder: "e.g., EXT-PO-2024-001" },
-    { id: "prNos", label: t('prNos'), placeholder: "e.g., PR202401100001" },
+    { 
+      id: "orderNo", 
+      label: t('poNo'), 
+      placeholder: "PO202403150001\nPO202403150002\nPO202403150003",
+      type: "batch",
+      maxItems: 100
+    },
+    { 
+      id: "originalPoNo", 
+      label: t('originalPoNo'), 
+      placeholder: "e.g., EXT-PO-2024-001"
+    },
+    { 
+      id: "prNos", 
+      label: t('prNos'), 
+      placeholder: "PR202401100001\nPR202401100002",
+      type: "batch",
+      maxItems: 100
+    },
     { id: "referenceNo", label: t('referenceNo'), placeholder: "e.g., REF202403150001" },
     { id: "supplierName", label: t('supplierName'), placeholder: "e.g., ABC Suppliers Inc." },
     { id: "supplierNo", label: t('supplierNo'), placeholder: "e.g., SUP001" },
@@ -694,14 +711,34 @@ export default function POPage() {
     if (Object.keys(advancedSearchValues).length > 0) {
       filtered = filtered.filter(po => {
         return Object.entries(advancedSearchValues).every(([key, value]) => {
-          // Handle PR Nos search specially since it's an array
-          if (key === 'prNos') {
-            return po.prNos.some(prNo => prNo.toLowerCase().includes(value.toLowerCase()))
+          // 处理批量搜索（数组）
+          if (Array.isArray(value)) {
+            // 特殊处理：prNos字段本身就是数组
+            if (key === 'prNos') {
+              return po.prNos.some(prNo => 
+                value.some(v => prNo.toLowerCase().includes(v.toLowerCase()))
+              )
+            }
+            
+            // 其他字段（如orderNo）
+            const poValue = po[key as keyof PurchaseOrder]
+            if (typeof poValue === 'string') {
+              return value.some(v => poValue.toLowerCase().includes(v.toLowerCase()))
+            }
+            return false
           }
           
-          const poValue = po[key as keyof PurchaseOrder]
-          if (typeof poValue === 'string') {
-            return poValue.toLowerCase().includes(value.toLowerCase())
+          // 处理普通搜索（字符串）
+          if (typeof value === 'string') {
+            // 特殊处理：prNos字段本身就是数组
+            if (key === 'prNos') {
+              return po.prNos.some(prNo => prNo.toLowerCase().includes(value.toLowerCase()))
+            }
+            
+            const poValue = po[key as keyof PurchaseOrder]
+            if (typeof poValue === 'string') {
+              return poValue.toLowerCase().includes(value.toLowerCase())
+            }
           }
           return false
         })
@@ -1420,7 +1457,10 @@ export default function POPage() {
           columns={columnConfigs}
           onColumnsChange={handleColumnsChange}
           advancedSearchFields={advancedSearchFields}
-          onAdvancedSearch={setAdvancedSearchValues}
+          onAdvancedSearch={(values, filters) => {
+            setAdvancedSearchValues(values)
+            setAdvancedSearchFilters(filters || [])
+          }}
         />
 
         {/* Batch Operations Bar */}

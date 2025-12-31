@@ -476,6 +476,7 @@ function PRPageContent() {
   const [searchValue, setSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = React.useState<AdvancedSearchValues>({})
+  const [advancedSearchFilters, setAdvancedSearchFilters] = React.useState<any[]>([])
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   const [filteredData, setFilteredData] = React.useState<PurchaseRequest[]>(mockPRs)
@@ -616,8 +617,18 @@ function PRPageContent() {
 
   // Advanced search field configurations - memoized for language changes
   const advancedSearchFields: SearchField[] = React.useMemo(() => [
-    { id: "prNo", label: t('prNumber'), placeholder: t('examplePRNumber') },
-    { id: "businessNo", label: t('businessNumber'), placeholder: t('exampleBusinessNumber') },
+    { 
+      id: "prNo", 
+      label: t('prNumber'), 
+      placeholder: "PR202401100001\nPR202401100002\nPR202401100003",
+      type: "batch",
+      maxItems: 100
+    },
+    { 
+      id: "businessNo", 
+      label: t('businessNumber'), 
+      placeholder: t('exampleBusinessNumber')
+    },
     { id: "requester", label: t('requester'), placeholder: t('enterName') },
     { id: "requesterNo", label: t('requesterNumber'), placeholder: t('exampleEmployeeNumber') },
     { id: "currentApprover", label: t('currentApprover'), placeholder: t('enterApproverName') },
@@ -674,7 +685,17 @@ function PRPageContent() {
       filtered = filtered.filter(pr => {
         return Object.entries(advancedSearchValues).every(([key, value]) => {
           const prValue = pr[key as keyof PurchaseRequest]
-          if (typeof prValue === 'string') {
+          
+          // 处理批量搜索（数组）
+          if (Array.isArray(value)) {
+            if (typeof prValue === 'string') {
+              return value.some(v => prValue.toLowerCase().includes(v.toLowerCase()))
+            }
+            return false
+          }
+          
+          // 处理普通搜索（字符串）
+          if (typeof prValue === 'string' && typeof value === 'string') {
             return prValue.toLowerCase().includes(value.toLowerCase())
           }
           return false
@@ -1400,7 +1421,10 @@ function PRPageContent() {
           columns={columnConfigs}
           onColumnsChange={handleColumnsChange}
           advancedSearchFields={advancedSearchFields}
-          onAdvancedSearch={setAdvancedSearchValues}
+          onAdvancedSearch={(values, filters) => {
+            setAdvancedSearchValues(values)
+            setAdvancedSearchFilters(filters || [])
+          }}
         />
 
         {/* Batch Operations Bar */}

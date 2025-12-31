@@ -61,6 +61,7 @@ export default function RealLayoutDemo() {
   const [searchValue, setSearchValue] = useState("")
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = useState<AdvancedSearchValues>({})
+  const [advancedSearchFilters, setAdvancedSearchFilters] = useState<any[]>([])
   const [filteredData, setFilteredData] = useState(mockOrders)
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set())
   const { theme, setTheme } = useTheme()
@@ -98,6 +99,15 @@ export default function RealLayoutDemo() {
     if (Object.keys(advancedSearchValues).length > 0) {
       filtered = filtered.filter(o => {
         return Object.entries(advancedSearchValues).every(([key, value]) => {
+          // 处理批量搜索（数组）
+          if (Array.isArray(value)) {
+            const orderValue = o[key as keyof typeof o]
+            if (typeof orderValue === 'string') {
+              return value.some(v => orderValue.toLowerCase().includes(v.toLowerCase()))
+            }
+            return false
+          }
+          // 处理普通搜索（字符串）
           const orderValue = o[key as keyof typeof o]
           if (typeof orderValue === 'string') {
             return orderValue.toLowerCase().includes(value.toLowerCase())
@@ -149,8 +159,15 @@ export default function RealLayoutDemo() {
 
   // Advanced search fields
   const advancedSearchFields: SearchField[] = [
-    { id: "orderNo", label: "订单编号", placeholder: "e.g., ORD-2024-1001" },
+    { 
+      id: "orderNo", 
+      label: "订单编号", 
+      placeholder: "ORD-2024-1001\nORD-2024-1002\nORD-2024-1003",
+      type: "batch",
+      maxItems: 100
+    },
     { id: "customer", label: "客户名称", placeholder: "e.g., 北京科技有限公司" },
+    { id: "supplier", label: "供应商名称", placeholder: "e.g., ABC Suppliers Inc." },
   ]
 
   // Columns
@@ -346,7 +363,10 @@ export default function RealLayoutDemo() {
                 columns={columnConfigs}
                 onColumnsChange={handleColumnsChange}
                 advancedSearchFields={advancedSearchFields}
-                onAdvancedSearch={setAdvancedSearchValues}
+                onAdvancedSearch={(values, filters) => {
+                  setAdvancedSearchValues(values)
+                  setAdvancedSearchFilters(filters || [])
+                }}
               />
               {showSpecs && (
                 <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
