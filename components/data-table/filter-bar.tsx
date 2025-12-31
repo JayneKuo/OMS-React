@@ -15,6 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import {
   Popover,
@@ -94,6 +98,38 @@ export function FilterBar({
   const [showAdvanced, setShowAdvanced] = React.useState(false)
   const [showBatchSearch, setShowBatchSearch] = React.useState(false)
   const [filterSearches, setFilterSearches] = React.useState<Record<string, string>>({})
+  const [moreFiltersSearch, setMoreFiltersSearch] = React.useState("")
+  const [visibleFilterCount, setVisibleFilterCount] = React.useState(filters.length)
+  
+  const filterContainerRef = React.useRef<HTMLDivElement>(null)
+  const rightActionsRef = React.useRef<HTMLDivElement>(null)
+
+  // Calculate how many filters can fit
+  React.useEffect(() => {
+    const calculateVisibleFilters = () => {
+      if (!filterContainerRef.current || !rightActionsRef.current) return
+      
+      const container = filterContainerRef.current.parentElement
+      if (!container) return
+      
+      const containerWidth = container.offsetWidth
+      const searchWidth = 384 // max-w-md = 384px
+      const rightActionsWidth = rightActionsRef.current.offsetWidth
+      const gap = 8 // gap-2 = 8px
+      const moreButtonWidth = 60 // "..." button approximate width
+      const filterButtonWidth = 120 // approximate width per filter button
+      
+      const availableWidth = containerWidth - searchWidth - rightActionsWidth - (gap * 4) - moreButtonWidth
+      const maxFilters = Math.floor(availableWidth / (filterButtonWidth + gap))
+      
+      setVisibleFilterCount(Math.max(1, Math.min(maxFilters, filters.length)))
+    }
+
+    calculateVisibleFilters()
+    window.addEventListener('resize', calculateVisibleFilters)
+    
+    return () => window.removeEventListener('resize', calculateVisibleFilters)
+  }, [filters.length])
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value)
@@ -245,10 +281,9 @@ export function FilterBar({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Search and Filter Row */}
-      <div className="flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2 flex-1">
+      <div className="flex items-center gap-2">
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={searchPlaceholder}
@@ -266,66 +301,153 @@ export function FilterBar({
           )}
         </div>
 
-        {/* Filter Popovers */}
-        {filters.map((filter) => {
-          const activeCount = getActiveFilterCount(filter.id)
-          const hasActiveFilters = activeCount > 0
-          const filterSearch = filterSearches[filter.id] || ""
-          
-          // Filter options based on search
-          const filteredOptions = filter.options.filter(option =>
-            option.label.toLowerCase().includes(filterSearch.toLowerCase())
-          )
-          
-          return (
-            <Popover key={filter.id}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  {filter.label}
-                  {activeCount > 0 && (
+        {/* Filter Buttons Container */}
+        <div ref={filterContainerRef} className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Visible Filter Popovers */}
+          {filters.slice(0, visibleFilterCount).map((filter) => {
+            const activeCount = getActiveFilterCount(filter.id)
+            const hasActiveFilters = activeCount > 0
+            const filterSearch = filterSearches[filter.id] || ""
+            
+            // Filter options based on search
+            const filteredOptions = filter.options.filter(option =>
+              option.label.toLowerCase().includes(filterSearch.toLowerCase())
+            )
+            
+            return (
+              <Popover key={filter.id}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2 whitespace-nowrap flex-shrink-0">
+                    {filter.label}
+                    {activeCount > 0 && (
+                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                        {activeCount}
+                      </Badge>
+                    )}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-64 p-0">
+                  <div className="flex items-center justify-between px-3 py-2 border-b">
+                    <span className="text-sm font-semibold">{filter.label}</span>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                          // Clear all filters for this filter type
+                          setActiveFilters((prev) => {
+                            const newFilters = prev.filter((f) => f.filterId !== filter.id)
+                            onFiltersChange?.(newFilters)
+                            return newFilters
+                          })
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Search input for filter options */}
+                  <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder={`Search ${filter.label.toLowerCase()}...`}
+                          value={filterSearch}
+                          onChange={(e) => setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))}
+                          className="h-8 pl-7 pr-7 text-sm"
+                        />
+                        {filterSearch && (
+                          <button
+                            onClick={() => setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  
+                  <div className="p-1 max-h-[300px] overflow-y-auto">
+                    {filteredOptions.length > 0 ? (
+                      filteredOptions.map((option) => (
+                        <label
+                          key={option.id}
+                          className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
+                        >
+                          <Checkbox
+                            checked={isFilterActive(filter.id, option.id)}
+                            onCheckedChange={() => handleFilterToggle(filter, option)}
+                          />
+                          <span className="text-sm flex-1">{option.label}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                        No results found
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )
+          })}
+
+          {/* More Filters Dropdown */}
+          {filters.length > visibleFilterCount && (() => {
+            // Filter hidden filters based on search - search both filter names and option labels
+            const hiddenFilters = filters.slice(visibleFilterCount)
+            const filteredHiddenFilters = moreFiltersSearch
+              ? hiddenFilters.filter(f => {
+                  const searchLower = moreFiltersSearch.toLowerCase()
+                  // Match filter name
+                  if (f.label.toLowerCase().includes(searchLower)) {
+                    return true
+                  }
+                  // Match any option label
+                  return f.options.some(opt => 
+                    opt.label.toLowerCase().includes(searchLower)
+                  )
+                })
+              : hiddenFilters
+            
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-1 whitespace-nowrap flex-shrink-0">
+                    <Filter className="h-4 w-4" />
+                    更多
                     <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                      {activeCount}
+                      {hiddenFilters.length}
                     </Badge>
-                  )}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-64 p-0">
-                <div className="flex items-center justify-between px-3 py-2 border-b">
-                  <span className="text-sm font-semibold">{filter.label}</span>
-                  {hasActiveFilters && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => {
-                        // Clear all filters for this filter type
-                        setActiveFilters((prev) => {
-                          const newFilters = prev.filter((f) => f.filterId !== filter.id)
-                          onFiltersChange?.(newFilters)
-                          return newFilters
-                        })
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Search input for filter options */}
-                {filter.options.length > 5 && (
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>更多筛选</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {/* Search input for more filters */}
                   <div className="p-2 border-b">
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder={`Search ${filter.label.toLowerCase()}...`}
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))}
+                        placeholder="搜索筛选项..."
+                        value={moreFiltersSearch}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          setMoreFiltersSearch(e.target.value)
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className="h-8 pl-7 pr-7 text-sm"
                       />
-                      {filterSearch && (
+                      {moreFiltersSearch && (
                         <button
-                          onClick={() => setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMoreFiltersSearch("")
+                          }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -333,43 +455,150 @@ export function FilterBar({
                       )}
                     </div>
                   </div>
-                )}
-                
-                <div className="p-1 max-h-[300px] overflow-y-auto">
-                  {filteredOptions.length > 0 ? (
-                    filteredOptions.map((option) => (
-                      <label
-                        key={option.id}
-                        className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
-                      >
-                        <Checkbox
-                          checked={isFilterActive(filter.id, option.id)}
-                          onCheckedChange={() => handleFilterToggle(filter, option)}
-                        />
-                        <span className="text-sm flex-1">{option.label}</span>
-                      </label>
-                    ))
+                  
+                  {filteredHiddenFilters.length > 0 ? (
+                    filteredHiddenFilters.map((filter) => {
+                      const activeCount = getActiveFilterCount(filter.id)
+                      const hasActiveFilters = activeCount > 0
+                      const filterSearch = filterSearches[filter.id] || ""
+                      
+                      // Check if this filter matches by option content
+                      const searchLower = moreFiltersSearch.toLowerCase()
+                      const matchedByOption = moreFiltersSearch && 
+                        !filter.label.toLowerCase().includes(searchLower) &&
+                        filter.options.some(opt => opt.label.toLowerCase().includes(searchLower))
+                      
+                      // Filter options based on search - use moreFiltersSearch if matched by option
+                      const effectiveSearch = matchedByOption ? moreFiltersSearch : filterSearch
+                      const filteredOptions = filter.options.filter(option =>
+                        option.label.toLowerCase().includes(effectiveSearch.toLowerCase())
+                      )
+                      
+                      // Show match count if matched by option
+                      const matchCount = matchedByOption ? filteredOptions.length : 0
+                      
+                      return (
+                        <DropdownMenuSub key={filter.id}>
+                          <DropdownMenuSubTrigger className="flex items-center justify-between">
+                            <span>{filter.label}</span>
+                            <div className="flex items-center gap-1">
+                              {matchCount > 0 && (
+                                <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs bg-primary/10 text-primary">
+                                  {matchCount}
+                                </Badge>
+                              )}
+                              {activeCount > 0 && (
+                                <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs">
+                                  {activeCount}
+                                </Badge>
+                              )}
+                            </div>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent className="w-64 p-0 max-h-[400px]">
+                              <div className="flex items-center justify-between px-3 py-2 border-b sticky top-0 bg-popover z-10">
+                                <span className="text-sm font-semibold">{filter.label}</span>
+                                {hasActiveFilters && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      // Clear all filters for this filter type
+                                      setActiveFilters((prev) => {
+                                        const newFilters = prev.filter((f) => f.filterId !== filter.id)
+                                        onFiltersChange?.(newFilters)
+                                        return newFilters
+                                      })
+                                    }}
+                                  >
+                                    Clear
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              {/* Search input for filter options */}
+                              <div className="p-2 border-b sticky top-[41px] bg-popover z-10">
+                                  <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                      placeholder={`Search ${filter.label.toLowerCase()}...`}
+                                      value={effectiveSearch}
+                                      onChange={(e) => {
+                                        e.stopPropagation()
+                                        setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))
+                                        // Clear parent search if user starts typing in child
+                                        if (matchedByOption) {
+                                          setMoreFiltersSearch("")
+                                        }
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="h-8 pl-7 pr-7 text-sm"
+                                    />
+                                    {effectiveSearch && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))
+                                          if (matchedByOption) {
+                                            setMoreFiltersSearch("")
+                                          }
+                                        }}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              
+                              <div className="p-1 max-h-[300px] overflow-y-auto">
+                                {filteredOptions.length > 0 ? (
+                                  filteredOptions.map((option) => (
+                                    <label
+                                      key={option.id}
+                                      className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Checkbox
+                                        checked={isFilterActive(filter.id, option.id)}
+                                        onCheckedChange={() => handleFilterToggle(filter, option)}
+                                      />
+                                      <span className="text-sm flex-1">{option.label}</span>
+                                    </label>
+                                  ))
+                                ) : (
+                                  <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                    No results found
+                                  </div>
+                                )}
+                              </div>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
+                      )
+                    })
                   ) : (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      No results found
+                      未找到匹配的筛选项
                     </div>
                   )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )
-        })}
-
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          })()}
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-2">
+        <div ref={rightActionsRef} className="flex items-center gap-2 flex-shrink-0">
           {/* Batch Search */}
           {enableBatchSearch && onBatchSearch && (
             <>
               <Button 
                 variant="outline" 
                 size="sm"
+                className="whitespace-nowrap"
                 onClick={() => setShowBatchSearch(true)}
               >
                 <ListFilter className="mr-2 h-4 w-4" />
@@ -390,7 +619,7 @@ export function FilterBar({
               fields={advancedSearchFields}
               onSearch={handleAdvancedSearch}
               trigger={
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
                   <SearchX className="mr-2 h-4 w-4" />
                   高级搜索
                   {advancedSearchFilters.length > 0 && (
@@ -407,7 +636,7 @@ export function FilterBar({
           {columns.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
                   <Settings2 className="mr-2 h-4 w-4" />
                   Columns
                 </Button>
@@ -470,7 +699,7 @@ export function FilterBar({
           {savedFilters.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="whitespace-nowrap">
                   Saved
                   <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                 </Button>
