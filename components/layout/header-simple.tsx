@@ -11,32 +11,60 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const tenants = [
   {
     id: "tenant-1",
     name: "Acme Corporation",
     merchants: [
-      { id: "merchant-1", name: "Acme Store US" },
-      { id: "merchant-2", name: "Acme Store EU" },
-      { id: "merchant-3", name: "Acme Store Asia" },
+      { id: "merchant-1", name: "Acme Store US", customerCode: "ACM-US-001" },
+      { id: "merchant-2", name: "Acme Store EU", customerCode: "ACM-EU-002" },
+      { id: "merchant-3", name: "Acme Store Asia", customerCode: "ACM-AS-003" },
+      { id: "merchant-4", name: "Acme Store Canada", customerCode: "ACM-CA-004" },
+      { id: "merchant-5", name: "Acme Store Mexico", customerCode: "ACM-MX-005" },
+      { id: "merchant-6", name: "Acme Store Brazil", customerCode: "ACM-BR-006" },
+      { id: "merchant-7", name: "Acme Store UK", customerCode: "ACM-UK-007" },
+      { id: "merchant-8", name: "Acme Store France", customerCode: "ACM-FR-008" },
+      { id: "merchant-9", name: "Acme Store Germany", customerCode: "ACM-DE-009" },
+      { id: "merchant-10", name: "Acme Store Spain", customerCode: "ACM-ES-010" },
+      { id: "merchant-11", name: "Acme Store Italy", customerCode: "ACM-IT-011" },
+      { id: "merchant-12", name: "Acme Store Japan", customerCode: "ACM-JP-012" },
+      { id: "merchant-13", name: "Acme Store Korea", customerCode: "ACM-KR-013" },
+      { id: "merchant-14", name: "Acme Store Singapore", customerCode: "ACM-SG-014" },
+      { id: "merchant-15", name: "Acme Store Australia", customerCode: "ACM-AU-015" },
     ],
   },
   {
     id: "tenant-2",
     name: "Global Retail Inc",
     merchants: [
-      { id: "merchant-4", name: "Global Shop North" },
-      { id: "merchant-5", name: "Global Shop South" },
+      { id: "merchant-16", name: "Global Shop North", customerCode: "GLB-NO-016" },
+      { id: "merchant-17", name: "Global Shop South", customerCode: "GLB-SO-017" },
+      { id: "merchant-18", name: "Global Shop East", customerCode: "GLB-EA-018" },
+      { id: "merchant-19", name: "Global Shop West", customerCode: "GLB-WE-019" },
+      { id: "merchant-20", name: "Global Shop Central", customerCode: "GLB-CE-020" },
+      { id: "merchant-21", name: "Global Shop Pacific", customerCode: "GLB-PA-021" },
+      { id: "merchant-22", name: "Global Shop Atlantic", customerCode: "GLB-AT-022" },
+      { id: "merchant-23", name: "Global Shop Nordic", customerCode: "GLB-NO-023" },
+      { id: "merchant-24", name: "Global Shop Baltic", customerCode: "GLB-BA-024" },
+      { id: "merchant-25", name: "Global Shop Mediterranean", customerCode: "GLB-ME-025" },
     ],
   },
   {
     id: "tenant-3",
     name: "TechMart Solutions",
     merchants: [
-      { id: "merchant-6", name: "TechMart Online" },
-      { id: "merchant-7", name: "TechMart Wholesale" },
-      { id: "merchant-8", name: "TechMart Retail" },
+      { id: "merchant-26", name: "TechMart Online", customerCode: "TCH-ON-026" },
+      { id: "merchant-27", name: "TechMart Wholesale", customerCode: "TCH-WH-027" },
+      { id: "merchant-28", name: "TechMart Retail", customerCode: "TCH-RT-028" },
+      { id: "merchant-29", name: "TechMart Enterprise", customerCode: "TCH-EN-029" },
+      { id: "merchant-30", name: "TechMart SMB", customerCode: "TCH-SM-030" },
+      { id: "merchant-31", name: "TechMart Education", customerCode: "TCH-ED-031" },
+      { id: "merchant-32", name: "TechMart Government", customerCode: "TCH-GO-032" },
+      { id: "merchant-33", name: "TechMart Healthcare", customerCode: "TCH-HC-033" },
+      { id: "merchant-34", name: "TechMart Finance", customerCode: "TCH-FI-034" },
+      { id: "merchant-35", name: "TechMart Manufacturing", customerCode: "TCH-MF-035" },
     ],
   },
 ]
@@ -75,12 +103,19 @@ export function HeaderSimple() {
   const [themeMenuOpen, setThemeMenuOpen] = React.useState(false)
   const [tenantSearch, setTenantSearch] = React.useState("")
   const [merchantSearch, setMerchantSearch] = React.useState("")
+  const [merchantSearchField, setMerchantSearchField] = React.useState<'name' | 'code'>('name')
+  const [merchantPage, setMerchantPage] = React.useState(1)
   const [timezone, setTimezone] = React.useState("UTC")
+  const [useSecondaryNav, setUseSecondaryNav] = React.useState(false)
   
   // Refs for submenu close delays
   const languageCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
   const timezoneCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
   const themeCloseTimer = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const navContainerRef = React.useRef<HTMLDivElement>(null)
+  const searchBoxRef = React.useRef<HTMLDivElement>(null)
+  const tenantScrollRef = React.useRef<HTMLDivElement>(null)
+  const merchantScrollRef = React.useRef<HTMLDivElement>(null)
 
   // Convert i18n language to display format
   const displayLanguage = i18nLanguage === 'zh' ? '中文简体' : 'English'
@@ -100,6 +135,115 @@ export function HeaderSimple() {
     }
   }, [])
 
+  // 检测导航是否需要换到第二行
+  React.useEffect(() => {
+    let resizeTimer: NodeJS.Timeout | undefined
+
+    const checkOverlap = () => {
+      // 小屏幕直接使用汉堡菜单
+      if (window.innerWidth < 1024) {
+        setUseSecondaryNav(false)
+        return
+      }
+
+      if (!navContainerRef.current || !searchBoxRef.current) {
+        setUseSecondaryNav(false)
+        return
+      }
+
+      const nav = navContainerRef.current
+      const searchBox = searchBoxRef.current
+      
+      // 获取header的总宽度和padding
+      const header = nav.closest('header')
+      if (!header) {
+        setUseSecondaryNav(false)
+        return
+      }
+
+      const headerRect = header.getBoundingClientRect()
+      const headerPadding = 48 // px-6 = 24px * 2
+      
+      // 临时显示导航以测量（无论当前是否隐藏）
+      const wasHidden = nav.classList.contains('hidden')
+      if (wasHidden) {
+        nav.style.visibility = 'hidden'
+        nav.style.position = 'absolute'
+        nav.classList.remove('hidden')
+        nav.classList.add('flex')
+      }
+
+      // 强制重排
+      void nav.offsetHeight
+
+      // 获取所有导航项并计算总宽度
+      const navItems = nav.querySelectorAll('a')
+      let totalNavWidth = 0
+      navItems.forEach(item => {
+        totalNavWidth += item.getBoundingClientRect().width
+      })
+      
+      // 加上导航项之间的间距 (space-x-1 = 4px * (items - 1))
+      totalNavWidth += (navItems.length - 1) * 4
+
+      // 恢复原始状态
+      if (wasHidden) {
+        nav.style.visibility = ''
+        nav.style.position = ''
+        nav.classList.remove('flex')
+        nav.classList.add('hidden')
+      }
+
+      // 获取左侧区域（Logo + Tenant）和右侧区域（搜索 + 按钮）的宽度
+      const leftSection = header.querySelector('.flex.items-center.space-x-4.flex-shrink-0')
+      const rightSection = searchBox // searchBoxRef 本身就是右侧区域
+      
+      if (!leftSection || !rightSection) {
+        setUseSecondaryNav(false)
+        return
+      }
+
+      const leftWidth = leftSection.getBoundingClientRect().width
+      const rightWidth = rightSection.getBoundingClientRect().width
+      
+      // 计算导航可用空间 = header总宽度 - 左侧 - 右侧 - padding - 安全边距
+      const safeMargin = 100 // 安全边距
+      const availableSpace = headerRect.width - leftWidth - rightWidth - headerPadding - safeMargin
+      
+      const needSecondaryNav = totalNavWidth > availableSpace
+
+      console.log('📏 Navigation Space Check:', {
+        headerWidth: headerRect.width,
+        leftWidth: leftWidth,
+        rightWidth: rightWidth,
+        totalNavWidth: totalNavWidth,
+        availableSpace: availableSpace,
+        safeMargin: safeMargin,
+        needSecondaryNav: needSecondaryNav,
+        currentState: useSecondaryNav
+      })
+
+      setUseSecondaryNav(needSecondaryNav)
+    }
+
+    // 防抖的resize处理
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(checkOverlap, 150)
+    }
+
+    // 初始检测
+    const initTimer = setTimeout(checkOverlap, 100)
+    
+    window.addEventListener('resize', handleResize)
+    
+    return () => {
+      clearTimeout(initTimer)
+      if (resizeTimer) clearTimeout(resizeTimer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [mainNavItems, useSecondaryNav])
+
   const filteredTenants = React.useMemo(() => {
     if (!tenantSearch) return tenants
     return tenants.filter((t) =>
@@ -109,10 +253,49 @@ export function HeaderSimple() {
 
   const filteredMerchants = React.useMemo(() => {
     if (!merchantSearch) return selectedTenant.merchants
-    return selectedTenant.merchants.filter((m) =>
-      m.name.toLowerCase().includes(merchantSearch.toLowerCase())
-    )
+    const searchLower = merchantSearch.toLowerCase()
+    return selectedTenant.merchants.filter((m) => {
+      if (merchantSearchField === 'name') {
+        return m.name.toLowerCase().includes(searchLower)
+      } else {
+        // code
+        return m.customerCode.toLowerCase().includes(searchLower)
+      }
+    })
+  }, [merchantSearch, selectedTenant, merchantSearchField])
+
+  // 分页逻辑
+  const merchantsPerPage = 10
+  const totalMerchantPages = Math.ceil(filteredMerchants.length / merchantsPerPage)
+  const paginatedMerchants = React.useMemo(() => {
+    const startIndex = (merchantPage - 1) * merchantsPerPage
+    return filteredMerchants.slice(startIndex, startIndex + merchantsPerPage)
+  }, [filteredMerchants, merchantPage])
+
+  // 当搜索或切换租户时重置页码
+  React.useEffect(() => {
+    setMerchantPage(1)
   }, [merchantSearch, selectedTenant])
+
+  // 当切换器打开时，滚动到选中的租户和商户
+  React.useEffect(() => {
+    if (switcherOpen) {
+      // 延迟执行以确保DOM已渲染
+      setTimeout(() => {
+        // 滚动到选中的租户
+        const selectedTenantButton = document.querySelector(`button[data-tenant-id="${selectedTenant.id}"]`)
+        if (selectedTenantButton && tenantScrollRef.current) {
+          selectedTenantButton.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+
+        // 滚动到选中的商户
+        const selectedMerchantButton = document.querySelector(`button[data-merchant-id="${selectedMerchant.id}"]`)
+        if (selectedMerchantButton && merchantScrollRef.current) {
+          selectedMerchantButton.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [switcherOpen, selectedTenant.id, selectedMerchant.id])
 
   const handleTenantSelect = (tenant: typeof tenants[0]) => {
     setSelectedTenant(tenant)
@@ -148,14 +331,14 @@ export function HeaderSimple() {
               className="flex items-center gap-2 hover:bg-primary/10 rounded-md px-2 py-1 transition-colors group"
             >
               <div className="flex flex-col -space-y-0.5">
-                <span className="text-xs text-muted-foreground group-hover:text-foreground text-left whitespace-nowrap transition-colors">
+                <span className="text-xs text-muted-foreground group-hover:text-primary text-left whitespace-nowrap transition-colors">
                   {selectedTenant.name}
                 </span>
-                <span className="text-xs text-muted-foreground group-hover:text-foreground text-left whitespace-nowrap transition-colors">
+                <span className="text-xs text-muted-foreground group-hover:text-primary text-left whitespace-nowrap transition-colors">
                   {selectedMerchant.name}
                 </span>
               </div>
-              <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
             </button>
           </div>
 
@@ -185,7 +368,7 @@ export function HeaderSimple() {
                           />
                         </div>
                       </div>
-                      <ScrollArea className="h-[calc(400px-120px)]">
+                      <ScrollArea className="h-[calc(400px-120px)]" ref={tenantScrollRef}>
                         <div className="p-2">
                           {filteredTenants.length === 0 ? (
                             <div className="py-6 text-center text-sm text-muted-foreground">
@@ -197,9 +380,10 @@ export function HeaderSimple() {
                               return (
                                 <button
                                   key={tenant.id}
+                                  data-tenant-id={tenant.id}
                                   onClick={() => handleTenantSelect(tenant)}
-                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 ${
-                                    isSelected ? "bg-primary-hover/10" : ""
+                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 hover:text-primary ${
+                                    isSelected ? "bg-primary-hover/10 text-primary" : ""
                                   }`}
                                 >
                                   <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
@@ -233,37 +417,52 @@ export function HeaderSimple() {
                           <Store className="h-4 w-4 text-primary" />
                           <span className="text-sm font-semibold">{t('merchant')}</span>
                         </div>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            placeholder={t('searchMerchants')}
-                            value={merchantSearch}
-                            onChange={(e) => setMerchantSearch(e.target.value)}
-                            className="pl-9 h-9"
-                          />
+                        <div className="flex gap-2">
+                          <Select value={merchantSearchField} onValueChange={(v: 'name' | 'code') => setMerchantSearchField(v)}>
+                            <SelectTrigger className="w-20 h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="name">Name</SelectItem>
+                              <SelectItem value="code">No.</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
+                            <Input
+                              placeholder={t('searchMerchants')}
+                              value={merchantSearch}
+                              onChange={(e) => setMerchantSearch(e.target.value)}
+                              className="pl-9 h-9"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <ScrollArea className="h-[calc(400px-120px)]">
+                      <ScrollArea className="h-[calc(400px-120px)]" ref={merchantScrollRef}>
                         <div className="p-2">
                           {filteredMerchants.length === 0 ? (
                             <div className="py-6 text-center text-sm text-muted-foreground">
                               {t('noMerchantsFound')}
                             </div>
                           ) : (
-                            filteredMerchants.map((merchant) => {
+                            paginatedMerchants.map((merchant) => {
                               const isSelected = selectedMerchant.id === merchant.id
                               return (
                                 <button
                                   key={merchant.id}
+                                  data-merchant-id={merchant.id}
                                   onClick={() => handleMerchantSelect(merchant)}
-                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 ${
-                                    isSelected ? "bg-primary-hover/10" : ""
+                                  className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-primary-hover/10 hover:text-primary ${
+                                    isSelected ? "bg-primary-hover/10 text-primary" : ""
                                   }`}
                                 >
                                   <Store className="h-4 w-4 text-muted-foreground shrink-0" />
                                   <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium truncate">
                                       {merchant.name}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {merchant.customerCode}
                                     </div>
                                   </div>
                                   {isSelected && (
@@ -275,6 +474,32 @@ export function HeaderSimple() {
                           )}
                         </div>
                       </ScrollArea>
+                      {/* 分页控件 - 底部 */}
+                      {totalMerchantPages > 1 && (
+                        <div className="p-2 flex items-center justify-center gap-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => setMerchantPage(p => Math.max(1, p - 1))}
+                            disabled={merchantPage === 1}
+                          >
+                            ‹
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            {merchantPage} / {totalMerchantPages}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => setMerchantPage(p => Math.min(totalMerchantPages, p + 1))}
+                            disabled={merchantPage === totalMerchantPages}
+                          >
+                            ›
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -290,8 +515,8 @@ export function HeaderSimple() {
           <div className="h-6 w-px bg-border" />
         </div>
 
-        {/* Center: Main Navigation - Hidden on small screens, shown on 2xl+ */}
-        <nav className="hidden 2xl:flex items-center space-x-1 flex-1 min-w-0">
+        {/* Center: Main Navigation */}
+        <nav ref={navContainerRef} className={cn("items-center space-x-1 flex-1 min-w-0", useSecondaryNav ? "hidden" : "hidden lg:flex")}>
           {mainNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (
@@ -305,7 +530,7 @@ export function HeaderSimple() {
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 )}
               >
                 {item.title}
@@ -315,7 +540,7 @@ export function HeaderSimple() {
         </nav>
         
         {/* Right: Search + Actions */}
-        <div className="flex items-center space-x-4 flex-shrink-0">
+        <div ref={searchBoxRef} className="flex items-center space-x-4 flex-shrink-0 px-6">
           <div className="relative w-64 hidden lg:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -394,7 +619,7 @@ export function HeaderSimple() {
                           languageCloseTimer.current = setTimeout(() => setLanguageMenuOpen(false), 200)
                         }}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-primary rounded transition-colors">
                           <div className="flex items-center gap-2">
                             <Globe className="h-4 w-4" />
                             <span>{t('language')}</span>
@@ -430,8 +655,8 @@ export function HeaderSimple() {
                                     setLanguageMenuOpen(false)
                                     setUserMenuOpen(false)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center justify-between ${
-                                    i18nLanguage === lang.code ? "text-primary font-medium bg-primary-hover/10" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 hover:text-primary flex items-center justify-between transition-colors ${
+                                    i18nLanguage === lang.code ? "text-primary font-medium bg-primary-hover/10" : "text-muted-foreground"
                                   }`}
                                 >
                                   {lang.display}
@@ -454,7 +679,7 @@ export function HeaderSimple() {
                           timezoneCloseTimer.current = setTimeout(() => setTimezoneMenuOpen(false), 200)
                         }}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-primary rounded transition-colors">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             <span>{t('timezone')}</span>
@@ -486,8 +711,8 @@ export function HeaderSimple() {
                                     // Store in localStorage for persistence
                                     localStorage.setItem("oms-timezone", tz)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center justify-between ${
-                                    timezone === tz ? "text-primary font-medium bg-primary-hover/10" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 hover:text-primary flex items-center justify-between transition-colors ${
+                                    timezone === tz ? "text-primary font-medium bg-primary-hover/10" : "text-muted-foreground"
                                   }`}
                                 >
                                   {tz}
@@ -510,7 +735,7 @@ export function HeaderSimple() {
                           themeCloseTimer.current = setTimeout(() => setThemeMenuOpen(false), 200)
                         }}
                       >
-                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm hover:bg-primary-hover/10 rounded">
+                        <button className="w-full flex items-center justify-between px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-primary rounded transition-colors">
                           <div className="flex items-center gap-2">
                             {theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
                             <span>{t('theme')}</span>
@@ -544,8 +769,8 @@ export function HeaderSimple() {
                                     setTheme(themeOption.value)
                                     setThemeMenuOpen(false)
                                   }}
-                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 flex items-center gap-2 ${
-                                    theme === themeOption.value ? "text-primary font-medium bg-primary-hover/10" : ""
+                                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-primary-hover/10 hover:text-primary flex items-center gap-2 transition-colors ${
+                                    theme === themeOption.value ? "text-primary font-medium bg-primary-hover/10" : "text-muted-foreground"
                                   }`}
                                 >
                                   <themeOption.icon className="h-3 w-3" />
@@ -577,7 +802,7 @@ export function HeaderSimple() {
                       <Separator className="my-2" />
 
                       {/* Logout */}
-                      <button className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-foreground rounded">
+                      <button className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-primary-hover/10 hover:text-primary rounded">
                         <LogOut className="h-4 w-4" />
                         {t('logout')}
                       </button>
@@ -590,28 +815,30 @@ export function HeaderSimple() {
         </div>
       </div>
 
-      {/* Secondary Navigation Row - Shown on lg to 2xl screens */}
-      <div className="hidden lg:block 2xl:hidden border-t bg-background relative z-40">
-        <nav className="flex items-center px-6 py-2 space-x-1 overflow-x-auto">
-          {mainNavItems.map((item) => {
-            const isActive = pathname.startsWith(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
-                )}
-              >
-                {item.title}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
+      {/* Secondary Navigation Row */}
+      {useSecondaryNav && (
+        <div className="border-t bg-background relative z-40">
+          <nav className="flex items-center px-6 py-2 space-x-1">
+            {mainNavItems.map((item) => {
+              const isActive = pathname.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  )}
+                >
+                  {item.title}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+      )}
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
@@ -628,7 +855,7 @@ export function HeaderSimple() {
                     "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                   )}
                 >
                   {item.title}

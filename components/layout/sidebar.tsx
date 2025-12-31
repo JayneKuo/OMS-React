@@ -28,9 +28,9 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
   return (
     <div className={cn(
       "flex h-full flex-col border-r bg-sidebar transition-all duration-300",
-      collapsed ? "w-16" : "w-60"
+      collapsed ? "w-16" : "w-[280px]"
     )}>
-      <div className="flex h-14 items-center px-4 justify-between">
+      <div className="flex h-14 items-center px-6 justify-between">
         {!collapsed && (
           <span className="text-sm font-medium text-foreground truncate">
             {moduleName}
