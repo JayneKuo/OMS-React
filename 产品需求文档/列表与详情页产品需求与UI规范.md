@@ -469,6 +469,367 @@
 </Popover>
 ```
 
+### 4.3.1 "更多筛选"功能（智能空间管理）
+
+**产品目标**：
+- 当筛选按钮数量超过可用空间时，自动收纳到"更多"下拉菜单
+- 提供多层级搜索能力，快速定位筛选项和选项
+- 保持界面整洁，避免筛选按钮溢出或换行
+
+**业务规则**：
+- 动态计算可显示的筛选按钮数量
+- 超出部分自动收纳到"更多"菜单
+- 支持三层搜索：菜单搜索 → 筛选项 → 选项搜索
+- 搜索可匹配筛选项名称和选项内容
+- 响应窗口大小变化，自动重新计算
+
+**使用场景**：
+- 系统有大量筛选维度（如12个以上）
+- 用户需要快速找到特定筛选项
+- 用户需要搜索特定的筛选选项（如"1-5件"）
+- 不同屏幕尺寸下保持良好体验
+
+#### 4.3.1.1 动态显示逻辑
+
+**计算公式**：
+```
+可用宽度 = 容器总宽度 - 搜索框宽度(384px) - 右侧操作区宽度 - 间距 - 更多按钮宽度(60px)
+可显示筛选数 = Math.floor(可用宽度 / (单个筛选按钮宽度120px + 间距8px))
+```
+
+**显示规则**：
+- 前 N 个筛选按钮直接显示在工具栏
+- 剩余筛选项收纳到"更多"下拉菜单
+- 窗口大小变化时自动重新计算
+- 最少显示1个筛选按钮
+
+**技术实现**：
+```typescript
+// 使用 useEffect + resize 监听
+React.useEffect(() => {
+  const calculateVisibleFilters = () => {
+    const containerWidth = container.offsetWidth
+    const searchWidth = 384
+    const rightActionsWidth = rightActions.offsetWidth
+    const gap = 8
+    const moreButtonWidth = 60
+    const filterButtonWidth = 120
+    
+    const availableWidth = containerWidth - searchWidth - rightActionsWidth - (gap * 4) - moreButtonWidth
+    const maxFilters = Math.floor(availableWidth / (filterButtonWidth + gap))
+    
+    setVisibleFilterCount(Math.max(1, Math.min(maxFilters, filters.length)))
+  }
+  
+  calculateVisibleFilters()
+  window.addEventListener('resize', calculateVisibleFilters)
+  return () => window.removeEventListener('resize', calculateVisibleFilters)
+}, [filters.length])
+```
+
+#### 4.3.1.2 三层搜索架构
+
+**第一层：顶部菜单搜索**
+- 位置："更多筛选"标题下方
+- 占位符："搜索筛选项..."
+- 搜索范围：筛选项名称 + 所有选项内容
+- 搜索逻辑：
+  ```typescript
+  匹配筛选项名称 OR 匹配任意选项标签
+  例如：搜索"1-5" → 找到"商品数量"（因为包含"1-5件"选项）
+  ```
+
+**第二层：筛选项子菜单**
+- 触发方式：鼠标悬停在筛选项上
+- 实现方式：DropdownMenuSub（原生子菜单）
+- 显示内容：该筛选项的所有选项
+- 不会意外关闭：支持鼠标在子菜单内移动
+
+**第三层：选项搜索框**
+- 位置：子菜单顶部（标题下方）
+- 占位符："Search {筛选项名称}..."
+- 搜索范围：当前筛选项的所有选项
+- 智能填充：从顶部搜索匹配到选项时，自动填充搜索词
+
+#### 4.3.1.3 搜索匹配与显示
+
+**匹配逻辑**：
+```typescript
+// 判断是否通过选项内容匹配
+matchedByOption = 搜索词不匹配筛选项名称 
+                 AND 匹配到至少一个选项标签
+
+// 确定实际使用的搜索词
+effectiveSearch = matchedByOption ? 顶部搜索词 : 子菜单搜索词
+
+// 过滤选项
+filteredOptions = filter.options.filter(option =>
+  option.label.toLowerCase().includes(effectiveSearch.toLowerCase())
+)
+```
+
+**视觉反馈**：
+- 匹配数量徽章：紫色背景 `bg-primary/10 text-primary`
+  - 显示匹配到的选项数量
+  - 位置：筛选项名称右侧
+  
+- 激活数量徽章：灰色背景 `variant="secondary"`
+  - 显示已选中的选项数量
+  - 位置：匹配徽章右侧
+
+**示例**：
+```
+商品数量  [1] [2]
+         ↑   ↑
+    匹配数  激活数
+```
+
+#### 4.3.1.4 交互流程示例
+
+**场景1：搜索筛选项名称**
+```
+1. 用户点击"更多"按钮
+2. 用户输入"商品"
+3. 筛选列表只显示"商品数量"
+4. 用户鼠标悬停
+5. 显示所有商品数量选项
+```
+
+**场景2：搜索选项内容（深度搜索）**
+```
+1. 用户点击"更多"按钮
+2. 用户输入"1-5"
+3. 筛选列表显示"商品数量"（右侧显示"1"个匹配）
+4. 用户鼠标悬停
+5. 子菜单搜索框自动填充"1-5"
+6. 只显示"1-5件"选项
+7. 用户勾选该选项
+```
+
+**场景3：修改子菜单搜索**
+```
+1. 子菜单已打开，搜索框有内容
+2. 用户修改搜索词
+3. 自动清除顶部搜索词
+4. 使用新搜索词过滤选项
+```
+
+#### 4.3.1.5 UI规范
+
+**"更多"按钮**：
+
+| 元素 | 样式 | 说明 |
+|------|------|------|
+| 按钮 | `variant="outline"` `size="sm"` | 边框按钮 |
+| 图标 | `Filter` `h-4 w-4` | 筛选图标 |
+| 文字 | "更多" | 固定文字 |
+| 数量徽章 | `variant="secondary"` `px-1.5 py-0 text-xs` | 显示隐藏数量 |
+
+**下拉菜单容器**：
+
+| 元素 | 样式 | 说明 |
+|------|------|------|
+| 宽度 | `w-56` (224px) | 固定宽度 |
+| 对齐 | `align="start"` | 左对齐 |
+| 标题 | `text-sm font-semibold` | 14px加粗 |
+
+**顶部搜索框**：
+
+| 元素 | 样式 | 说明 |
+|------|------|------|
+| 容器 | `p-2 border-b` | 内边距8px，底部边框 |
+| 输入框 | `h-8 pl-7 pr-7 text-sm` | 高度32px |
+| 搜索图标 | `h-3.5 w-3.5` (14px) | 左侧图标 |
+| 清除按钮 | `h-3.5 w-3.5` (14px) | 右侧X按钮 |
+
+**筛选项列表**：
+
+| 元素 | 样式 | 说明 |
+|------|------|------|
+| 项容器 | `DropdownMenuSubTrigger` | 子菜单触发器 |
+| 项文字 | `text-sm` | 14px |
+| 匹配徽章 | `bg-primary/10 text-primary` | 紫色背景 |
+| 激活徽章 | `variant="secondary"` | 灰色背景 |
+| 徽章间距 | `gap-1` | 4px |
+
+**子菜单内容**：
+
+| 元素 | 样式 | 说明 |
+|------|------|------|
+| 容器 | `w-64 p-0 max-h-[400px]` | 宽度256px，最大高度400px |
+| 标题栏 | `px-3 py-2 border-b sticky top-0 bg-popover z-10` | 吸顶 |
+| 搜索框区 | `p-2 border-b sticky top-[41px] bg-popover z-10` | 吸顶 |
+| 选项区 | `p-1 max-h-[300px] overflow-y-auto` | 可滚动 |
+| 选项项 | `px-2 py-2 hover:bg-primary-hover/10` | Hover效果 |
+
+**空状态**：
+
+| 场景 | 文字 | 样式 |
+|------|------|------|
+| 无匹配筛选项 | "未找到匹配的筛选项" | `text-sm text-muted-foreground` |
+| 无匹配选项 | "No results found" | `text-sm text-muted-foreground` |
+
+#### 4.3.1.6 状态管理
+
+**关键状态**：
+```typescript
+moreFiltersSearch: string          // 顶部搜索框的值
+filterSearches: Record<string, string>  // 各筛选项子菜单的搜索值
+visibleFilterCount: number         // 可见筛选按钮数量
+```
+
+**计算状态**：
+```typescript
+hiddenFilters                      // 隐藏的筛选项列表
+filteredHiddenFilters              // 搜索过滤后的筛选项
+matchedByOption                    // 是否通过选项内容匹配
+effectiveSearch                    // 实际使用的搜索词
+matchCount                         // 匹配的选项数量
+```
+
+#### 4.3.1.7 完整示例代码
+
+```tsx
+{/* 更多筛选下拉菜单 */}
+{filters.length > visibleFilterCount && (() => {
+  const hiddenFilters = filters.slice(visibleFilterCount)
+  const filteredHiddenFilters = moreFiltersSearch
+    ? hiddenFilters.filter(f => {
+        const searchLower = moreFiltersSearch.toLowerCase()
+        // 匹配筛选项名称或任意选项标签
+        return f.label.toLowerCase().includes(searchLower) ||
+               f.options.some(opt => opt.label.toLowerCase().includes(searchLower))
+      })
+    : hiddenFilters
+  
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="gap-1 whitespace-nowrap flex-shrink-0">
+          <Filter className="h-4 w-4" />
+          更多
+          <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+            {hiddenFilters.length}
+          </Badge>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>更多筛选</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        {/* 顶部搜索框 */}
+        <div className="p-2 border-b">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="搜索筛选项..."
+              value={moreFiltersSearch}
+              onChange={(e) => setMoreFiltersSearch(e.target.value)}
+              className="h-8 pl-7 pr-7 text-sm"
+            />
+            {moreFiltersSearch && (
+              <button onClick={() => setMoreFiltersSearch("")}>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* 筛选项列表 */}
+        {filteredHiddenFilters.length > 0 ? (
+          filteredHiddenFilters.map((filter) => {
+            const activeCount = getActiveFilterCount(filter.id)
+            const matchedByOption = moreFiltersSearch && 
+              !filter.label.toLowerCase().includes(moreFiltersSearch.toLowerCase()) &&
+              filter.options.some(opt => opt.label.toLowerCase().includes(moreFiltersSearch.toLowerCase()))
+            
+            const effectiveSearch = matchedByOption ? moreFiltersSearch : filterSearches[filter.id] || ""
+            const filteredOptions = filter.options.filter(option =>
+              option.label.toLowerCase().includes(effectiveSearch.toLowerCase())
+            )
+            const matchCount = matchedByOption ? filteredOptions.length : 0
+            
+            return (
+              <DropdownMenuSub key={filter.id}>
+                <DropdownMenuSubTrigger>
+                  <span>{filter.label}</span>
+                  <div className="flex items-center gap-1">
+                    {matchCount > 0 && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
+                        {matchCount}
+                      </Badge>
+                    )}
+                    {activeCount > 0 && (
+                      <Badge variant="secondary">{activeCount}</Badge>
+                    )}
+                  </div>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="w-64 p-0 max-h-[400px]">
+                    {/* 标题栏 */}
+                    <div className="px-3 py-2 border-b sticky top-0 bg-popover z-10">
+                      <span className="text-sm font-semibold">{filter.label}</span>
+                    </div>
+                    
+                    {/* 选项搜索框 */}
+                    <div className="p-2 border-b sticky top-[41px] bg-popover z-10">
+                      <Input
+                        placeholder={`Search ${filter.label.toLowerCase()}...`}
+                        value={effectiveSearch}
+                        onChange={(e) => {
+                          setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))
+                          if (matchedByOption) setMoreFiltersSearch("")
+                        }}
+                        className="h-8 pl-7 pr-7 text-sm"
+                      />
+                    </div>
+                    
+                    {/* 选项列表 */}
+                    <div className="p-1 max-h-[300px] overflow-y-auto">
+                      {filteredOptions.map((option) => (
+                        <label key={option.id} className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 rounded-sm cursor-pointer">
+                          <Checkbox
+                            checked={isFilterActive(filter.id, option.id)}
+                            onCheckedChange={() => handleFilterToggle(filter, option)}
+                          />
+                          <span className="text-sm">{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )
+          })
+        ) : (
+          <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+            未找到匹配的筛选项
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+})()}
+```
+
+#### 4.3.1.8 性能优化
+
+**优化措施**：
+1. 使用 `useEffect` + `resize` 监听窗口变化
+2. 搜索使用实时过滤（本地数据，无需防抖）
+3. 使用 `stopPropagation()` 阻止事件冒泡
+4. 子菜单使用 `DropdownMenuPortal` 避免层级问题
+5. 搜索框和标题栏使用 `sticky` 定位保持可见
+
+**用户体验亮点**：
+- ✅ 智能空间利用：根据屏幕宽度自动调整
+- ✅ 多层级搜索：支持搜索筛选项和选项内容
+- ✅ 自动填充：搜索匹配选项时自动填充
+- ✅ 视觉反馈：匹配数量徽章、激活状态徽章
+- ✅ 流畅交互：子菜单不会意外关闭
+- ✅ 清晰提示：空状态提示、搜索占位符
+- ✅ 一致性：所有筛选项都有搜索功能
+
 ### 4.4 高级搜索
 
 **产品逻辑**：
