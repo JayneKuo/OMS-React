@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Search, Bell, Settings, User, Check, Building2, Store, ChevronDown, Globe, Clock, Sun, Moon, Monitor, LogOut } from "lucide-react"
+import { Search, Bell, Settings, User, Check, Building2, Store, ChevronDown, Globe, Clock, Sun, Moon, Monitor, LogOut, Menu, X } from "lucide-react"
 import { useI18n } from "@/components/i18n-provider"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -68,6 +68,7 @@ export function HeaderSimple() {
   const [selectedTenant, setSelectedTenant] = React.useState(tenants[0])
   const [selectedMerchant, setSelectedMerchant] = React.useState(tenants[0].merchants[0])
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
   const [languageMenuOpen, setLanguageMenuOpen] = React.useState(false)
   const [timezoneMenuOpen, setTimezoneMenuOpen] = React.useState(false)
@@ -144,17 +145,17 @@ export function HeaderSimple() {
             </Link>
             <button
               onClick={() => setSwitcherOpen(!switcherOpen)}
-              className="flex items-center gap-2 hover:bg-primary-hover/10 rounded-md px-2 py-1 transition-colors"
+              className="flex items-center gap-2 hover:bg-primary/10 rounded-md px-2 py-1 transition-colors group"
             >
               <div className="flex flex-col -space-y-0.5">
-                <span className="text-xs text-muted-foreground text-left whitespace-nowrap">
+                <span className="text-xs text-muted-foreground group-hover:text-foreground text-left whitespace-nowrap transition-colors">
                   {selectedTenant.name}
                 </span>
-                <span className="text-xs text-muted-foreground text-left whitespace-nowrap">
+                <span className="text-xs text-muted-foreground group-hover:text-foreground text-left whitespace-nowrap transition-colors">
                   {selectedMerchant.name}
                 </span>
               </div>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
             </button>
           </div>
 
@@ -289,8 +290,8 @@ export function HeaderSimple() {
           <div className="h-6 w-px bg-border" />
         </div>
 
-        {/* Center: Main Navigation */}
-        <nav className="flex items-center space-x-1 overflow-x-auto flex-1 min-w-0">
+        {/* Center: Main Navigation - Hidden on small screens, shown on 2xl+ */}
+        <nav className="hidden 2xl:flex items-center space-x-1 flex-1 min-w-0">
           {mainNavItems.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (
@@ -304,7 +305,7 @@ export function HeaderSimple() {
                   "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-primary-hover/10 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
                 )}
               >
                 {item.title}
@@ -325,6 +326,16 @@ export function HeaderSimple() {
           </div>
           
           <div className="flex items-center space-x-1">
+            {/* Mobile Menu Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+            
             <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden">
               <Search className="h-4 w-4" />
             </Button>
@@ -578,6 +589,55 @@ export function HeaderSimple() {
           </div>
         </div>
       </div>
+
+      {/* Secondary Navigation Row - Shown on lg to 2xl screens */}
+      <div className="hidden lg:block 2xl:hidden border-t bg-background relative z-40">
+        <nav className="flex items-center px-6 py-2 space-x-1 overflow-x-auto">
+          {mainNavItems.map((item) => {
+            const isActive = pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                )}
+              >
+                {item.title}
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t bg-background">
+          <nav className="p-4 space-y-1">
+            {mainNavItems.map((item) => {
+              const isActive = pathname.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                  )}
+                >
+                  {item.title}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

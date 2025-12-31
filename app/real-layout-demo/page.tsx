@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable, Column } from "@/components/data-table/data-table"
+import { DataTableWithStickyHeader } from "@/components/data-table/data-table-with-sticky-header"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
 import { OrderNumberCell } from "@/components/ui/order-number-cell"
@@ -15,26 +16,72 @@ import {
   MoreVertical, Eye, Trash2, X
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Toaster } from "@/components/ui/sonner"
 
-// Mock order data
-const mockOrders = [
-  { id: '1', orderNo: 'ORD-2024-1001', customer: '北京科技有限公司', status: 'pending', amount: 8234.50, date: '2024-12-25', items: 5, address: '北京市朝阳区建国路88号SOHO现代城A座1001室', supplier: 'ABC Suppliers Inc.' },
-  { id: '2', orderNo: 'ORD-2024-1002', customer: '上海贸易公司', status: 'processing', amount: 5678.90, date: '2024-12-24', items: 3, address: '上海市浦东新区陆家嘴环路1000号', supplier: 'Global Trading Co.' },
-  { id: '3', orderNo: 'ORD-2024-1003', customer: '深圳电子厂', status: 'shipped', amount: 12456.00, date: '2024-12-23', items: 8, address: '深圳市南山区科技园南区深圳湾科技生态园', supplier: 'Tech Distributors Ltd.' },
-  { id: '4', orderNo: 'ORD-2024-1004', customer: '广州物流中心', status: 'completed', amount: 3456.78, date: '2024-12-22', items: 2, address: '广州市天河区珠江新城花城大道85号', supplier: 'Premium Goods Supply' },
-  { id: '5', orderNo: 'ORD-2024-1005', customer: '成都制造有限公司', status: 'completed', amount: 9876.54, date: '2024-12-21', items: 6, address: '成都市高新区天府大道中段1366号', supplier: 'Reliable Parts Co.' },
-  { id: '6', orderNo: 'ORD-2024-1006', customer: '杭州互联网科技', status: 'pending', amount: 15678.00, date: '2024-12-20', items: 10, address: '杭州市西湖区文三路90号东部软件园', supplier: 'Digital Solutions Ltd.' },
-  { id: '7', orderNo: 'ORD-2024-1007', customer: '南京医疗器械公司', status: 'processing', amount: 23456.80, date: '2024-12-19', items: 12, address: '南京市江宁区秣周东路9号', supplier: 'MedTech Supplies' },
-  { id: '8', orderNo: 'ORD-2024-1008', customer: '武汉光电研究所', status: 'shipped', amount: 18900.00, date: '2024-12-18', items: 7, address: '武汉市洪山区珞喻路1037号', supplier: 'Optics International' },
-  { id: '9', orderNo: 'ORD-2024-1009', customer: '西安航天科技', status: 'pending', amount: 45678.90, date: '2024-12-17', items: 15, address: '西安市高新区锦业路1号', supplier: 'Aerospace Components' },
-  { id: '10', orderNo: 'ORD-2024-1010', customer: '天津港务集团', status: 'processing', amount: 34567.00, date: '2024-12-16', items: 20, address: '天津市滨海新区新港二号路', supplier: 'Marine Equipment Co.' },
-]
+// Generate 100 mock orders
+const generateMockOrders = () => {
+  const customers = [
+    '北京科技有限公司', '上海贸易公司', '深圳电子厂', '广州物流中心', '成都制造有限公司',
+    '杭州互联网科技', '南京医疗器械公司', '武汉光电研究所', '西安航天科技', '天津港务集团',
+    '重庆汽车制造', '苏州工业园区', '青岛海运集团', '大连化工有限', '长沙建材公司',
+    '郑州食品加工', '济南机械制造', '福州电子商务', '厦门进出口贸易', '合肥新能源科技'
+  ]
+  
+  const suppliers = [
+    'ABC Suppliers Inc.', 'Global Trading Co.', 'Tech Distributors Ltd.', 'Premium Goods Supply',
+    'Reliable Parts Co.', 'Digital Solutions Ltd.', 'MedTech Supplies', 'Optics International',
+    'Aerospace Components', 'Marine Equipment Co.', 'Industrial Materials Ltd.', 'Smart Tech Supply',
+    'Quality Products Inc.', 'Express Logistics Co.', 'Advanced Manufacturing'
+  ]
+  
+  const addresses = [
+    '北京市朝阳区建国路88号SOHO现代城A座1001室',
+    '上海市浦东新区陆家嘴环路1000号',
+    '深圳市南山区科技园南区深圳湾科技生态园',
+    '广州市天河区珠江新城花城大道85号',
+    '成都市高新区天府大道中段1366号',
+    '杭州市西湖区文三路90号东部软件园',
+    '南京市江宁区秣周东路9号',
+    '武汉市洪山区珞喻路1037号',
+    '西安市高新区锦业路1号',
+    '天津市滨海新区新港二号路'
+  ]
+  
+  const statuses: Array<'pending' | 'processing' | 'shipped' | 'completed'> = ['pending', 'processing', 'shipped', 'completed']
+  
+  const orders = []
+  for (let i = 1; i <= 100; i++) {
+    const status = statuses[Math.floor(Math.random() * statuses.length)]
+    const customer = customers[Math.floor(Math.random() * customers.length)]
+    const supplier = suppliers[Math.floor(Math.random() * suppliers.length)]
+    const address = addresses[Math.floor(Math.random() * addresses.length)]
+    const amount = Math.floor(Math.random() * 50000) + 1000
+    const items = Math.floor(Math.random() * 20) + 1
+    const daysAgo = Math.floor(Math.random() * 90)
+    const date = new Date(2024, 11, 31 - daysAgo).toISOString().split('T')[0]
+    
+    orders.push({
+      id: String(i),
+      orderNo: `ORD-2024-${String(1000 + i).padStart(4, '0')}`,
+      customer,
+      status,
+      amount,
+      date,
+      items,
+      address,
+      supplier
+    })
+  }
+  
+  return orders
+}
+
+const mockOrders = generateMockOrders()
 
 const statusConfig = {
   pending: { label: '待处理', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' },
@@ -52,12 +99,14 @@ const sidebarItems = [
 ]
 
 export default function RealLayoutDemo() {
+  const [mounted, setMounted] = useState(false)
   const [selectedRows, setSelectedRows] = useState<(string | number)[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(50)
   const [showSpecs, setShowSpecs] = useState(false)
-  const [activeTab, setActiveTab] = useState("all")
+  const [listType, setListType] = useState<"current" | "history">("current") // 一级Tab：当前/历史
+  const [activeTab, setActiveTab] = useState("all") // 二级Tab：状态
   const [searchValue, setSearchValue] = useState("")
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
   const [advancedSearchValues, setAdvancedSearchValues] = useState<AdvancedSearchValues>({})
@@ -66,11 +115,25 @@ export default function RealLayoutDemo() {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set())
   const { theme, setTheme } = useTheme()
 
+  // 等待客户端挂载
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const selectedOrder = mockOrders.find(o => o.id === selectedOrderId)
 
   // Filter data based on tab, search, and filters
   useMemo(() => {
     let filtered = mockOrders
+
+    // List type filter (current vs history)
+    if (listType === "history") {
+      // 历史订单：只显示已完成和已取消的订单（假设completed是历史状态）
+      filtered = filtered.filter(o => o.status === "completed")
+    } else {
+      // 当前订单：排除已完成的订单
+      filtered = filtered.filter(o => o.status !== "completed")
+    }
 
     // Tab filter
     if (activeTab !== "all") {
@@ -119,22 +182,33 @@ export default function RealLayoutDemo() {
 
     setFilteredData(filtered)
     setCurrentPage(1)
-  }, [activeTab, searchValue, activeFilters, advancedSearchValues])
+  }, [activeTab, searchValue, activeFilters, advancedSearchValues, listType]) // 添加listType依赖
 
-  // Status counts
+  // Paginated data - 根据当前页和每页数量切片数据
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    return filteredData.slice(startIndex, endIndex)
+  }, [filteredData, currentPage, pageSize])
+
+  // Status counts - 根据listType计算
   const statusCounts = useMemo(() => {
+    const dataToCount = listType === "history" 
+      ? mockOrders.filter(o => o.status === "completed")
+      : mockOrders.filter(o => o.status !== "completed")
+    
     const counts: Record<string, number> = {
-      all: mockOrders.length,
+      all: dataToCount.length,
       pending: 0,
       processing: 0,
       shipped: 0,
       completed: 0,
     }
-    mockOrders.forEach(order => {
+    dataToCount.forEach(order => {
       counts[order.status] = (counts[order.status] || 0) + 1
     })
     return counts
-  }, [])
+  }, [listType])
 
   // Filter configs
   const filterConfigs: FilterConfig[] = [
@@ -325,30 +399,81 @@ export default function RealLayoutDemo() {
               )}
             </div>
 
-            {/* Status Tabs */}
+            {/* List Type Tabs (一级Tab - 带竖线分隔和底部横线) */}
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setListType("current")
+                    setActiveTab("all")
+                  }}
+                  className={cn(
+                    "relative px-4 py-2 text-sm font-medium transition-colors",
+                    listType === "current"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  当前订单
+                  {listType === "current" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
+                </button>
+                <div className="h-4 w-px bg-border" />
+                <button
+                  onClick={() => {
+                    setListType("history")
+                    setActiveTab("all")
+                  }}
+                  className={cn(
+                    "relative px-4 py-2 text-sm font-medium transition-colors",
+                    listType === "history"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  历史订单
+                  {listType === "history" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
+                </button>
+              </div>
+              {showSpecs && (
+                <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
+                  一级Tab: 竖线分隔 | 激活: text-primary + 底部紫色横线(h-0.5) | 未激活: text-muted-foreground
+                </div>
+              )}
+            </div>
+
+            {/* Status Tabs (二级Tab - 标准Tab样式) */}
             <div className="relative">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
                   <TabsTrigger value="all">
-                    全部 <Badge variant="secondary" className={cn("ml-2", activeTab === "all" && "bg-transparent text-primary-foreground border-0")}>{statusCounts.all}</Badge>
+                    全部 <Badge variant="secondary" className={cn("ml-2", activeTab === "all" && "bg-transparent text-primary-foreground border-0")}>{mounted ? statusCounts.all : 0}</Badge>
                   </TabsTrigger>
-                  <TabsTrigger value="pending">
-                    待处理 <Badge variant="secondary" className={cn("ml-2", activeTab === "pending" && "bg-transparent text-primary-foreground border-0")}>{statusCounts.pending}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="processing">
-                    处理中 <Badge variant="secondary" className={cn("ml-2", activeTab === "processing" && "bg-transparent text-primary-foreground border-0")}>{statusCounts.processing}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="shipped">
-                    已发货 <Badge variant="secondary" className={cn("ml-2", activeTab === "shipped" && "bg-transparent text-primary-foreground border-0")}>{statusCounts.shipped}</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="completed">
-                    已完成 <Badge variant="secondary" className={cn("ml-2", activeTab === "completed" && "bg-transparent text-primary-foreground border-0")}>{statusCounts.completed}</Badge>
-                  </TabsTrigger>
+                  {listType === "current" ? (
+                    <>
+                      <TabsTrigger value="pending">
+                        待处理 <Badge variant="secondary" className={cn("ml-2", activeTab === "pending" && "bg-transparent text-primary-foreground border-0")}>{mounted ? statusCounts.pending : 0}</Badge>
+                      </TabsTrigger>
+                      <TabsTrigger value="processing">
+                        处理中 <Badge variant="secondary" className={cn("ml-2", activeTab === "processing" && "bg-transparent text-primary-foreground border-0")}>{mounted ? statusCounts.processing : 0}</Badge>
+                      </TabsTrigger>
+                      <TabsTrigger value="shipped">
+                        已发货 <Badge variant="secondary" className={cn("ml-2", activeTab === "shipped" && "bg-transparent text-primary-foreground border-0")}>{mounted ? statusCounts.shipped : 0}</Badge>
+                      </TabsTrigger>
+                    </>
+                  ) : (
+                    <TabsTrigger value="completed">
+                      已完成 <Badge variant="secondary" className={cn("ml-2", activeTab === "completed" && "bg-transparent text-primary-foreground border-0")}>{mounted ? statusCounts.completed : 0}</Badge>
+                    </TabsTrigger>
+                  )}
                 </TabsList>
               </Tabs>
               {showSpecs && (
                 <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
-                  Tabs: TabsList + TabsTrigger | Badge: 选中时透明背景+白色文字 | 未选中灰色背景
+                  二级Tab: 标准Tab样式 | 根据一级Tab显示不同状态 | Badge数量显示
                 </div>
               )}
             </div>
@@ -481,28 +606,23 @@ export default function RealLayoutDemo() {
               </Card>
             )}
 
-            {/* Data Table */}
+            {/* Data Table with Sticky Header */}
             <div className="relative">
-              <Card>
-                <CardContent className="pt-6">
-                  <DataTable
-                    data={filteredData}
-                    columns={visibleColumnsList}
-                    currentPage={currentPage}
-                    totalItems={filteredData.length}
-                    pageSize={pageSize}
-                    onPageChange={setCurrentPage}
-                    onPageSizeChange={setPageSize}
-                    onSelectionChange={setSelectedRows}
-                    selectedRows={selectedRows}
-                    onRowClick={(row) => setSelectedOrderId(row.id)}
-                    hideColumnControl={true}
-                  />
-                </CardContent>
-              </Card>
+              <DataTableWithStickyHeader
+                data={paginatedData}
+                columns={visibleColumnsList}
+                currentPage={currentPage}
+                totalItems={filteredData.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                onSelectionChange={setSelectedRows}
+                selectedRows={selectedRows}
+                onRowClick={(row) => setSelectedOrderId(row.id)}
+              />
               {showSpecs && (
                 <div className="absolute top-2 right-2 bg-black text-white text-xs p-2 rounded max-w-xs z-50">
-                  DataTable: Card包裹 | pt-6 | 订单编号可点击(hover:text-primary hover:underline) | 文本截断+Tooltip | 分页在底部
+                  DataTable: 表头吸顶(滚动时fixed) | 订单编号可点击 | 文本截断+Tooltip | 分页在底部
                 </div>
               )}
             </div>

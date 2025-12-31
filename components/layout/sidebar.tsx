@@ -30,7 +30,7 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
       "flex h-full flex-col border-r bg-sidebar transition-all duration-300",
       collapsed ? "w-16" : "w-60"
     )}>
-      <div className="flex h-14 items-center border-b px-4 justify-between">
+      <div className="flex h-14 items-center px-4 justify-between">
         {!collapsed && (
           <span className="text-sm font-medium text-foreground truncate">
             {moduleName}
@@ -50,8 +50,10 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
         </Button>
       </div>
       
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="flex flex-col space-y-1">
+      <div className="border-b" />
+      
+      <ScrollArea className="flex-1 py-4">
+        <nav className="flex flex-col space-y-1 px-4">
           {items.map((item) => {
             const isActive = pathname === item.href
             const isDisabled = item.href === "#"
@@ -62,7 +64,7 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
                   key={item.title}
                   className={cn(
                     "rounded-md px-3 py-2 text-sm font-medium flex items-center gap-3 cursor-not-allowed opacity-50",
-                    collapsed ? "justify-center" : ""
+                    collapsed ? "justify-center px-0" : ""
                   )}
                   title={collapsed ? item.title : undefined}
                 >
@@ -78,10 +80,10 @@ export function Sidebar({ items = [], moduleName = "Workspace" }: SidebarProps) 
                 href={item.href}
                 className={cn(
                   "rounded-md px-3 py-2 text-sm font-medium transition-colors flex items-center gap-3",
-                  collapsed ? "justify-center" : "",
+                  collapsed ? "justify-center px-0" : "",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-primary-hover/10 hover:text-primary"
+                    : "text-sidebar-foreground hover:bg-primary/10 hover:text-primary"
                 )}
                 title={collapsed ? item.title : undefined}
               >
