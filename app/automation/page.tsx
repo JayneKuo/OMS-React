@@ -7,13 +7,13 @@ import {
   PauseCircle, 
   Filter, 
   Settings, 
-  RefreshCw, 
   ArrowLeftRight, 
   Mail, 
   Webhook,
   Store,
   Truck,
-  Box
+  Box,
+  Route
 } from "lucide-react"
 
 const sidebarItems = [
@@ -46,7 +46,7 @@ const sidebarItems = [
     children: [
       { title: "Carrier Account", href: "/automation/logistics/carrier-account", icon: <Store className="h-4 w-4" /> },
       { title: "Carrier & Delivery Service", href: "/automation/logistics/carrier-delivery-service", icon: <Truck className="h-4 w-4" /> },
-      { title: "Delivery Order Routing", href: "/automation/logistics/delivery-order-routing", icon: <Truck className="h-4 w-4" /> },
+      { title: "Delivery Order Routing", href: "/automation/logistics/delivery-order-routing", icon: <Route className="h-4 w-4" /> },
     ]
   },
   { 
