@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Download, Printer } from "lucide-react"
@@ -109,7 +110,7 @@ const mockPOData = {
   approvalDate: "2024-03-15",
 }
 
-export default function POPDFPreviewPage() {
+function POPDFPreviewContent() {
   const searchParams = useSearchParams()
   const poNo = searchParams.get('poNo') || mockPOData.orderNo
   const template = (searchParams.get('template') as PDFTemplate) || 'standard'
@@ -450,5 +451,20 @@ export default function POPDFPreviewPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function POPDFPreviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading PDF preview...</p>
+        </div>
+      </div>
+    }>
+      <POPDFPreviewContent />
+    </Suspense>
   )
 }
