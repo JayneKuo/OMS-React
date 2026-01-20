@@ -6,6 +6,9 @@ app/ui-guidelines-new
 app/*-test
 app/test-*
 
+# 例外：允许 po-detail-refactor-test 部署
+!app/po-detail-refactor-test
+
 # 排除文档
 *.md
 !README.md

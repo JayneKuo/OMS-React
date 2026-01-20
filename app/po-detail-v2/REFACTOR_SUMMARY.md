@@ -4,7 +4,7 @@
 This is a refactored version of the Purchase Order detail page with a new layout structure optimized for better information hierarchy and user workflow.
 
 ## File Location
-`OMS React/app/po-detail-refactor-test/page.tsx`
+`OMS React/app/po-detail-v2/page.tsx`
 
 ## Key Changes from Original
 
