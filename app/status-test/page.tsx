@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { POStatusSelector, ShippingStatusSelector, ReceivingStatusSelector } from '@/components/purchase/status-selector'
 import { 
@@ -12,8 +13,6 @@ import {
   getShippingStatusOptions,
   getReceivingStatusOptions
 } from '@/lib/enums/po-status'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 
 export default function StatusTestPage() {
   const [selectedPOStatus, setSelectedPOStatus] = useState<POStatus>(POStatus.NEW)
@@ -129,7 +128,7 @@ export default function StatusTestPage() {
               <label className="text-sm font-medium">PO状态</label>
               <POStatusSelector
                 value={selectedPOStatus}
-                onValueChange={setSelectedPOStatus}
+                onValueChange={(value) => setSelectedPOStatus(value as POStatus)}
                 language={language}
               />
               <div className="text-sm text-muted-foreground">
@@ -142,7 +141,7 @@ export default function StatusTestPage() {
               <label className="text-sm font-medium">运输状态</label>
               <ShippingStatusSelector
                 value={selectedShippingStatus}
-                onValueChange={setSelectedShippingStatus}
+                onValueChange={(value) => setSelectedShippingStatus(value as ShippingStatus)}
                 language={language}
               />
               <div className="text-sm text-muted-foreground">
@@ -155,7 +154,7 @@ export default function StatusTestPage() {
               <label className="text-sm font-medium">收货状态</label>
               <ReceivingStatusSelector
                 value={selectedReceivingStatus}
-                onValueChange={setSelectedReceivingStatus}
+                onValueChange={(value) => setSelectedReceivingStatus(value as ReceivingStatus)}
                 language={language}
               />
               <div className="text-sm text-muted-foreground">
@@ -180,7 +179,7 @@ export default function StatusTestPage() {
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">PO-2024-001</h4>
-                <StatusBadge status={POStatus.IN_PROGRESS} language={language} showIcon />
+                <StatusBadge status={POStatus.IN_TRANSIT} language={language} showIcon />
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -216,7 +215,7 @@ export default function StatusTestPage() {
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">PO-2024-003</h4>
-                <StatusBadge status={POStatus.COMPLETE} language={language} showIcon />
+                <StatusBadge status={POStatus.COMPLETED} language={language} showIcon />
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

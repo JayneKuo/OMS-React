@@ -13,7 +13,8 @@ import {
   Store,
   Truck,
   Box,
-  Route
+  Route,
+  ShoppingCart
 } from "lucide-react"
 
 const sidebarItems = [
@@ -29,6 +30,14 @@ const sidebarItems = [
       { title: "Filter Orders by SKU", href: "/automation/sales-order/filter-by-sku", icon: <Filter className="h-4 w-4" /> },
       { title: "Order Update Settings", href: "/automation/sales-order/update-settings", icon: <Settings className="h-4 w-4" /> },
       { title: "Mapping", href: "/automation/sales-order/mapping", icon: <ArrowLeftRight className="h-4 w-4" /> },
+    ]
+  },
+  { 
+    title: "Purchase Order", 
+    href: "/automation/purchase-order",
+    icon: <ShoppingCart className="h-4 w-4" />,
+    children: [
+      { title: "PO Order Routing", href: "/automation/purchase-order/routing", icon: <Route className="h-4 w-4" /> },
     ]
   },
   { 

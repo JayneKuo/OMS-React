@@ -57,6 +57,7 @@ export interface ColumnConfig {
 }
 
 interface FilterBarProps {
+  searchValue?: string // Controlled search value
   searchPlaceholder?: string
   onSearchChange?: (value: string) => void
   filters?: FilterConfig[]
@@ -77,6 +78,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({
+  searchValue: externalSearchValue,
   searchPlaceholder = "Search...",
   onSearchChange,
   filters = [],
@@ -92,7 +94,7 @@ export function FilterBar({
   onBatchSearch,
   className,
 }: FilterBarProps) {
-  const [searchValue, setSearchValue] = React.useState("")
+  const [internalSearchValue, setInternalSearchValue] = React.useState("")
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchFilters, setAdvancedSearchFilters] = React.useState<AdvancedSearchFilter[]>([])
   const [showAdvanced, setShowAdvanced] = React.useState(false)
@@ -100,6 +102,9 @@ export function FilterBar({
   const [filterSearches, setFilterSearches] = React.useState<Record<string, string>>({})
   const [moreFiltersSearch, setMoreFiltersSearch] = React.useState("")
   const [visibleFilterCount, setVisibleFilterCount] = React.useState(filters.length)
+  
+  // Use external search value if provided (controlled), otherwise use internal state (uncontrolled)
+  const searchValue = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue
   
   const filterContainerRef = React.useRef<HTMLDivElement>(null)
   const rightActionsRef = React.useRef<HTMLDivElement>(null)
@@ -132,7 +137,11 @@ export function FilterBar({
   }, [filters.length])
 
   const handleSearchChange = (value: string) => {
-    setSearchValue(value)
+    // Update internal state only if not controlled
+    if (externalSearchValue === undefined) {
+      setInternalSearchValue(value)
+    }
+    // Always call the callback
     onSearchChange?.(value)
   }
 

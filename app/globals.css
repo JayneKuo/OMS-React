@@ -150,3 +150,38 @@
     background-color: hsl(var(--info) / 0.05) !important;
   }
 }
+
+
+/* Toast/Sonner customization */
+[data-sonner-toast] {
+  background-color: hsl(var(--background)) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+  opacity: 1 !important;
+}
+
+[data-sonner-toast][data-styled] {
+  padding: 16px !important;
+}
+
+[data-close-button] {
+  position: absolute !important;
+  right: 4px !important;
+  top: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s !important;
+  z-index: 10 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+}
+
+[data-close-button]:hover {
+  opacity: 1 !important;
+  background: hsl(var(--muted) / 0.5) !important;
+}

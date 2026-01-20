@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable, Column } from "@/components/data-table/data-table"
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy, MapPin, FileCheck, MoreVertical } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, AlertCircle, Download, Upload, FileDown, FilePlus, Eye, Edit, Send, X, RotateCcw, Copy, MapPin, FileCheck, MoreVertical, Mail } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useI18n } from "@/components/i18n-provider"
@@ -17,8 +17,23 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { OrderNumberCell } from "@/components/ui/order-number-cell"
 import { POStatus, ShippingStatus, ReceivingStatus } from "@/lib/enums/po-status"
 import { LocalWarehouseReceiptDialog } from "@/components/purchase/local-warehouse-receipt-dialog"
+import { POSendDialog } from "@/components/purchase/po-send-dialog"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
 import { cn } from "@/lib/utils"
+
+// Email history record interface
+interface EmailHistoryRecord {
+  id: string
+  sentDate: string
+  from: string
+  recipients: string[]
+  cc?: string[]
+  subject: string
+  body: string
+  pdfTemplate: string
+  status: "SENT" | "FAILED" | "PENDING"
+  sentBy: string
+}
 
 // PO Data Interface based on the optimized status system
 interface PurchaseOrder {
@@ -74,9 +89,14 @@ interface PurchaseOrder {
   // 其他
   itemCount: number
   exceptions: string[]
+  
+  // Email tracking
+  sentToSupplier: boolean
+  lastSentDate?: string
+  emailHistory?: EmailHistoryRecord[]
 }
 
-// Mock data with optimized status system
+// Mock data with simplified status system (NEW, PROCESSING, CLOSED, CANCELLED, EXCEPTION)
 const mockPOs: PurchaseOrder[] = [
   {
     id: "1",
@@ -88,7 +108,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP001",
     destination: "Main Warehouse - Los Angeles",
     warehouseName: "Main Warehouse",
-    status: POStatus.IN_TRANSIT,
+    status: "PROCESSING" as POStatus, // Changed from IN_TRANSIT
     shippingStatus: ShippingStatus.SHIPPED,
     receivingStatus: ReceivingStatus.NOT_RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -110,6 +130,22 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Handle with care - fragile items",
     itemCount: 15,
     exceptions: [],
+    sentToSupplier: true,
+    lastSentDate: "2024-01-15T11:00:00Z",
+    emailHistory: [
+      {
+        id: "email-1",
+        sentDate: "2024-01-15T11:00:00Z",
+        from: "purchasing@company.com",
+        recipients: ["sup001@abcsuppliers.com"],
+        cc: ["manager@company.com"],
+        subject: "Purchase Order PO202403150001 - ABC Suppliers Inc.",
+        body: "Dear ABC Suppliers Inc.,\n\nPlease find attached Purchase Order PO202403150001...",
+        pdfTemplate: "standard",
+        status: "SENT",
+        sentBy: "John Doe"
+      }
+    ]
   },
   {
     id: "2",
@@ -121,7 +157,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP002",
     destination: "East Distribution Center - New York",
     warehouseName: "East DC",
-    status: POStatus.WAITING_FOR_RECEIVING,
+    status: "PROCESSING" as POStatus, // Changed from WAITING_FOR_RECEIVING
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
@@ -143,6 +179,7 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Signature required",
     itemCount: 28,
     exceptions: ["Delayed shipment"],
+    sentToSupplier: false,
   },
   {
     id: "3",
@@ -176,6 +213,8 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "",
     itemCount: 42,
     exceptions: [],
+    sentToSupplier: true,
+    lastSentDate: "2024-01-10T14:00:00Z",
   },
   {
     id: "4",
@@ -209,6 +248,7 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Hold for inspection",
     itemCount: 35,
     exceptions: ["Payment pending", "Quality check required"],
+    sentToSupplier: false,
   },
   {
     id: "5",
@@ -220,7 +260,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP005",
     destination: "South Warehouse - Miami",
     warehouseName: "South WH",
-    status: POStatus.PARTIAL_RECEIPT,
+    status: "PROCESSING" as POStatus, // Changed from PARTIAL_RECEIPT
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
@@ -242,6 +282,8 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Partial delivery expected",
     itemCount: 18,
     exceptions: [],
+    sentToSupplier: true,
+    lastSentDate: "2024-01-12T16:00:00Z",
   },
   {
     id: "6",
@@ -275,6 +317,7 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "",
     itemCount: 8,
     exceptions: [],
+    sentToSupplier: false,
   },
   {
     id: "7",
@@ -286,7 +329,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP007",
     destination: "Main Warehouse - Los Angeles",
     warehouseName: "Main Warehouse",
-    status: POStatus.RECEIVING,
+    status: "PROCESSING" as POStatus, // Changed from RECEIVING
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -308,6 +351,7 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Currently receiving at warehouse",
     itemCount: 25,
     exceptions: [],
+    sentToSupplier: false,
   },
   {
     id: "8",
@@ -319,7 +363,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP008",
     destination: "West Fulfillment Center - Seattle",
     warehouseName: "West FC",
-    status: POStatus.WAITING_FOR_RECEIVING,
+    status: "PROCESSING" as POStatus, // Changed from WAITING_FOR_RECEIVING
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.NOT_RECEIVED,
     dataSource: "MANUAL",
@@ -341,6 +385,7 @@ const mockPOs: PurchaseOrder[] = [
     shippingNotes: "Local warehouse - ready for receiving",
     itemCount: 12,
     exceptions: [],
+    sentToSupplier: false,
   },
 ]
 
@@ -372,6 +417,8 @@ export default function POPage() {
   const [activeTab, setActiveTab] = React.useState<string>("all")
   const [showLocalWarehouseReceiptDialog, setShowLocalWarehouseReceiptDialog] = React.useState(false)
   const [currentPOForReceipt, setCurrentPOForReceipt] = React.useState<PurchaseOrder | null>(null)
+  const [showSendDialog, setShowSendDialog] = React.useState(false)
+  const [currentPOForSend, setCurrentPOForSend] = React.useState<PurchaseOrder | null>(null)
 
   // Mock PO Line Items数据 - 实际应用中应该从API获取
   const mockPOLineItems: Record<string, Array<{
@@ -472,12 +519,49 @@ export default function POPage() {
           ...po,
           receivedQty: newReceivedQty,
           status: isFullyReceived ? POStatus.CLOSED : POStatus.PARTIAL_RECEIPT,
-          receivingStatus: isFullyReceived ? ReceivingStatus.FULLY_RECEIVED : ReceivingStatus.PARTIAL_RECEIVED,
+          receivingStatus: isFullyReceived ? ReceivingStatus.RECEIVED : ReceivingStatus.PARTIAL_RECEIVED,
           updated: new Date().toISOString(),
         }
       }
       return po
     }))
+  }
+
+  // 处理发送PO邮件
+  const handleSendPO = (emailData: any) => {
+    console.log("Send PO Email:", emailData)
+    
+    // 更新PO状态，添加邮件历史记录
+    if (currentPOForSend) {
+      const newEmailRecord: EmailHistoryRecord = {
+        id: `email-${Date.now()}`,
+        sentDate: new Date().toISOString(),
+        from: emailData.from,
+        recipients: emailData.recipients,
+        cc: emailData.cc,
+        subject: emailData.subject,
+        body: emailData.body,
+        pdfTemplate: emailData.pdfTemplate || "standard",
+        status: "SENT",
+        sentBy: "Current User" // 实际应用中应该从用户上下文获取
+      }
+      
+      setFilteredData(prev => prev.map(po => {
+        if (po.id === currentPOForSend.id) {
+          return {
+            ...po,
+            sentToSupplier: true,
+            lastSentDate: new Date().toISOString(),
+            emailHistory: [...(po.emailHistory || []), newEmailRecord],
+            updated: new Date().toISOString(),
+          }
+        }
+        return po
+      }))
+    }
+    
+    // 实际应用中应该调用API发送邮件
+    // 成功提示已在弹窗内显示，这里不需要额外的提示
   }
 
   // 主状态配置（PO Status）- 使用设计系统颜色
@@ -562,7 +646,7 @@ export default function POPage() {
     API_IMPORT: { label: t('API_IMPORT'), color: "text-text-secondary" },
   }
 
-  // Define filter configurations based on optimized PO system
+  // Define filter configurations with simplified status system
   const filterConfigs: FilterConfig[] = [
     {
       id: "status",
@@ -570,10 +654,7 @@ export default function POPage() {
       type: "multiple",
       options: [
         { id: "new", label: t('NEW'), value: POStatus.NEW },
-        { id: "in_transit", label: t('IN_TRANSIT'), value: POStatus.IN_TRANSIT },
-        { id: "waiting_for_receiving", label: t('WAITING_FOR_RECEIVING'), value: POStatus.WAITING_FOR_RECEIVING },
-        { id: "receiving", label: t('RECEIVING'), value: POStatus.RECEIVING },
-        { id: "partial_receipt", label: t('PARTIAL_RECEIPT'), value: POStatus.PARTIAL_RECEIPT },
+        { id: "processing", label: "Processing", value: "PROCESSING" },
         { id: "closed", label: t('CLOSED'), value: POStatus.CLOSED },
         { id: "cancelled", label: t('CANCELLED'), value: POStatus.CANCELLED },
         { id: "exception", label: t('EXCEPTION'), value: POStatus.EXCEPTION },
@@ -598,8 +679,6 @@ export default function POPage() {
         { id: "not_received", label: t('NOT_RECEIVED'), value: ReceivingStatus.NOT_RECEIVED },
         { id: "partial_received", label: t('PARTIAL_RECEIVED'), value: ReceivingStatus.PARTIAL_RECEIVED },
         { id: "received", label: t('RECEIVED'), value: ReceivingStatus.RECEIVED },
-        { id: "fully_received", label: t('FULLY_RECEIVED'), value: "FULLY_RECEIVED" },
-        { id: "over_received", label: t('OVER_RECEIVED'), value: "OVER_RECEIVED" },
       ],
     },
     {
@@ -666,21 +745,23 @@ export default function POPage() {
     { id: "supplierNo", label: t('supplierNo'), placeholder: "e.g., SUP001" },
   ]
 
-  // Calculate status counts based on status
+  // Calculate status counts based on simplified status system
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {
       all: mockPOs.length,
       [POStatus.NEW]: 0,
-      [POStatus.IN_TRANSIT]: 0,
-      [POStatus.WAITING_FOR_RECEIVING]: 0,
-      [POStatus.RECEIVING]: 0,
-      [POStatus.PARTIAL_RECEIPT]: 0,
+      PROCESSING: 0,
       [POStatus.CLOSED]: 0,
       [POStatus.CANCELLED]: 0,
       [POStatus.EXCEPTION]: 0,
     }
+    
     mockPOs.forEach(po => {
-      counts[po.status] = (counts[po.status] || 0) + 1
+      if (po.status === "PROCESSING") {
+        counts.PROCESSING++
+      } else {
+        counts[po.status] = (counts[po.status] || 0) + 1
+      }
     })
     return counts
   }, [])
@@ -748,7 +829,17 @@ export default function POPage() {
     // Apply active filters
     activeFilters.forEach(filter => {
       if (filter.filterId === "status") {
-        filtered = filtered.filter(po => po.status === filter.optionValue)
+        if (filter.optionValue === "PROCESSING") {
+          // PROCESSING filter includes multiple statuses
+          filtered = filtered.filter(po => 
+            po.status === POStatus.IN_TRANSIT ||
+            po.status === POStatus.WAITING_FOR_RECEIVING ||
+            po.status === POStatus.RECEIVING ||
+            po.status === POStatus.PARTIAL_RECEIPT
+          )
+        } else {
+          filtered = filtered.filter(po => po.status === filter.optionValue)
+        }
       } else if (filter.filterId === "shippingStatus") {
         filtered = filtered.filter(po => po.shippingStatus === filter.optionValue)
       } else if (filter.filterId === "receivingStatus") {
@@ -777,7 +868,7 @@ export default function POPage() {
       cell: (row) => (
         <OrderNumberCell 
           orderNumber={row.orderNo} 
-          onClick={() => router.push(`/purchase/po/${row.id}`)}
+          onClick={() => router.push(`/po-detail-refactor-test`)}
         />
       ),
     },
@@ -919,6 +1010,33 @@ export default function POPage() {
       },
     },
     {
+      id: "sentToSupplier",
+      header: "Sent to Supplier",
+      width: "120px",
+      defaultVisible: true,
+      cell: (row) => (
+        <div className="flex items-center justify-center">
+          {row.sentToSupplier ? (
+            <div className="flex flex-col items-center gap-1">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700">
+                <Mail className="h-3 w-3 mr-1" />
+                Sent
+              </Badge>
+              {row.lastSentDate && (
+                <span className="text-xs text-muted-foreground">
+                  {new Date(row.lastSentDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">
+              Not Sent
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
       id: "totalPrice",
       header: t('totalPrice'),
       width: "140px",
@@ -1050,7 +1168,10 @@ export default function POPage() {
           switch (row.status) {
             case POStatus.NEW:
               return [
-                { label: t('send'), action: () => console.log("Send to supplier", row.orderNo), variant: undefined, disabled: undefined },
+                { label: t('send'), action: () => {
+                  setCurrentPOForSend(row)
+                  setShowSendDialog(true)
+                }, variant: undefined, disabled: undefined },
                 { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('createReceipt'), action: () => {
                   // 本地仓库：打开弹窗，一步完成入库和收货
@@ -1064,51 +1185,25 @@ export default function POPage() {
                 }, variant: undefined, disabled: undefined },
                 { label: t('cancel'), action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
               ]
-            case POStatus.IN_TRANSIT:
+            case "PROCESSING":
+              // PROCESSING状态包含所有中间处理阶段的操作
               return [
                 { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('markArrived'), action: () => {
-                  // 标记送达：更新PO状态和运输状态
+                  // 标记送达：更新运输状态
                   setFilteredData(prev => prev.map(po => {
                     if (po.id === row.id) {
                       return {
                         ...po,
-                        status: POStatus.WAITING_FOR_RECEIVING,
                         shippingStatus: ShippingStatus.ARRIVED,
                         updated: new Date().toISOString(),
                       }
                     }
                     return po
                   }))
-                  // 实际应用中应该调用API更新状态
                   console.log("Mark arrived", row.orderNo)
                 }, variant: undefined, disabled: undefined },
-              ]
-            case POStatus.WAITING_FOR_RECEIVING:
-              return [
-                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), action: () => {
-                  // 本地仓库：打开弹窗，一步完成入库和收货
-                  // 第三方仓库：跳转到入库请求创建页面
-                  if (isLocalWarehouse) {
-                    setCurrentPOForReceipt(row)
-                    setShowLocalWarehouseReceiptDialog(true)
-                  } else {
-                    router.push(`/purchase/receipts/create?poId=${row.id}`)
-                  }
-                }, variant: undefined, disabled: undefined },
-              ]
-            case POStatus.RECEIVING:
-              return [
-                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-              ]
-            case POStatus.PARTIAL_RECEIPT:
-              return [
-                { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('createReceipt'), action: () => {
                   // 本地仓库：打开弹窗，一步完成入库和收货
                   // 第三方仓库：跳转到入库请求创建页面
@@ -1231,16 +1326,15 @@ export default function POPage() {
             { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
             { label: t('batchCancel'), action: () => console.log("Batch cancel", selectedRows), variant: "destructive" },
           ]
-        case POStatus.IN_TRANSIT:
+        case "PROCESSING":
           return [
             { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
             { label: t('batchMarkArrived'), action: () => {
-              // 批量标记送达：更新选中PO的状态和运输状态
+              // 批量标记送达：更新选中PO的运输状态（保持PROCESSING状态）
               setFilteredData(prev => prev.map(po => {
-                if (selectedRows.includes(po.id) && po.status === POStatus.IN_TRANSIT) {
+                if (selectedRows.includes(po.id) && po.status === "PROCESSING") {
                   return {
                     ...po,
-                    status: POStatus.WAITING_FOR_RECEIVING,
                     shippingStatus: ShippingStatus.ARRIVED,
                     updated: new Date().toISOString(),
                   }
@@ -1248,22 +1342,8 @@ export default function POPage() {
                 return po
               }))
               setSelectedRows([])
-              // 实际应用中应该调用API批量更新状态
               console.log("Batch mark arrived", selectedRows)
             } },
-          ]
-        case POStatus.WAITING_FOR_RECEIVING:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-            { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
-          ]
-        case POStatus.RECEIVING:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
-          ]
-        case POStatus.PARTIAL_RECEIPT:
-          return [
-            { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
             { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
           ]
         case POStatus.CANCELLED:
@@ -1334,7 +1414,7 @@ export default function POPage() {
           </div>
         </div>
 
-        {/* Contract State Tabs */}
+        {/* Simplified Status Tabs: All, New, Processing, Closed, Cancelled, Exception */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">
@@ -1361,52 +1441,16 @@ export default function POPage() {
                 {statusCounts[POStatus.NEW] || 0}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value={POStatus.IN_TRANSIT}>
-              {t('IN_TRANSIT')} 
+            <TabsTrigger value="PROCESSING">
+              Processing
               <Badge 
                 variant="secondary" 
                 className={cn(
                   "ml-2",
-                  activeTab === POStatus.IN_TRANSIT && "bg-primary-foreground/20 text-primary-foreground border-0"
+                  activeTab === "PROCESSING" && "bg-primary-foreground/20 text-primary-foreground border-0"
                 )}
               >
-                {statusCounts[POStatus.IN_TRANSIT] || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.WAITING_FOR_RECEIVING}>
-              {t('WAITING_FOR_RECEIVING')} 
-              <Badge 
-                variant="secondary" 
-                className={cn(
-                  "ml-2",
-                  activeTab === POStatus.WAITING_FOR_RECEIVING && "bg-primary-foreground/20 text-primary-foreground border-0"
-                )}
-              >
-                {statusCounts[POStatus.WAITING_FOR_RECEIVING] || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.RECEIVING}>
-              {t('RECEIVING')} 
-              <Badge 
-                variant="secondary" 
-                className={cn(
-                  "ml-2",
-                  activeTab === POStatus.RECEIVING && "bg-primary-foreground/20 text-primary-foreground border-0"
-                )}
-              >
-                {statusCounts[POStatus.RECEIVING] || 0}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value={POStatus.PARTIAL_RECEIPT}>
-              {t('PARTIAL_RECEIPT')} 
-              <Badge 
-                variant="secondary" 
-                className={cn(
-                  "ml-2",
-                  activeTab === POStatus.PARTIAL_RECEIPT && "bg-primary-foreground/20 text-primary-foreground border-0"
-                )}
-              >
-                {statusCounts[POStatus.PARTIAL_RECEIPT] || 0}
+                {statusCounts.PROCESSING || 0}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value={POStatus.CLOSED}>
@@ -1498,7 +1542,7 @@ export default function POPage() {
                     onClick={() => console.log("Batch print", selectedRows)}
                   >
                     <FileText className="h-4 w-4" />
-                    {t('batchPrint')}
+                    批量打印
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1514,7 +1558,7 @@ export default function POPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => console.log("Batch close", selectedRows)}>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        {t('batchClose')}
+                        批量关闭
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
@@ -1559,6 +1603,23 @@ export default function POPage() {
           onOpenChange={setShowLocalWarehouseReceiptDialog}
           po={convertPOToPOInfo(currentPOForReceipt)}
           onConfirm={handleLocalWarehouseReceiptConfirm}
+        />
+      )}
+
+      {/* PO发送邮件弹窗 */}
+      {currentPOForSend && (
+        <POSendDialog
+          open={showSendDialog}
+          onOpenChange={setShowSendDialog}
+          poData={{
+            orderNo: currentPOForSend.orderNo,
+            supplierName: currentPOForSend.supplierName,
+            supplierEmail: `${currentPOForSend.supplierNo.toLowerCase()}@supplier.com`, // Mock email
+            totalAmount: currentPOForSend.totalPrice,
+            currency: currentPOForSend.currency,
+            itemCount: currentPOForSend.itemCount,
+          }}
+          onSend={handleSendPO}
         />
       )}
     </MainLayout>

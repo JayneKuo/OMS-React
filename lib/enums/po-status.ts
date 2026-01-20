@@ -10,6 +10,7 @@ export enum POStatus {
   WAITING_FOR_RECEIVING = 'WAITING_FOR_RECEIVING',
   RECEIVING = 'RECEIVING',
   PARTIAL_RECEIPT = 'PARTIAL_RECEIPT',
+  COMPLETED = 'COMPLETED',
   CLOSED = 'CLOSED',
   CANCELLED = 'CANCELLED',
   EXCEPTION = 'EXCEPTION'
@@ -17,6 +18,8 @@ export enum POStatus {
 
 // 运输状态枚举
 export enum ShippingStatus {
+  NOT_SHIPPED = 'NOT_SHIPPED',
+  ASN_CREATED = 'ASN_CREATED',
   SHIPPED = 'SHIPPED',
   IN_TRANSIT = 'IN_TRANSIT',
   ARRIVED = 'ARRIVED',
@@ -27,7 +30,9 @@ export enum ShippingStatus {
 export enum ReceivingStatus {
   NOT_RECEIVED = 'NOT_RECEIVED',
   PARTIAL_RECEIVED = 'PARTIAL_RECEIVED',
-  RECEIVED = 'RECEIVED'
+  FULLY_RECEIVED = 'FULLY_RECEIVED',
+  RECEIVED = 'RECEIVED',
+  OVER_RECEIVED = 'OVER_RECEIVED'
 }
 
 // 状态样式配置
@@ -42,66 +47,81 @@ export const PO_STATUS_STYLES: Record<POStatus, StatusStyle> = {
   [POStatus.NEW]: {
     variant: 'default',
     color: 'gray',
-    description: '刚创建，还没开始履约'
+    description: 'Newly created, not yet fulfilled'
   },
   [POStatus.IN_TRANSIT]: {
     variant: 'processing',
     color: 'blue',
-    description: '货物运输中'
+    description: 'Goods in transit'
   },
   [POStatus.WAITING_FOR_RECEIVING]: {
     variant: 'processing',
     color: 'indigo',
-    description: '货物已到达，等待收货'
+    description: 'Goods arrived, waiting for receiving'
   },
   [POStatus.RECEIVING]: {
     variant: 'processing',
     color: 'purple',
-    description: '正在收货中'
+    description: 'Currently receiving'
   },
   [POStatus.PARTIAL_RECEIPT]: {
     variant: 'warning',
     color: 'orange',
-    description: '部分收货完成'
+    description: 'Partially received'
+  },
+  [POStatus.COMPLETED]: {
+    variant: 'success',
+    color: 'green',
+    description: 'Fully completed'
   },
   [POStatus.CLOSED]: {
     variant: 'success',
     color: 'green',
-    description: '全部收货完成，已关闭'
+    description: 'Fully received and closed'
   },
   [POStatus.CANCELLED]: {
     variant: 'default',
     color: 'gray-outline',
-    description: '被取消，不再履约'
+    description: 'Cancelled, no longer fulfilled'
   },
   [POStatus.EXCEPTION]: {
     variant: 'error',
     color: 'red',
-    description: '需要人工处理的问题单（数量差异等）'
+    description: 'Requires manual handling (quantity variance, etc.)'
   }
 };
 
 // 运输状态样式映射
 export const SHIPPING_STATUS_STYLES: Record<ShippingStatus, StatusStyle> = {
+  [ShippingStatus.NOT_SHIPPED]: {
+    variant: 'default',
+    color: 'gray',
+    description: 'Not shipped yet'
+  },
+  [ShippingStatus.ASN_CREATED]: {
+    variant: 'processing',
+    color: 'blue',
+    description: 'ASN created, preparing to ship'
+  },
   [ShippingStatus.SHIPPED]: {
     variant: 'processing',
     color: 'blue',
-    description: '已从供应商/仓库发出'
+    description: 'Shipped from supplier/warehouse'
   },
   [ShippingStatus.IN_TRANSIT]: {
     variant: 'processing',
-    color: 'blue-loading',
-    description: '承运商运输途中'
+    color: 'blue',
+    description: 'In transit with carrier'
   },
   [ShippingStatus.ARRIVED]: {
     variant: 'success',
     color: 'green',
-    description: '到仓/园区（Gate / Appointment / ET 到场）'
+    description: 'Arrived at warehouse (Gate/Appointment/ET arrival)'
   },
   [ShippingStatus.SHIPPING_EXCEPTION]: {
     variant: 'error',
     color: 'red',
-    description: '物流异常（延误、清关、丢件等）'
+    description: 'Shipping exception (delay, customs, lost, etc.)'
   }
 };
 
@@ -110,17 +130,27 @@ export const RECEIVING_STATUS_STYLES: Record<ReceivingStatus, StatusStyle> = {
   [ReceivingStatus.NOT_RECEIVED]: {
     variant: 'default',
     color: 'gray',
-    description: '还没收任何货'
+    description: 'Not received yet'
   },
   [ReceivingStatus.PARTIAL_RECEIVED]: {
     variant: 'warning',
     color: 'orange',
-    description: '有收货，但没收完'
+    description: 'Partially received, not complete'
+  },
+  [ReceivingStatus.FULLY_RECEIVED]: {
+    variant: 'success',
+    color: 'green',
+    description: 'Fully received'
   },
   [ReceivingStatus.RECEIVED]: {
     variant: 'success',
     color: 'green',
-    description: '收货全部完成'
+    description: 'Fully received'
+  },
+  [ReceivingStatus.OVER_RECEIVED]: {
+    variant: 'warning',
+    color: 'orange',
+    description: 'Over received'
   }
 };
 
@@ -147,6 +177,10 @@ export const STATUS_LABELS = {
     en: 'Partial Receipt',
     cn: '部分收货'
   },
+  [POStatus.COMPLETED]: {
+    en: 'Completed',
+    cn: '已完成'
+  },
   [POStatus.CLOSED]: {
     en: 'Closed',
     cn: '已关闭'
@@ -161,20 +195,24 @@ export const STATUS_LABELS = {
   },
   
   // 运输状态
+  [ShippingStatus.NOT_SHIPPED]: {
+    en: 'Not Shipped',
+    cn: '未发货'
+  },
+  [ShippingStatus.ASN_CREATED]: {
+    en: 'ASN Created',
+    cn: 'ASN已创建'
+  },
   [ShippingStatus.SHIPPED]: {
     en: 'Shipped',
     cn: '已发货'
-  },
-  [ShippingStatus.IN_TRANSIT]: {
-    en: 'In Transit',
-    cn: '运输中'
   },
   [ShippingStatus.ARRIVED]: {
     en: 'Arrived',
     cn: '已到达'
   },
   [ShippingStatus.SHIPPING_EXCEPTION]: {
-    en: 'Exception',
+    en: 'Shipping Exception',
     cn: '运输异常'
   },
   
@@ -187,9 +225,17 @@ export const STATUS_LABELS = {
     en: 'Partial Received',
     cn: '部分收货'
   },
+  [ReceivingStatus.FULLY_RECEIVED]: {
+    en: 'Fully Received',
+    cn: '全部收货'
+  },
   [ReceivingStatus.RECEIVED]: {
     en: 'Received',
     cn: '已收货'
+  },
+  [ReceivingStatus.OVER_RECEIVED]: {
+    en: 'Over Received',
+    cn: '超量收货'
   }
 };
 

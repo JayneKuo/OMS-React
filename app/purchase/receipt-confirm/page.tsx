@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useI18n } from "@/components/i18n-provider"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -34,7 +35,7 @@ interface ReceiptConfirm {
   poNo?: string // PO单号
   receivedTime: number // 收货时间（时间戳）
   receiptType: "REGULAR_RECEIPT" | "RETURN" | "XDOCK" // 收货类型
-  status: "CLOSED" | "PARTIAL" | "EXCEPTION" // 状态
+  status: "NEW" | "CLOSED" | "CANCELLED" // 状态
   shippingMethod?: string // 运输方式
   inYardTime?: number // 进场时间（时间戳）
   containerSize?: string // 集装箱尺寸
@@ -74,7 +75,7 @@ const mockReceiptConfirms: ReceiptConfirm[] = [
     poNo: "PO-2024-001",
     receivedTime: 1705747800000, // 2024-01-20T10:30:00Z
     receiptType: "REGULAR_RECEIPT",
-    status: "PARTIAL",
+    status: "NEW",
     shippingMethod: "LTL",
     inYardTime: 1705746000000, // 2024-01-20T10:00:00Z
     containerSize: "40FT",
@@ -170,7 +171,7 @@ const mockReceiptConfirms: ReceiptConfirm[] = [
     poNo: "PO-2024-003",
     receivedTime: 1705920300000, // 2024-01-22T11:45:00Z
     receiptType: "RETURN",
-    status: "EXCEPTION",
+    status: "CANCELLED",
     shippingMethod: "OCEAN_FCL",
     inYardTime: 1705918500000,
     containerSize: "40FT",
@@ -210,9 +211,9 @@ export default function ReceiptConfirmPage() {
 
   // 状态配置
   const statusConfig = {
+    NEW: { label: t('NEW'), color: "text-blue-600" },
     CLOSED: { label: t('CLOSED'), color: "text-success" },
-    PARTIAL: { label: t('PARTIALLY_RECEIVED'), color: "text-warning" },
-    EXCEPTION: { label: t('EXCEPTION'), color: "text-destructive" },
+    CANCELLED: { label: t('CANCELLED'), color: "text-muted-foreground" },
   }
 
   // 收货类型配置
@@ -229,9 +230,9 @@ export default function ReceiptConfirmPage() {
       label: t('status'),
       type: "multiple",
       options: [
+        { id: "new", label: t('NEW'), value: "NEW" },
         { id: "closed", label: t('CLOSED'), value: "CLOSED" },
-        { id: "partial", label: t('PARTIALLY_RECEIVED'), value: "PARTIAL" },
-        { id: "exception", label: t('EXCEPTION'), value: "EXCEPTION" },
+        { id: "cancelled", label: t('CANCELLED'), value: "CANCELLED" },
       ],
     },
     {
@@ -265,12 +266,14 @@ export default function ReceiptConfirmPage() {
       result = result.filter(r => r.status === activeTab.toUpperCase())
     }
 
-    // 基础搜索过滤
+    // 基础搜索过滤 - 支持 RC No., RCP No., RN No., Reference No.
     if (searchValue) {
       const searchLower = searchValue.toLowerCase()
       result = result.filter(r =>
-        (r.receiptReferenceNo || r.receiptConfirmNo || "").toLowerCase().includes(searchLower) ||
-        (r.receiptNo || "").toLowerCase().includes(searchLower) ||
+        (r.receiptReferenceNo || r.receiptConfirmNo || "").toLowerCase().includes(searchLower) || // RC No.
+        (r.receiptNo || "").toLowerCase().includes(searchLower) || // RCP No.
+        (r.inboundReceiptNo || "").toLowerCase().includes(searchLower) || // RN No.
+        (r.referenceNo || "").toLowerCase().includes(searchLower) || // Reference No.
         (r.customer && r.customer.toLowerCase().includes(searchLower)) ||
         (r.carrierName && r.carrierName.toLowerCase().includes(searchLower)) ||
         (r.containerNo && r.containerNo.toLowerCase().includes(searchLower)) ||
@@ -307,6 +310,12 @@ export default function ReceiptConfirmPage() {
         if (advancedSearchValues.receiptNo && !(r.receiptNo || "").toLowerCase().includes(advancedSearchValues.receiptNo.toLowerCase())) {
           return false
         }
+        if (advancedSearchValues.status && r.status !== advancedSearchValues.status) {
+          return false
+        }
+        if (advancedSearchValues.receiptType && r.receiptType !== advancedSearchValues.receiptType) {
+          return false
+        }
         if (advancedSearchValues.customer && (!r.customer || !r.customer.toLowerCase().includes(advancedSearchValues.customer.toLowerCase()))) {
           return false
         }
@@ -336,9 +345,9 @@ export default function ReceiptConfirmPage() {
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {
       all: filteredData.length,
+      NEW: 0,
       CLOSED: 0,
-      PARTIAL: 0,
-      EXCEPTION: 0,
+      CANCELLED: 0,
     }
     filteredData.forEach(confirm => {
       counts[confirm.status] = (counts[confirm.status] || 0) + 1
@@ -381,6 +390,26 @@ export default function ReceiptConfirmPage() {
   const advancedSearchFields: SearchField[] = [
     { id: "receiptReferenceNo", label: t('receiptReferenceNo'), type: "text" },
     { id: "receiptNo", label: t('inboundRequestNo'), type: "text" },
+    { 
+      id: "status", 
+      label: t('status'), 
+      type: "select",
+      options: [
+        { label: t('NEW'), value: "NEW" },
+        { label: t('CLOSED'), value: "CLOSED" },
+        { label: t('CANCELLED'), value: "CANCELLED" },
+      ]
+    },
+    { 
+      id: "receiptType", 
+      label: t('receiptType'), 
+      type: "select",
+      options: [
+        { label: t('REGULAR_RECEIPT'), value: "REGULAR_RECEIPT" },
+        { label: t('RETURN'), value: "RETURN" },
+        { label: t('XDOCK'), value: "XDOCK" },
+      ]
+    },
     { id: "customer", label: t('customer'), type: "text" },
     { id: "carrierName", label: t('carrierName'), type: "text" },
     { id: "containerNo", label: t('containerNo'), type: "text" },
@@ -410,9 +439,9 @@ export default function ReceiptConfirmPage() {
       defaultVisible: true,
       cell: (row) => (
         <Badge className={`text-xs ${
+          row.status === 'NEW' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
           row.status === 'CLOSED' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-          row.status === 'PARTIAL' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-          row.status === 'EXCEPTION' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+          row.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
           'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
         }`}>
           {statusConfig[row.status]?.label || row.status}
@@ -687,14 +716,14 @@ export default function ReceiptConfirmPage() {
               <TabsTrigger value="all">
                 {t('all')} ({statusCounts.all})
               </TabsTrigger>
+              <TabsTrigger value="new">
+                {t('NEW')} ({statusCounts.NEW})
+              </TabsTrigger>
               <TabsTrigger value="closed">
                 {t('CLOSED')} ({statusCounts.CLOSED})
               </TabsTrigger>
-              <TabsTrigger value="partial">
-                {t('PARTIALLY_RECEIVED')} ({statusCounts.PARTIAL})
-              </TabsTrigger>
-              <TabsTrigger value="exception">
-                {t('EXCEPTION')} ({statusCounts.EXCEPTION})
+              <TabsTrigger value="cancelled">
+                {t('CANCELLED')} ({statusCounts.CANCELLED})
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -702,16 +731,14 @@ export default function ReceiptConfirmPage() {
           {/* Filter Bar */}
           <FilterBar
             searchValue={searchValue}
+            searchPlaceholder={t('searchReceiptConfirmsPlaceholder') || '搜索 RC No., RCP No., RN No., Reference No., 供应商, PO单号, 仓库或收货人...'}
             onSearchChange={setSearchValue}
-            activeFilters={activeFilters}
+            filters={filterConfigs}
             onFiltersChange={setActiveFilters}
-            filterConfigs={filterConfigs}
-            advancedSearchFields={advancedSearchFields}
-            advancedSearchValues={advancedSearchValues}
-            onAdvancedSearchChange={setAdvancedSearchValues}
-            columnConfigs={columnConfigs}
+            columns={columnConfigs}
             onColumnsChange={handleColumnsChange}
-            searchPlaceholder={t('searchReceiptConfirmsPlaceholder') || '搜索收货确认单号、入库请求单号、供应商、PO单号、仓库或收货人...'}
+            advancedSearchFields={advancedSearchFields}
+            onAdvancedSearch={(values) => setAdvancedSearchValues(values)}
           />
 
           {/* Data Table */}

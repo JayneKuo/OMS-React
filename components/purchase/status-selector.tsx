@@ -24,7 +24,6 @@ import {
   getPOStatusOptions,
   getShippingStatusOptions,
   getReceivingStatusOptions,
-  getStatusLabel
 } from "@/lib/enums/po-status"
 
 type StatusType = 'po' | 'shipping' | 'receiving'
@@ -148,15 +147,57 @@ export function StatusSelector({
   )
 }
 
-// 便捷组件
-export function POStatusSelector(props: Omit<StatusSelectorProps, 'type'>) {
-  return <StatusSelector {...props} type="po" />
+// 便捷组件 - 使用更精确的类型定义
+export function POStatusSelector({ 
+  value, 
+  onValueChange, 
+  ...props 
+}: Omit<StatusSelectorProps, 'type' | 'value' | 'onValueChange'> & { 
+  value?: POStatus
+  onValueChange?: (value: POStatus) => void 
+}) {
+  return (
+    <StatusSelector 
+      {...props} 
+      type="po" 
+      value={value} 
+      onValueChange={onValueChange ? (v) => onValueChange(v as POStatus) : undefined} 
+    />
+  )
 }
 
-export function ShippingStatusSelector(props: Omit<StatusSelectorProps, 'type'>) {
-  return <StatusSelector {...props} type="shipping" />
+export function ShippingStatusSelector({
+  value,
+  onValueChange,
+  ...props
+}: Omit<StatusSelectorProps, 'type' | 'value' | 'onValueChange'> & {
+  value?: ShippingStatus
+  onValueChange?: (value: ShippingStatus) => void
+}) {
+  return (
+    <StatusSelector 
+      {...props} 
+      type="shipping" 
+      value={value} 
+      onValueChange={onValueChange ? (v) => onValueChange(v as ShippingStatus) : undefined} 
+    />
+  )
 }
 
-export function ReceivingStatusSelector(props: Omit<StatusSelectorProps, 'type'>) {
-  return <StatusSelector {...props} type="receiving" />
+export function ReceivingStatusSelector({
+  value,
+  onValueChange,
+  ...props
+}: Omit<StatusSelectorProps, 'type' | 'value' | 'onValueChange'> & {
+  value?: ReceivingStatus
+  onValueChange?: (value: ReceivingStatus) => void
+}) {
+  return (
+    <StatusSelector 
+      {...props} 
+      type="receiving" 
+      value={value} 
+      onValueChange={onValueChange ? (v) => onValueChange(v as ReceivingStatus) : undefined} 
+    />
+  )
 }

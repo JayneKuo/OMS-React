@@ -73,9 +73,9 @@ export const translations = {
     // 采购子模块
     purchaseRequest: '采购申请',
     purchaseOrder: '采购订单',
-    advanceShipNotice: '运单',
-    receipts: '入库请求',
-    receiptConfirm: '已收货',
+    advanceShipNotice: '运单跟踪',
+    receipts: '仓库收货',
+    receiptConfirm: '收货确认',
     
     // ==================== PR相关 ====================
     prNo: 'PR编号',
@@ -1027,7 +1027,7 @@ export const translations = {
     relatedRCNo: '关联RC单号',
     relatedReceiptConfirms: '收货确认单据',
     receiptConfirmNo: '收货确认单号',
-    manageReceiptConfirms: 'Confirm what was received',
+    manageReceiptConfirms: '确认已收到的货物',
     receiptReferenceNo: '收货参考号',
     facility: '仓库',
     customer: '客户',
@@ -1072,7 +1072,7 @@ export const translations = {
     FAIL: '失败',
     SKIPPED: '跳过',
     damageType: '损坏类型',
-    searchReceiptConfirmsPlaceholder: '搜索收货确认单号、入库请求单号、供应商、PO单号、仓库或收货人...',
+    searchReceiptConfirmsPlaceholder: '搜索 RC No., RCP No., RN No., Reference No., 供应商, PO单号, 仓库或收货人...',
     totalReceivedQty: '累计已收货',
     purchaseInfo: '采购信息',
     noReceiptConfirms: '暂无收货确认单据',
@@ -1135,7 +1135,7 @@ export const translations = {
     // ==================== Shipment相关翻译 ====================
     shipment: '运输单',
     shipments: '运输单列表',
-    manageShipments: 'Track PO shipment in transit',
+    manageShipments: '跟踪PO运输在途情况',
     shipmentNo: '运输单号',
     shipmentType: '运输类型',
     domestic: '国内',
@@ -1480,9 +1480,9 @@ export const translations = {
     // Purchase sub-modules
     purchaseRequest: 'Purchase Request',
     purchaseOrder: 'Purchase Order',
-    advanceShipNotice: 'Shipments',
-    receipts: 'Receipts',
-    receiptConfirm: 'History',
+    advanceShipNotice: 'Shipment Tracking',
+    receipts: 'Warehouse Receipt',
+    receiptConfirm: 'Receipt Confirmation',
     
     // ==================== PR Related ====================
     prNo: 'Request ID',
@@ -1832,7 +1832,7 @@ export const translations = {
     relatedReceiptConfirms: 'Receipt Confirm Documents',
     receiptConfirmNo: 'Receipt Confirm No.',
     manageReceiptConfirms: 'Confirm what was received',
-    searchReceiptConfirmsPlaceholder: 'Search by Receipt Confirm No., Inbound Request No., Supplier, PO No., Warehouse, or Received By...',
+    searchReceiptConfirmsPlaceholder: 'Search RC No., RCP No., RN No., Reference No., Supplier, PO No., Warehouse, or Received By...',
     receiptReferenceNo: 'Receipt Reference No.',
     facility: 'Facility',
     customer: 'Customer',
