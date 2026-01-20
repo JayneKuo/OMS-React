@@ -549,13 +549,7 @@ const getProgressSteps = (poStatus: string) => {
   })
 }
 
-interface PODetailPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default function PODetailPage({ params }: PODetailPageProps) {
+export default function PODetailPage() {
   const { t } = useI18n()
   const router = useRouter()
   const sidebarItems = createPurchaseSidebarItems(t)
@@ -668,7 +662,7 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                     <p>刷新数据</p>
                   </TooltipContent>
                 </Tooltip>
-                <Button variant="outline" size="sm" onClick={() => router.push(`/purchase/po/${params.id}/edit`)}>
+                <Button variant="outline" size="sm" onClick={() => router.push(`/purchase/po/${mockPODetail.id}/edit`)}>
                   <Edit className="h-4 w-4" />
                   <span className="ml-2">编辑</span>
                 </Button>
