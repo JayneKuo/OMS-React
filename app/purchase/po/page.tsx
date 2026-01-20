@@ -868,7 +868,7 @@ export default function POPage() {
       cell: (row) => (
         <OrderNumberCell 
           orderNumber={row.orderNo} 
-          onClick={() => router.push(`/po-detail-refactor-test`)}
+          onClick={() => router.push(`/po-detail-v2`)}
         />
       ),
     },
