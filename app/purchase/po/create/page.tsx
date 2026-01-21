@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Trash2, Save, Send, ArrowLeft, ShoppingBag, Settings, Building, Calendar } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Trash2, Save, Send, ArrowLeft, ShoppingBag, Settings, Building, Calendar, MapPin } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
 import { SNLotManagementDialog } from "@/components/purchase/sn-lot-management-dialog"
@@ -68,6 +68,18 @@ interface Product {
   category: string
   brand: string
   inStock: boolean
+}
+
+// Factory Direct Config Interface
+interface FactoryDirectConfig {
+  viaFinishedGoodsWarehouse: boolean
+  factoryId: string
+  factoryName: string
+  finishedGoodsWarehouseId?: string
+  finishedGoodsWarehouseName?: string
+  finalDestinationId: string
+  finalDestinationType: "CUSTOMER" | "STORE" | "WAREHOUSE"
+  finalDestinationName: string
 }
 
 // Batch Settings Dialog Component
@@ -239,9 +251,22 @@ export default function CreatePOPage() {
   // Supplier & Delivery Information State
   const [supplierInfo, setSupplierInfo] = React.useState({
     supplierName: "",
+    supplierCode: "",
     contactPerson: "",
     contactPhone: "",
     contactEmail: "",
+  })
+  
+  // Factory Direct Configuration State
+  const [factoryDirectConfig, setFactoryDirectConfig] = React.useState<FactoryDirectConfig>({
+    viaFinishedGoodsWarehouse: true,
+    factoryId: "",
+    factoryName: "",
+    finishedGoodsWarehouseId: "",
+    finishedGoodsWarehouseName: "",
+    finalDestinationId: "",
+    finalDestinationType: "CUSTOMER",
+    finalDestinationName: "",
   })
   
   // Shipping Address Information (supplier contact info)
@@ -508,11 +533,11 @@ export default function CreatePOPage() {
 
   // Form validation
   const isFormValid = () => {
-    return supplierInfo.supplierName && 
+    return purchaseType &&
+           supplierInfo.supplierName && 
            deliveryInfo.warehouse && 
            deliveryInfo.expectedDeliveryDate &&
            priority &&
-           department &&
            lineItems.length > 0 &&
            lineItems.every(item => item.skuCode && item.quantity > 0 && item.unitPrice > 0)
   }
@@ -619,22 +644,132 @@ export default function CreatePOPage() {
           </div>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="sticky top-0 z-10 bg-background border-b">
+          <div className="flex gap-2 overflow-x-auto py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('basic-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              基本信息
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('supplier-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              供应商信息
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('logistics-terms')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              物流条款
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('receiving-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              收货地址
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('shipping-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              发货地址
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('product-lines')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              产品明细
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => document.getElementById('attachments')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="whitespace-nowrap"
+            >
+              附件备注
+            </Button>
+          </div>
+        </div>
+
         {/* Basic Information */}
-        <Card>
+        <Card id="basic-info">
           <CardHeader>
             <CardTitle>{t('basicInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="poNumber">{t('poNo')}</Label>
+                <Label htmlFor="purchaseType">
+                  {t('purchaseType')} <span className="text-destructive">*</span>
+                </Label>
+                <Select value={purchaseType} onValueChange={setPurchaseType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectPurchaseType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="REGULAR">{t('regularPurchase')}</SelectItem>
+                    <SelectItem value="REPLENISHMENT">{t('stockReplenishment')}</SelectItem>
+                    <SelectItem value="FACTORY_DIRECT">工厂直发</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">
+                  {t('priorityField')} <span className="text-destructive">*</span>
+                </Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectPriority')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NORMAL">{t('normal')}</SelectItem>
+                    <SelectItem value="HIGH">{t('HIGH')}</SelectItem>
+                    <SelectItem value="URGENT">{t('urgent')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="department">{t('department')}</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectDepartment')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ECOM Dept">ECOM Dept</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                    <SelectItem value="Product Team">Product Team</SelectItem>
+                    <SelectItem value="Logistics">Logistics</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="budgetProject">{t('budgetProjectCostCenter')}</Label>
                 <Input
-                  id="poNumber"
-                  value={poNumber}
-                  disabled
-                  className="bg-muted"
+                  id="budgetProject"
+                  value={budgetProject}
+                  onChange={(e) => setBudgetProject(e.target.value)}
+                  placeholder="Q1-Marketing"
                 />
-                <div className="text-xs text-muted-foreground">{t('systemGenerated')}</div>
               </div>
 
               <div className="space-y-2">
@@ -656,114 +791,112 @@ export default function CreatePOPage() {
                   placeholder={t('enterReferenceNo')}
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Supplier Information (供应商信息) */}
+        <Card id="supplier-info">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="h-5 w-5" />
+              供应商信息
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priority">{t('priorityField')} *</Label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectPriority')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NORMAL">{t('normal')}</SelectItem>
-                    <SelectItem value="HIGH">{t('HIGH')}</SelectItem>
-                    <SelectItem value="URGENT">{t('urgent')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">{t('department')} *</Label>
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectDepartment')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ECOM Dept">ECOM Dept</SelectItem>
-                    <SelectItem value="Operations">Operations</SelectItem>
-                    <SelectItem value="Product Team">Product Team</SelectItem>
-                    <SelectItem value="Logistics">Logistics</SelectItem>
-                    <SelectItem value="Sales">Sales</SelectItem>
-                    <SelectItem value="IT">IT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="budgetProject">{t('budgetProjectCostCenter')} *</Label>
+                <Label htmlFor="supplierName">
+                  {t('supplierName')} <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="budgetProject"
-                  value={budgetProject}
-                  onChange={(e) => setBudgetProject(e.target.value)}
-                  placeholder="Q1-Marketing"
+                  id="supplierName"
+                  value={supplierInfo.supplierName}
+                  onChange={(e) => setSupplierInfo({...supplierInfo, supplierName: e.target.value})}
+                  placeholder={t('enterSupplierName')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="purchaseType">{t('purchaseType')}</Label>
-                <Select value={purchaseType} onValueChange={setPurchaseType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectPurchaseType')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="REGULAR">{t('regularPurchase')}</SelectItem>
-                    <SelectItem value="REPLENISHMENT">{t('stockReplenishment')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="supplierCode">供应商编码</Label>
+                <Input
+                  id="supplierCode"
+                  value={supplierInfo.supplierCode || ""}
+                  onChange={(e) => setSupplierInfo({...supplierInfo, supplierCode: e.target.value})}
+                  placeholder="输入供应商编码"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson">联系人</Label>
+                <Input
+                  id="contactPerson"
+                  value={supplierInfo.contactPerson}
+                  onChange={(e) => setSupplierInfo({...supplierInfo, contactPerson: e.target.value})}
+                  placeholder={t('enterContactPerson')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactPhone">联系电话</Label>
+                <Input
+                  id="contactPhone"
+                  value={supplierInfo.contactPhone}
+                  onChange={(e) => setSupplierInfo({...supplierInfo, contactPhone: e.target.value})}
+                  placeholder={t('enterContactPhone')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">联系邮箱</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  value={supplierInfo.contactEmail}
+                  onChange={(e) => setSupplierInfo({...supplierInfo, contactEmail: e.target.value})}
+                  placeholder={t('enterContactEmail')}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Delivery Information */}
-        <Card>
+        {/* Logistics Terms (物流条款) */}
+        <Card id="logistics-terms">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
-              {t('deliveryInfo')}
+              物流条款
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="warehouse">{t('warehouse')} *</Label>
-                <Select 
-                  value={deliveryInfo.warehouse} 
-                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, warehouse: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectTargetWarehouse')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WH001">Main Warehouse - Los Angeles</SelectItem>
-                    <SelectItem value="WH002">East Distribution Center - New York</SelectItem>
-                    <SelectItem value="WH003">West Fulfillment Center - Seattle</SelectItem>
-                    <SelectItem value="WH004">Central Warehouse - Chicago</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="expectedDeliveryDate">{t('expectedDeliveryDate')} *</Label>
+                <Label htmlFor="expectedDeliveryDate">
+                  交货期日 <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="expectedDeliveryDate"
-                  type="date"
+                  type="datetime-local"
                   value={deliveryInfo.expectedDeliveryDate}
                   onChange={(e) => setDeliveryInfo({...deliveryInfo, expectedDeliveryDate: e.target.value})}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="latestShippingTime">{t('latestShippingTime')}</Label>
+                <Label htmlFor="latestShippingTime">
+                  最晚发运时间 <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="latestShippingTime"
-                  type="date"
+                  type="datetime-local"
                   value={deliveryInfo.latestShippingTime}
                   onChange={(e) => setDeliveryInfo({...deliveryInfo, latestShippingTime: e.target.value})}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="shippingMethod">{t('shippingMethod')}</Label>
+                <Label htmlFor="shippingMethod">运输方式</Label>
                 <Select 
                   value={deliveryInfo.shippingMethod} 
                   onValueChange={(value) => setDeliveryInfo({...deliveryInfo, shippingMethod: value})}
@@ -781,7 +914,7 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="freightTerms">{t('freightTerms')}</Label>
+                <Label htmlFor="freightTerms">运费条款</Label>
                 <Select 
                   value={deliveryInfo.freightTerms} 
                   onValueChange={(value) => setDeliveryInfo({...deliveryInfo, freightTerms: value})}
@@ -797,7 +930,7 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="incoterm">{t('incoterm')}</Label>
+                <Label htmlFor="incoterm">贸易条款</Label>
                 <Select 
                   value={deliveryInfo.incoterm} 
                   onValueChange={(value) => setDeliveryInfo({...deliveryInfo, incoterm: value})}
@@ -810,6 +943,39 @@ export default function CreatePOPage() {
                     <SelectItem value="CIF">CIF</SelectItem>
                     <SelectItem value="EXW">EXW</SelectItem>
                     <SelectItem value="DDP">DDP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Address (收货地址) */}
+        <Card id="receiving-address">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              收货地址
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="warehouse">
+                  {t('warehouse')} <span className="text-destructive">*</span>
+                </Label>
+                <Select 
+                  value={deliveryInfo.warehouse} 
+                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, warehouse: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectTargetWarehouse')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WH001">Main Warehouse - Los Angeles</SelectItem>
+                    <SelectItem value="WH002">East Distribution Center - New York</SelectItem>
+                    <SelectItem value="WH003">West Fulfillment Center - Seattle</SelectItem>
+                    <SelectItem value="WH004">Central Warehouse - Chicago</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -854,9 +1020,14 @@ export default function CreatePOPage() {
                   placeholder={t('enterContactEmail')}
                 />
               </div>
+            </div>
 
+            {/* Address fields in specific layout */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="receivingCountry">{t('country')}</Label>
+                <Label htmlFor="receivingCountry">
+                  {t('country')} <span className="text-destructive">*</span>
+                </Label>
                 <Select 
                   value={receivingAddress.country} 
                   onValueChange={(value) => setReceivingAddress({...receivingAddress, country: value})}
@@ -876,7 +1047,9 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="receivingState">{t('stateProvince')}</Label>
+                <Label htmlFor="receivingState">
+                  {t('stateProvince')} <span className="text-destructive">*</span>
+                </Label>
                 <Select 
                   value={receivingAddress.state} 
                   onValueChange={(value) => setReceivingAddress({...receivingAddress, state: value})}
@@ -896,7 +1069,9 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="receivingCity">{t('cityField')}</Label>
+                <Label htmlFor="receivingCity">
+                  {t('cityField')} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="receivingCity"
                   value={receivingAddress.city}
@@ -914,9 +1089,13 @@ export default function CreatePOPage() {
                   placeholder={t('postalCode')}
                 />
               </div>
-              
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="receivingAddress1">{t('address1Field')}</Label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="receivingAddress1">
+                  {t('address1Field')} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="receivingAddress1"
                   value={receivingAddress.address1}
@@ -938,28 +1117,108 @@ export default function CreatePOPage() {
           </CardContent>
         </Card>
 
-        {/* Supplier Information */}
-        <Card>
+        {/* Shipping Address (发货地址) */}
+        <Card id="shipping-address">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              {t('supplierInfo')}
+              发货地址
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="supplierName">{t('supplierName')} *</Label>
-                <Input
-                  id="supplierName"
-                  value={supplierInfo.supplierName}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, supplierName: e.target.value})}
-                  placeholder={t('enterSupplierName')}
-                />
+            {/* Factory Direct Options - Show only when purchase type is FACTORY_DIRECT */}
+            {purchaseType === "FACTORY_DIRECT" && (
+              <div className="space-y-4 pb-4 border-b">
+                <div className="space-y-2">
+                  <Label>
+                    物流路径 <span className="text-destructive">*</span>
+                  </Label>
+                  <Select 
+                    value={factoryDirectConfig.viaFinishedGoodsWarehouse ? "VIA_FG" : "DIRECT"} 
+                    onValueChange={(value) => setFactoryDirectConfig({
+                      ...factoryDirectConfig,
+                      viaFinishedGoodsWarehouse: value === "VIA_FG"
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择物流路径" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="VIA_FG">经成品库（先入库再出库）</SelectItem>
+                      <SelectItem value="DIRECT">直接发货（工厂直发目的地）</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="factorySelect">
+                    工厂 <span className="text-destructive">*</span>
+                  </Label>
+                  <Select 
+                    value={factoryDirectConfig.factoryId} 
+                    onValueChange={(value) => {
+                      const factory = [
+                        { id: "FAC001", name: "深圳工厂" },
+                        { id: "FAC002", name: "东莞工厂" },
+                        { id: "FAC003", name: "惠州工厂" },
+                      ].find(f => f.id === value)
+                      if (factory) {
+                        setFactoryDirectConfig({
+                          ...factoryDirectConfig,
+                          factoryId: factory.id,
+                          factoryName: factory.name
+                        })
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择工厂" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FAC001">深圳工厂</SelectItem>
+                      <SelectItem value="FAC002">东莞工厂</SelectItem>
+                      <SelectItem value="FAC003">惠州工厂</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {factoryDirectConfig.viaFinishedGoodsWarehouse && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fgWarehouseSelect">
+                      成品库 <span className="text-destructive">*</span>
+                    </Label>
+                    <Select 
+                      value={factoryDirectConfig.finishedGoodsWarehouseId || ""} 
+                      onValueChange={(value) => {
+                        const warehouse = [
+                          { id: "FG001", name: "深圳成品库" },
+                          { id: "FG002", name: "广州成品库" },
+                          { id: "FG003", name: "东莞成品库" },
+                        ].find(w => w.id === value)
+                        if (warehouse) {
+                          setFactoryDirectConfig({
+                            ...factoryDirectConfig,
+                            finishedGoodsWarehouseId: warehouse.id,
+                            finishedGoodsWarehouseName: warehouse.name
+                          })
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择成品库" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FG001">深圳成品库</SelectItem>
+                        <SelectItem value="FG002">广州成品库</SelectItem>
+                        <SelectItem value="FG003">东莞成品库</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
-              
+            )}
 
-
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="shippingContactPerson">{t('contactPerson')}</Label>
                 <Input
@@ -1000,9 +1259,14 @@ export default function CreatePOPage() {
                   placeholder={t('enterContactEmail')}
                 />
               </div>
+            </div>
 
+            {/* Address fields in specific layout */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shippingCountry">{t('country')}</Label>
+                <Label htmlFor="shippingCountry">
+                  {t('country')} <span className="text-destructive">*</span>
+                </Label>
                 <Select 
                   value={shippingAddress.country} 
                   onValueChange={(value) => setShippingAddress({...shippingAddress, country: value})}
@@ -1022,7 +1286,9 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="shippingState">{t('stateProvince')}</Label>
+                <Label htmlFor="shippingState">
+                  {t('stateProvince')} <span className="text-destructive">*</span>
+                </Label>
                 <Select 
                   value={shippingAddress.state} 
                   onValueChange={(value) => setShippingAddress({...shippingAddress, state: value})}
@@ -1042,7 +1308,9 @@ export default function CreatePOPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="shippingCity">{t('cityField')}</Label>
+                <Label htmlFor="shippingCity">
+                  {t('cityField')} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="shippingCity"
                   value={shippingAddress.city}
@@ -1060,9 +1328,13 @@ export default function CreatePOPage() {
                   placeholder={t('postalCode')}
                 />
               </div>
-              
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="shippingAddress1">{t('address1Field')}</Label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="shippingAddress1">
+                  {t('address1Field')} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="shippingAddress1"
                   value={shippingAddress.address1}
@@ -1085,7 +1357,7 @@ export default function CreatePOPage() {
         </Card>
 
         {/* Product Lines */}
-        <Card>
+        <Card id="product-lines">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{t('productLines')}</CardTitle>
@@ -1629,7 +1901,7 @@ export default function CreatePOPage() {
 
 
         {/* Attachments */}
-        <Card>
+        <Card id="attachments">
           <CardHeader>
             <CardTitle>{t('attachments')}</CardTitle>
           </CardHeader>

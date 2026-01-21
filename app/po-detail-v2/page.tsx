@@ -1983,11 +1983,11 @@ export default function PODetailPage() {
                   <TabsContent value="info" className="mt-0">
                     <CardContent>
                       <div className="space-y-6">
-                        {/* Order Information */}
+                        {/* Basic Information - Now includes supplier info */}
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium">
                             <FileText className="h-4 w-4 text-blue-600" />
-                            <span>Order Information</span>
+                            <span>基本信息</span>
                           </div>
                           <div className="space-y-2 text-xs">
                             <div className="flex justify-between">
@@ -2005,6 +2005,24 @@ export default function PODetailPage() {
                               <span className="font-mono">{mockPODetail.referenceNo}</span>
                             </div>
                             <div className="flex justify-between">
+                              <span className="text-muted-foreground">供应商:</span>
+                              <span className="font-medium">{mockPODetail.supplierName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">供应商编码:</span>
+                              <Badge variant="outline" className="text-xs h-5">
+                                {mockPODetail.supplierCode}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">联系人:</span>
+                              <span className="font-medium">{mockPODetail.contactPerson}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">联系电话:</span>
+                              <span className="font-mono text-xs">{mockPODetail.contactPhone}</span>
+                            </div>
+                            <div className="flex justify-between">
                               <span className="text-muted-foreground">Data Source:</span>
                               <Badge variant="outline" className="text-xs h-5">
                                 {mockPODetail.dataSource === 'PR_CONVERSION' ? 'PR转单' : '手动创建'}
@@ -2013,18 +2031,6 @@ export default function PODetailPage() {
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Created:</span>
                               <span>{new Date(mockPODetail.created).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Expected Arrival:</span>
-                              <span className="font-medium text-orange-600 dark:text-orange-400">{mockPODetail.expectedArrivalDate}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Payment Terms:</span>
-                              <span className="font-medium">{mockPODetail.paymentTerms}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Delivery Terms:</span>
-                              <span className="font-medium">{mockPODetail.deliveryTerms}</span>
                             </div>
                           </div>
                           {mockPODetail.relatedPRs.length > 0 && (
@@ -2043,108 +2049,108 @@ export default function PODetailPage() {
 
                         <Separator />
 
-                        {/* Supplier Information */}
+                        {/* Shipping Address (发货地址) - Supplier Address */}
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium">
-                            <Building className="h-4 w-4 text-green-600" />
-                            <span>Supplier Information</span>
+                            <Building className="h-4 w-4 text-blue-600" />
+                            <span>发货地址</span>
+                          </div>
+                          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
+                              {mockPODetail.supplierName}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-2">
+                              {mockPODetail.supplierAddress}
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* Delivery Address (收货地址) - Warehouse Address */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <MapPin className="h-4 w-4 text-green-600" />
+                            <span>收货地址</span>
                           </div>
                           <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
                             <div className="font-medium text-sm text-green-800 dark:text-green-200 mb-1">
-                              {mockPODetail.supplierName}
+                              {mockPODetail.warehouseName}
                             </div>
-                            <div className="text-xs text-green-600 dark:text-green-400">
-                              Code: {mockPODetail.supplierCode}
+                            <div className="text-xs text-green-600 dark:text-green-400 mb-2">
+                              Code: {mockPODetail.warehouseCode}
                             </div>
+                            <div className="text-xs text-muted-foreground">
+                              {mockPODetail.warehouseAddress}
+                            </div>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* Logistics Terms (物流条款) */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <Truck className="h-4 w-4 text-purple-600" />
+                            <span>物流条款</span>
                           </div>
                           <div className="space-y-2 text-xs">
-                            <div>
-                              <div className="text-muted-foreground mb-1">Contact Person</div>
-                              <div className="font-medium">{mockPODetail.contactPerson}</div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">交货期日:</span>
+                              <span className="font-medium text-orange-600 dark:text-orange-400">
+                                {new Date(mockPODetail.expectedArrivalDate).toLocaleString()}
+                              </span>
                             </div>
-                            <div className="space-y-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full justify-start h-7 text-xs"
-                              >
-                                <Phone className="h-3 w-3 mr-1" />
-                                {mockPODetail.contactPhone}
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full justify-start h-7 text-xs"
-                              >
-                                <Mail className="h-3 w-3 mr-1" />
-                                Email Contact
-                              </Button>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">最晚发运时间:</span>
+                              <span className="font-medium">2024-01-20 18:00:00</span>
                             </div>
-                            <div>
-                              <div className="text-muted-foreground mb-1">Address</div>
-                              <div className="text-muted-foreground">{mockPODetail.supplierAddress}</div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">运输方式:</span>
+                              <Badge variant="outline" className="text-xs h-5">
+                                Air Freight
+                              </Badge>
                             </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Address Information */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <MapPin className="h-4 w-4 text-purple-600" />
-                            <span>Address Information</span>
-                          </div>
-                          <div>
-                            <div className="text-xs font-medium mb-1 flex items-center gap-1">
-                              <Building className="h-3 w-3 text-blue-600" />
-                              Ship From
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">运费条款:</span>
+                              <span className="font-medium">FOB</span>
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <div className="font-medium text-xs">{mockPODetail.supplierName}</div>
-                              <div className="text-xs text-muted-foreground mt-1">{mockPODetail.supplierAddress}</div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">贸易条款:</span>
+                              <span className="font-medium">{mockPODetail.deliveryTerms}</span>
                             </div>
-                          </div>
-                          <div>
-                            <div className="text-xs font-medium mb-1 flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-green-600" />
-                              Ship To
-                            </div>
-                            <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded-lg border border-green-200 dark:border-green-800">
-                              <div className="font-medium text-xs">{mockPODetail.warehouseName}</div>
-                              <div className="text-xs text-muted-foreground mt-1">{mockPODetail.warehouseAddress}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Code: {mockPODetail.warehouseCode}
-                              </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">付款条款:</span>
+                              <span className="font-medium">{mockPODetail.paymentTerms}</span>
                             </div>
                           </div>
                         </div>
 
                         <Separator />
 
-                        {/* Logistics Tracking */}
+                        {/* Logistics Summary */}
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-sm font-medium">
-                            <Truck className="h-4 w-4 text-indigo-600" />
-                            <span>Logistics Summary</span>
+                            <Package className="h-4 w-4 text-indigo-600" />
+                            <span>物流汇总</span>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                              <div className="text-muted-foreground mb-1">Shipments</div>
+                              <div className="text-muted-foreground mb-1">发货单</div>
                               <div className="font-bold text-blue-600 dark:text-blue-400">
                                 {mockPODetail.shipmentRecords.length}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Shipped: {mockPODetail.shippedQty}
+                                已发: {mockPODetail.shippedQty}
                               </div>
                             </div>
                             <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800">
-                              <div className="text-muted-foreground mb-1">Receipts</div>
+                              <div className="text-muted-foreground mb-1">收货单</div>
                               <div className="font-bold text-green-600 dark:text-green-400">
                                 {mockPODetail.receiptRecords.length}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Received: {mockPODetail.receivedQty}
+                                已收: {mockPODetail.receivedQty}
                               </div>
                             </div>
                           </div>

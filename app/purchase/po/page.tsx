@@ -108,7 +108,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP001",
     destination: "Main Warehouse - Los Angeles",
     warehouseName: "Main Warehouse",
-    status: "PROCESSING" as POStatus, // Changed from IN_TRANSIT
+    status: POStatus.IN_TRANSIT,
     shippingStatus: ShippingStatus.SHIPPED,
     receivingStatus: ReceivingStatus.NOT_RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -120,7 +120,7 @@ const mockPOs: PurchaseOrder[] = [
     asnCount: 1,
     created: "2024-01-15T10:30:00Z",
     updated: "2024-01-16T14:20:00Z",
-    expectedArrivalDate: "2024-01-25",
+    expectedArrivalDate: "2024-01-25T15:00:00Z",
     purchaseOrderDate: "2024-01-15",
     toCity: "Los Angeles",
     toState: "CA",
@@ -157,7 +157,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP002",
     destination: "East Distribution Center - New York",
     warehouseName: "East DC",
-    status: "PROCESSING" as POStatus, // Changed from WAITING_FOR_RECEIVING
+    status: POStatus.WAITING_FOR_RECEIVING,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
@@ -169,7 +169,7 @@ const mockPOs: PurchaseOrder[] = [
     asnCount: 2,
     created: "2024-01-14T09:15:00Z",
     updated: "2024-01-18T11:45:00Z",
-    expectedArrivalDate: "2024-01-23",
+    expectedArrivalDate: "2024-01-23T14:30:00Z",
     purchaseOrderDate: "2024-01-14",
     toCity: "New York",
     toState: "NY",
@@ -203,7 +203,7 @@ const mockPOs: PurchaseOrder[] = [
     asnCount: 3,
     created: "2024-01-10T13:20:00Z",
     updated: "2024-01-17T10:35:00Z",
-    expectedArrivalDate: "2024-01-17",
+    expectedArrivalDate: "2024-01-17T16:00:00Z",
     purchaseOrderDate: "2024-01-10",
     toCity: "Seattle",
     toState: "WA",
@@ -238,7 +238,7 @@ const mockPOs: PurchaseOrder[] = [
     asnCount: 0,
     created: "2024-01-16T08:00:00Z",
     updated: "2024-01-16T16:30:00Z",
-    expectedArrivalDate: "2024-01-27",
+    expectedArrivalDate: "2024-01-27T10:00:00Z",
     purchaseOrderDate: "2024-01-16",
     toCity: "Chicago",
     toState: "IL",
@@ -272,7 +272,7 @@ const mockPOs: PurchaseOrder[] = [
     asnCount: 4,
     created: "2024-01-12T15:45:00Z",
     updated: "2024-01-20T09:30:00Z",
-    expectedArrivalDate: "2024-01-22",
+    expectedArrivalDate: "2024-01-22T13:30:00Z",
     purchaseOrderDate: "2024-01-12",
     toCity: "Miami",
     toState: "FL",
@@ -750,18 +750,17 @@ export default function POPage() {
     const counts: Record<string, number> = {
       all: mockPOs.length,
       [POStatus.NEW]: 0,
-      PROCESSING: 0,
+      [POStatus.IN_TRANSIT]: 0,
+      [POStatus.WAITING_FOR_RECEIVING]: 0,
+      [POStatus.RECEIVING]: 0,
+      [POStatus.PARTIAL_RECEIPT]: 0,
       [POStatus.CLOSED]: 0,
       [POStatus.CANCELLED]: 0,
       [POStatus.EXCEPTION]: 0,
     }
     
     mockPOs.forEach(po => {
-      if (po.status === "PROCESSING") {
-        counts.PROCESSING++
-      } else {
-        counts[po.status] = (counts[po.status] || 0) + 1
-      }
+      counts[po.status] = (counts[po.status] || 0) + 1
     })
     return counts
   }, [])
@@ -829,17 +828,7 @@ export default function POPage() {
     // Apply active filters
     activeFilters.forEach(filter => {
       if (filter.filterId === "status") {
-        if (filter.optionValue === "PROCESSING") {
-          // PROCESSING filter includes multiple statuses
-          filtered = filtered.filter(po => 
-            po.status === POStatus.IN_TRANSIT ||
-            po.status === POStatus.WAITING_FOR_RECEIVING ||
-            po.status === POStatus.RECEIVING ||
-            po.status === POStatus.PARTIAL_RECEIPT
-          )
-        } else {
-          filtered = filtered.filter(po => po.status === filter.optionValue)
-        }
+        filtered = filtered.filter(po => po.status === filter.optionValue)
       } else if (filter.filterId === "shippingStatus") {
         filtered = filtered.filter(po => po.shippingStatus === filter.optionValue)
       } else if (filter.filterId === "receivingStatus") {
@@ -1060,6 +1049,7 @@ export default function POPage() {
       accessorKey: "expectedArrivalDate",
       width: "180px",
       defaultVisible: true,
+      cell: (row) => new Date(row.expectedArrivalDate).toLocaleString(),
     },
     {
       id: "prNos",
@@ -1185,8 +1175,11 @@ export default function POPage() {
                 }, variant: undefined, disabled: undefined },
                 { label: t('cancel'), action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
               ]
-            case "PROCESSING":
-              // PROCESSING状态包含所有中间处理阶段的操作
+            case POStatus.IN_TRANSIT:
+            case POStatus.WAITING_FOR_RECEIVING:
+            case POStatus.RECEIVING:
+            case POStatus.PARTIAL_RECEIPT:
+              // 运输中和收货相关状态的操作
               return [
                 { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
                 { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
@@ -1326,13 +1319,20 @@ export default function POPage() {
             { label: t('batchCreateReceipt'), action: () => console.log("Batch create receipt", selectedRows) },
             { label: t('batchCancel'), action: () => console.log("Batch cancel", selectedRows), variant: "destructive" },
           ]
-        case "PROCESSING":
+        case POStatus.IN_TRANSIT:
+        case POStatus.WAITING_FOR_RECEIVING:
+        case POStatus.RECEIVING:
+        case POStatus.PARTIAL_RECEIPT:
           return [
             { label: t('batchCreateShipment'), action: () => console.log("Batch create shipment", selectedRows) },
             { label: t('batchMarkArrived'), action: () => {
-              // 批量标记送达：更新选中PO的运输状态（保持PROCESSING状态）
+              // 批量标记送达：更新选中PO的运输状态
               setFilteredData(prev => prev.map(po => {
-                if (selectedRows.includes(po.id) && po.status === "PROCESSING") {
+                if (selectedRows.includes(po.id) && 
+                    (po.status === POStatus.IN_TRANSIT || 
+                     po.status === POStatus.WAITING_FOR_RECEIVING || 
+                     po.status === POStatus.RECEIVING || 
+                     po.status === POStatus.PARTIAL_RECEIPT)) {
                   return {
                     ...po,
                     shippingStatus: ShippingStatus.ARRIVED,
