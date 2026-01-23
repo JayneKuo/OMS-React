@@ -8,12 +8,12 @@ export type RuleType = "FACTORY_DIRECT" | "SKU_BASED" | "SUPPLIER_BASED" | "WARE
 export type ExecutionMode = "FIRST_MATCH" | "CHAIN" | "ALL_MATCH"
 
 // Condition operators
-export type ConditionOperator = 
-  | "equals" 
+export type ConditionOperator =
+  | "equals"
   | "notEquals"
-  | "contains" 
+  | "contains"
   | "notContains"
-  | "greaterThan" 
+  | "greaterThan"
   | "lessThan"
   | "greaterThanOrEqual"
   | "lessThanOrEqual"
@@ -21,26 +21,54 @@ export type ConditionOperator =
   | "notIn"
   | "startsWith"
   | "endsWith"
+  | "matches"
+  | "between"
+  | "isEmpty"
+  | "isNotEmpty"
+  | "before"
+  | "after"
+  | "withinDays"
 
 // Condition fields
-export type ConditionField = 
+export type ConditionField =
   | "purchaseType"
+  | "poType"
+  | "poStatus"
+  | "priority"
   | "supplier"
   | "supplierId"
+  | "supplierType"
+  | "supplierCountry"
   | "sku"
   | "category"
+  | "productType"
   | "brand"
+  | "itemCount"
+  | "totalQuantity"
   | "warehouse"
   | "destinationWarehouse"
+  | "warehouseType"
   | "amount"
+  | "totalAmount"
+  | "currency"
+  | "paymentTerm"
   | "quantity"
   | "weight"
   | "country"
   | "region"
+  | "location"
   | "paymentMethod"
   | "shippingMethod"
+  | "incoterm"
+  | "leadTime"
   | "tags"
   | "customField"
+  | "hasSerialNumber"
+  | "hasLotNumber"
+  | "requiresInspection"
+  | "isUrgent"
+  | "createdBy"
+  | "department"
 
 // Condition logic
 export type ConditionLogic = "AND" | "OR"
@@ -49,7 +77,7 @@ export interface RoutingRuleCondition {
   id: string
   field: ConditionField
   operator: ConditionOperator
-  value: string | number | string[] | number[]
+  value: string | number | boolean | string[] | number[]
   logic?: ConditionLogic // How to combine with next condition (default: AND)
 }
 
@@ -58,6 +86,7 @@ export type ActionType =
   | "SET_WORKFLOW" // Set fulfillment workflow
   | "ASSIGN_WAREHOUSE" // Assign to specific warehouse
   | "SEND_NOTIFICATION" // Send email/webhook notification
+  | "TRIGGER_WEBHOOK" // Trigger external webhook
   | "ADD_TAG" // Add tag to order
   | "SET_PRIORITY" // Set order priority
   | "HOLD_ORDER" // Put order on hold
@@ -75,6 +104,8 @@ export interface WorkflowAction {
     autoCreateFinalReceipt?: boolean
     fgWarehouse?: string
     destinationWarehouse?: string
+    dropshipSupplier?: string
+    crossDockWarehouse?: string
   }
 }
 
@@ -92,6 +123,14 @@ export interface NotificationAction {
   message?: string
 }
 
+export interface WebhookAction {
+  type: "TRIGGER_WEBHOOK"
+  url: string
+  method: "GET" | "POST"
+  headers?: Record<string, string>
+  payload?: string
+}
+
 export interface TagAction {
   type: "ADD_TAG"
   tags: string[]
@@ -99,35 +138,37 @@ export interface TagAction {
 
 export interface PriorityAction {
   type: "SET_PRIORITY"
-  priority: "HIGH" | "MEDIUM" | "LOW"
+  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
 }
 
 export interface HoldAction {
   type: "HOLD_ORDER"
   reason: string
-  requiresApproval: boolean
+  releaseCondition?: string
 }
 
 export interface SplitAction {
   type: "SPLIT_ORDER"
-  splitBy: "SKU" | "WAREHOUSE" | "SUPPLIER"
+  splitBy: "WAREHOUSE" | "SUPPLIER" | "CATEGORY" | "LINE_ITEM"
 }
 
 export interface CustomAction {
   type: "CUSTOM"
-  actionName: string
-  parameters: Record<string, any>
+  actionId: string
+  config: Record<string, any>
 }
 
-export type RuleAction = 
+export type RuleAction =
   | WorkflowAction
   | WarehouseAction
   | NotificationAction
+  | WebhookAction
   | TagAction
   | PriorityAction
   | HoldAction
   | SplitAction
   | CustomAction
+
 
 export interface RoutingRule {
   id: string
@@ -137,14 +178,14 @@ export interface RoutingRule {
   enabled: boolean
   priority: number
   executionMode?: ExecutionMode // Optional: defaults to FIRST_MATCH
-  
+
   // IF (Conditions)
   conditions: RoutingRuleCondition[]
   conditionLogic: ConditionLogic // How to combine all conditions (default: AND)
-  
+
   // THEN (Actions)
   actions: RuleAction[]
-  
+
   createdAt: string
   updatedAt: string
 }

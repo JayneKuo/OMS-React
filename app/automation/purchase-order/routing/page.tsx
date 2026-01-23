@@ -11,18 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { PORoutingRuleDialogV2 } from "@/components/automation/po-routing-rule-dialog-v2"
+import { PORoutingRuleDialogV3 } from "@/components/automation/po-routing-rule-dialog-v3"
 import { cn } from "@/lib/utils"
 import type { RoutingRule, FactoryDirectActions } from "@/lib/types/routing-rule"
-import { 
-  Network, 
-  Package, 
-  Warehouse, 
-  PauseCircle, 
-  Filter, 
-  Settings, 
-  ArrowLeftRight, 
-  Mail, 
+import {
+  Network,
+  Package,
+  Warehouse,
+  PauseCircle,
+  Filter,
+  Settings,
+  ArrowLeftRight,
+  Mail,
   Webhook,
   Store,
   Truck,
@@ -39,24 +39,40 @@ import {
   Trash2,
   Copy,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  Archive,
+  Zap,
 } from "lucide-react"
 import { toast } from "sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // Global default settings
 interface GlobalSettings {
+  // Automation
   autoCreateReceipt: boolean
-  receiptTrigger?: "NEW" | "IN_TRANSIT" | "WAITING_FOR_RECEIVING"
+  receiptTrigger: string
+  pushToWMS: boolean
+  wmsTrigger?: "RECEIPT_CREATED"
+  autoClosePO: boolean
+
+  // Receiving
   autoCompleteReceipt: boolean
   autoCreateProduct: boolean
   allowOverReceipt: boolean
-  pushToWMS: boolean
-  wmsTrigger?: "RECEIPT_CREATED"
+  allowPartialReceipt: boolean
+  requiresInspection: boolean
+  receivingTolerance: number
 }
 
 const sidebarItems = [
-  { 
-    title: "Sales Order", 
+  {
+    title: "Sales Order",
     href: "/automation/sales-order",
     icon: <Network className="h-4 w-4" />,
     children: [
@@ -69,24 +85,24 @@ const sidebarItems = [
       { title: "Mapping", href: "/automation/sales-order/mapping", icon: <ArrowLeftRight className="h-4 w-4" /> },
     ]
   },
-  { 
-    title: "Purchase Order", 
+  {
+    title: "Purchase Order",
     href: "/automation/purchase-order",
     icon: <ShoppingCart className="h-4 w-4" />,
     children: [
       { title: "PO Order Routing", href: "/automation/purchase-order/routing", icon: <Route className="h-4 w-4" /> },
     ]
   },
-  { 
-    title: "Inventory", 
+  {
+    title: "Inventory",
     href: "/automation/inventory",
     icon: <Box className="h-4 w-4" />,
     children: [
       { title: "Inventory Sync Rules", href: "/automation/inventory/sync-rules", icon: <Box className="h-4 w-4" /> },
     ]
   },
-  { 
-    title: "Logistics", 
+  {
+    title: "Logistics",
     href: "/automation/logistics",
     icon: <Truck className="h-4 w-4" />,
     children: [
@@ -95,13 +111,13 @@ const sidebarItems = [
       { title: "Delivery Order Routing", href: "/automation/logistics/delivery-order-routing", icon: <Route className="h-4 w-4" /> },
     ]
   },
-  { 
-    title: "Email Notification", 
+  {
+    title: "Email Notification",
     href: "/automation/email-notification",
     icon: <Mail className="h-4 w-4" />
   },
-  { 
-    title: "Webhook", 
+  {
+    title: "Webhook",
     href: "/automation/webhook",
     icon: <Webhook className="h-4 w-4" />
   },
@@ -116,11 +132,16 @@ export default function POOrderRoutingPage() {
   const [globalSettings, setGlobalSettings] = React.useState<GlobalSettings>({
     autoCreateReceipt: true,
     receiptTrigger: "IN_TRANSIT",
+    pushToWMS: false,
+    wmsTrigger: "RECEIPT_CREATED",
+    autoClosePO: true,
+
     autoCompleteReceipt: false,
     autoCreateProduct: false,
     allowOverReceipt: true,
-    pushToWMS: false,
-    wmsTrigger: "RECEIPT_CREATED"
+    allowPartialReceipt: true,
+    requiresInspection: false,
+    receivingTolerance: 10
   })
 
   // Routing Rules
@@ -135,10 +156,10 @@ export default function POOrderRoutingPage() {
       executionMode: "FIRST_MATCH",
       conditionLogic: "AND",
       conditions: [
-        { 
+        {
           id: "cond-1",
-          field: "purchaseType", 
-          operator: "equals", 
+          field: "purchaseType",
+          operator: "equals",
           value: "FACTORY_DIRECT",
           logic: "AND"
         }
@@ -171,20 +192,17 @@ export default function POOrderRoutingPage() {
   const handleSaveRule = (rule: RoutingRule) => {
     const existingIndex = routingRules.findIndex(r => r.id === rule.id)
     if (existingIndex >= 0) {
-      // Update existing rule
       const newRules = [...routingRules]
       newRules[existingIndex] = rule
       setRoutingRules(newRules)
       toast.success("Rule updated successfully")
     } else {
-      // Add new rule
       setRoutingRules([...routingRules, { ...rule, priority: routingRules.length + 1 }])
       toast.success("Rule created successfully")
     }
   }
 
   const handleAddRule = () => {
-    // Create a new rule with default values using new IF-THEN structure
     const newRule: RoutingRule = {
       id: `rule-${Date.now()}`,
       name: "",
@@ -207,307 +225,54 @@ export default function POOrderRoutingPage() {
     <MainLayout sidebarItems={sidebarItems} moduleName="Automation">
       <div className="space-y-6">
         {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">PO Order Routing</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Configure automated routing and receiving behavior for purchase orders
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">Order Routing Rules</h1>
+            <p className="text-muted-foreground">
+              Configure how purchase orders are fulfilled, routed, and automated.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="h-8 px-3 text-sm">
+              {routingRules.filter(r => r.enabled).length} Active Rules
+            </Badge>
+          </div>
         </div>
 
-        {/* Global Default Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Globe className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Global Default Settings</CardTitle>
-                <CardDescription>
-                  Configure automated routing behavior for purchase orders
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Business Flow Info */}
-            <div className="p-4 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20 rounded-r-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium text-blue-900 dark:text-blue-100">Business Flow</p>
-                  <ul className="space-y-1 text-blue-800 dark:text-blue-200">
-                    <li>• <strong>Receipt Creation</strong>: Triggered by PO status (New, In Transit, or Waiting for Receiving)</li>
-                    <li>• <strong>Local Warehouse</strong>: Can auto-complete receipt (skip manual receiving)</li>
-                    <li>• <strong>Non-Local Warehouse</strong>: Auto-push to WMS when receipt is created</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+        <Tabs defaultValue="rules" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+              <TabsTrigger value="rules">Routing Rules (路由规则)</TabsTrigger>
+              <TabsTrigger value="settings">Global Settings (全局设置)</TabsTrigger>
+            </TabsList>
+          </div>
 
-            <div className="grid gap-4">
-              {/* Auto Create Receipt */}
-              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-blue-600" />
-                      <Label className="text-base font-medium">Auto-Create Receipt</Label>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically create receipt records when PO reaches specified status
-                    </p>
-                  </div>
-                  <Switch
-                    checked={globalSettings.autoCreateReceipt}
-                    onCheckedChange={(checked) => 
-                      setGlobalSettings({ ...globalSettings, autoCreateReceipt: checked })
-                    }
-                  />
-                </div>
-                
-                {globalSettings.autoCreateReceipt && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label className="text-sm">Trigger Node (PO Status)</Label>
-                      <Select
-                        value={globalSettings.receiptTrigger}
-                        onValueChange={(value: any) => 
-                          setGlobalSettings({ ...globalSettings, receiptTrigger: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NEW">New</SelectItem>
-                          <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-                          <SelectItem value="WAITING_FOR_RECEIVING">Waiting for Receiving (Shipping Arrival)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Receipt will be created when PO reaches this status
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+          {/* ==================== TAB 1: ROUTING RULES ==================== */}
+          <TabsContent value="rules" className="space-y-4">
 
-              {/* Auto Complete Receipt */}
-              <div className="flex items-start justify-between p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    <Label className="text-base font-medium">Auto-Complete Receipt (Local Warehouse)</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically complete receiving process when receipt is created for local warehouses
-                  </p>
-                </div>
-                <Switch
-                  checked={globalSettings.autoCompleteReceipt}
-                  onCheckedChange={(checked) => 
-                    setGlobalSettings({ ...globalSettings, autoCompleteReceipt: checked })
-                  }
-                />
-              </div>
-
-              {/* Auto Create Product */}
-              <div className="flex items-start justify-between p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Box className="h-4 w-4 text-amber-600" />
-                    <Label className="text-base font-medium">Auto-Create Missing Products</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically create product records when receiving items that don't exist in the system
-                  </p>
-                </div>
-                <Switch
-                  checked={globalSettings.autoCreateProduct}
-                  onCheckedChange={(checked) => 
-                    setGlobalSettings({ ...globalSettings, autoCreateProduct: checked })
-                  }
-                />
-              </div>
-
-              {/* Allow Over Receipt */}
-              <div className="flex items-start justify-between p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <Label className="text-base font-medium">Allow Over Receipt</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Allow receiving quantities that exceed the ordered amount
-                  </p>
-                </div>
-                <Switch
-                  checked={globalSettings.allowOverReceipt}
-                  onCheckedChange={(checked) => 
-                    setGlobalSettings({ ...globalSettings, allowOverReceipt: checked })
-                  }
-                />
-              </div>
-
-              {/* Push to WMS */}
-              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Route className="h-4 w-4 text-purple-600" />
-                      <Label className="text-base font-medium">Push to WMS (Non-Local Warehouse)</Label>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically send data to downstream WMS when receipt is created for non-local warehouses
-                    </p>
-                  </div>
-                  <Switch
-                    checked={globalSettings.pushToWMS}
-                    onCheckedChange={(checked) => 
-                      setGlobalSettings({ ...globalSettings, pushToWMS: checked })
-                    }
-                  />
-                </div>
-
-                {globalSettings.pushToWMS && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label className="text-sm">Trigger Node (Receipt Status)</Label>
-                      <Select
-                        value={globalSettings.wmsTrigger}
-                        onValueChange={(value: any) => 
-                          setGlobalSettings({ ...globalSettings, wmsTrigger: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="RECEIPT_CREATED">Receipt Created</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Data will be pushed to WMS when receipt is created (NEW status)
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
+            {/* Rules Header & Actions */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>Changes apply to all warehouses without specific overrides</span>
+              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full text-xs font-medium">
+                <AlertCircle className="h-3.5 w-3.5" />
+                Rules are evaluated top-to-bottom. First match wins.
               </div>
-              <Button onClick={handleSaveGlobal} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? "Saving..." : "Save Global Settings"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Routing Rules */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Route className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle>Routing Rules</CardTitle>
-                  <CardDescription>
-                    Configure conditional routing logic for different PO scenarios
-                  </CardDescription>
-                </div>
-              </div>
-              <Button onClick={handleAddRule}>
+              <Button onClick={handleAddRule} className="shadow-lg hover:shadow-xl transition-all">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Rule
+                Create New Rule
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Info Banner */}
-            <div className="p-4 border-l-4 border-l-primary bg-primary/5 rounded-r-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium">How Routing Rules Work</p>
-                  <p className="text-muted-foreground">
-                    Rules are evaluated in <strong>priority order (top to bottom)</strong>. Each rule can have its own execution mode.
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">
-                        🎯 First Match Mode (Default)
-                      </p>
-                      <p className="text-xs text-blue-800 dark:text-blue-200">
-                        The first matching rule determines the workflow. Evaluation stops after first match.
-                      </p>
-                      <ul className="text-xs text-blue-700 dark:text-blue-300 mt-1 ml-4 space-y-0.5">
-                        <li>• Priority 1 matches → Use Priority 1 (stop)</li>
-                        <li>• Priority 2 matches → Use Priority 2 (stop)</li>
-                        <li>• No match → Use Global Default Settings</li>
-                      </ul>
-                    </div>
-                    
-                    <div className="p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
-                      <p className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-1">
-                        🔗 Chain Mode
-                      </p>
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        Multiple matching rules can be applied in sequence. Each rule adds or overrides settings.
-                      </p>
-                      <ul className="text-xs text-amber-700 dark:text-amber-300 mt-1 ml-4 space-y-0.5">
-                        <li>• Priority 1 matches → Apply Priority 1 settings</li>
-                        <li>• Priority 2 matches → Merge/Override with Priority 2</li>
-                        <li>• Priority 3 matches → Merge/Override with Priority 3</li>
-                      </ul>
-                    </div>
 
-                    <div className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
-                      <p className="text-xs font-medium text-purple-900 dark:text-purple-100 mb-1">
-                        🎭 All Match Mode
-                      </p>
-                      <p className="text-xs text-purple-800 dark:text-purple-200">
-                        All matching rules are merged together. Higher priority wins conflicts.
-                      </p>
-                      <ul className="text-xs text-purple-700 dark:text-purple-300 mt-1 ml-4 space-y-0.5">
-                        <li>• All matching rules contribute settings</li>
-                        <li>• Conflicts resolved by priority (higher = wins)</li>
-                        <li>• Best for additive configurations</li>
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground mt-2">
-                    💡 Tip: Set execution mode when creating/editing each rule. Drag rules to reorder priority.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Rules List */}
+            {/* Empty State */}
             {routingRules.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                <Route className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Routing Rules</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create your first routing rule to customize PO fulfillment workflows
+              <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl bg-muted/10">
+                <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+                  <Route className="h-10 w-10 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No Routing Rules Yet</h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-sm text-center">
+                  Create rules to automatically route orders to specific warehouses or workflows based on criteria.
                 </p>
-                <Button onClick={handleAddRule}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Rule
-                </Button>
+                <Button onClick={handleAddRule}>Create First Rule</Button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -517,182 +282,276 @@ export default function POOrderRoutingPage() {
                     <div
                       key={rule.id}
                       className={cn(
-                        "group relative p-4 border rounded-lg transition-all",
-                        rule.enabled 
-                          ? "bg-card hover:shadow-md" 
-                          : "bg-muted/30 opacity-60"
+                        "group relative flex items-stretch border rounded-xl overflow-hidden transition-all hover:shadow-md bg-card",
+                        !rule.enabled && "opacity-60 bg-muted/30"
                       )}
                     >
-                      {/* Drag Handle */}
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab">
-                        <GripVertical className="h-5 w-5 text-muted-foreground" />
+                      {/* Priority Strip */}
+                      <div className={cn(
+                        "w-1.5 flex-shrink-0",
+                        rule.enabled ? "bg-primary" : "bg-muted-foreground/30"
+                      )} />
+
+                      {/* Drag Handle Area */}
+                      <div className="w-10 flex items-center justify-center border-r bg-muted/5 group-hover:bg-muted/10 cursor-grab">
+                        <span className="text-sm font-bold text-muted-foreground">{index + 1}</span>
                       </div>
 
-                      <div className="flex items-start gap-4 ml-6">
-                        {/* Priority Badge */}
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm flex-shrink-0">
-                          {index + 1}
+                      {/* Main Content */}
+                      <div className="flex-1 p-4 flex items-center gap-4">
+
+                        {/* Icon */}
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                          rule.type === "FACTORY_DIRECT" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
+                        )}>
+                          {rule.type === "FACTORY_DIRECT" ? <Truck className="h-5 w-5" /> : <Route className="h-5 w-5" />}
                         </div>
 
-                        {/* Rule Content */}
-                        <div className="flex-1 space-y-3">
-                          {/* Header */}
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold">{rule.name}</h4>
-                                <Badge variant={rule.enabled ? "default" : "secondary"} className="text-xs">
-                                  {rule.enabled ? "Active" : "Disabled"}
-                                </Badge>
-                                {rule.type === "FACTORY_DIRECT" && (
-                                  <Badge variant="outline" className="text-xs">
-                                    <Truck className="h-3 w-3 mr-1" />
-                                    Factory Direct
-                                  </Badge>
-                                )}
-                                {/* Execution Mode Badge */}
-                                {rule.executionMode && rule.executionMode !== "FIRST_MATCH" && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {rule.executionMode === "CHAIN" && "🔗 Chain"}
-                                    {rule.executionMode === "ALL_MATCH" && "🎭 All Match"}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{rule.description}</p>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold truncate">{rule.name}</h4>
+                            {!rule.enabled && <Badge variant="secondary" className="h-5 text-[10px] px-1.5">Disabled</Badge>}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {/* Conditions Summary */}
+                            <div className="flex items-center gap-1.5">
+                              <Filter className="h-3 w-3" />
+                              <span>
+                                {rule.conditions.length > 0
+                                  ? `${rule.conditions.length} Condition${rule.conditions.length > 1 ? "s" : ""}`
+                                  : "No conditions (Always)"}
+                              </span>
                             </div>
 
-                            {/* Actions */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
+                            {/* Arrow */}
+                            <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+
+                            {/* Actions Summary */}
+                            <div className="flex items-center gap-1.5 text-foreground font-medium">
+                              <Zap className="h-3 w-3 text-amber-500" />
+                              <span>
+                                {rule.actions.length} Action{rule.actions.length > 1 ? "s" : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Quick Actions (Hover) */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                                   setSelectedRule(rule)
                                   setIsRuleDialogOpen(true)
                                 }}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Rule
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
-                                  const newRule = { ...rule, id: `rule-${Date.now()}`, name: `${rule.name} (Copy)` }
-                                  setRoutingRules([...routingRules, newRule])
-                                }}>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
-                                  setRoutingRules(routingRules.map(r => 
-                                    r.id === rule.id ? { ...r, enabled: !r.enabled } : r
-                                  ))
-                                }}>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  {rule.enabled ? "Disable" : "Enable"}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive"
-                                  onClick={() => {
-                                    setRoutingRules(routingRules.filter(r => r.id !== rule.id))
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit Rule</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                          {/* Conditions */}
-                          <div className="flex items-start gap-2 text-sm">
-                            <span className="text-muted-foreground font-medium">IF:</span>
-                            <div className="flex flex-wrap gap-2">
-                              {rule.conditions.map((condition, idx) => (
-                                <React.Fragment key={idx}>
-                                  <Badge variant="secondary" className="font-normal">
-                                    {condition.field} {condition.operator} "{condition.value}"
-                                  </Badge>
-                                  {idx < rule.conditions.length - 1 && (
-                                    <span className="text-xs text-muted-foreground self-center font-mono">
-                                      {condition.logic || "AND"}
-                                    </span>
-                                  )}
-                                </React.Fragment>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Actions Preview */}
-                          <div className="flex items-start gap-2 text-sm">
-                            <span className="text-muted-foreground font-medium">THEN:</span>
-                            <div className="flex flex-wrap gap-2">
-                              {rule.actions.map((action, idx) => {
-                                if (action.type === "SET_WORKFLOW") {
-                                  const workflowAction = action as any
-                                  return (
-                                    <Badge key={idx} variant="outline" className="text-xs">
-                                      <Package className="h-3 w-3 mr-1" />
-                                      {workflowAction.workflow} Workflow
-                                    </Badge>
-                                  )
-                                }
-                                if (action.type === "ASSIGN_WAREHOUSE") {
-                                  return (
-                                    <Badge key={idx} variant="outline" className="text-xs">
-                                      <Warehouse className="h-3 w-3 mr-1" />
-                                      Assign Warehouse
-                                    </Badge>
-                                  )
-                                }
-                                if (action.type === "SEND_NOTIFICATION") {
-                                  return (
-                                    <Badge key={idx} variant="outline" className="text-xs">
-                                      <Mail className="h-3 w-3 mr-1" />
-                                      Send Notification
-                                    </Badge>
-                                  )
-                                }
-                                return (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {action.type}
-                                  </Badge>
-                                )
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Expand to see details */}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 text-xs"
-                            onClick={() => {
-                              setSelectedRule(rule)
-                              setIsRuleDialogOpen(true)
-                            }}
-                          >
-                            View Details
-                            <ChevronRight className="h-3 w-3 ml-1" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                const newRule = { ...rule, id: `rule-${Date.now()}`, name: `${rule.name} (Copy)` }
+                                setRoutingRules([...routingRules, newRule])
+                              }}>
+                                <Copy className="h-4 w-4 mr-2" /> Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive" onClick={() => {
+                                setRoutingRules(routingRules.filter(r => r.id !== rule.id))
+                              }}>
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
+
                       </div>
                     </div>
                   ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* New Rule Builder Dialog */}
-      <PORoutingRuleDialogV2
-        open={isRuleDialogOpen}
-        onOpenChange={setIsRuleDialogOpen}
-        rule={selectedRule}
-        onSave={handleSaveRule}
-      />
+            {/* V3 Dialog Component */}
+            <PORoutingRuleDialogV3
+              open={isRuleDialogOpen}
+              onOpenChange={setIsRuleDialogOpen}
+              rule={selectedRule}
+              onSave={handleSaveRule}
+            />
+          </TabsContent>
+
+          {/* ==================== TAB 2: GLOBAL SETTINGS ==================== */}
+          <TabsContent value="settings" className="space-y-6">
+
+            <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-2 rounded-md">
+                  <Settings className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Global Default Configuration</h3>
+                  <p className="text-sm text-muted-foreground">These settings apply when NO routing rules match an order.</p>
+                </div>
+              </div>
+              <Button onClick={handleSaveGlobal} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* 1. Receiving Controls */}
+              <Card className="md:col-span-1 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Archive className="h-4 w-4 text-primary" /> Receiving Controls
+                  </CardTitle>
+                  <CardDescription>Rules for warehouse receiving process</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="cursor-pointer">Allow Over Receipt (允许超收)</Label>
+                      <p className="text-xs text-muted-foreground">Allow receiving quantity greater than ordered quantity (允许入库数量大于订单数量)</p>
+                    </div>
+                    <Switch checked={globalSettings.allowOverReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, allowOverReceipt: c })} />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="cursor-pointer">Allow Partial Receipt (允许分批到货)</Label>
+                      <p className="text-xs text-muted-foreground">Allow multiple receipts for a single purchase order (允许一个PO分多次收货)</p>
+                    </div>
+                    <Switch checked={globalSettings.allowPartialReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, allowPartialReceipt: c })} />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="cursor-pointer">Requires Inspection (质检控制)</Label>
+                      <p className="text-xs text-muted-foreground">Flag new receipts for quality inspection by default (默认标记新入库单需要质检)</p>
+                    </div>
+                    <Switch checked={globalSettings.requiresInspection} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, requiresInspection: c })} />
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label>Receiving Tolerance (%)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={globalSettings.receivingTolerance}
+                        onChange={(e) => setGlobalSettings({ ...globalSettings, receivingTolerance: Number(e.target.value) })}
+                      />
+                      <span className="text-muted-foreground text-sm self-center">Max excess</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 2. Automation Triggers */}
+              <Card className="md:col-span-1 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-blue-600" /> Automation Triggers
+                  </CardTitle>
+                  <CardDescription>Auto-creation and syncing logic</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+
+                  <div className="space-y-3 bg-muted/20 p-3 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Auto-Create Receipt (自动创建入库单)</Label>
+                        <p className="text-xs text-muted-foreground">Automatically create a receiving document when PO status matches (当采购单状态匹配时自动创建入库通知)</p>
+                      </div>
+                      <Switch checked={globalSettings.autoCreateReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, autoCreateReceipt: c })} />
+                    </div>
+                    {globalSettings.autoCreateReceipt && (
+                      <div className="pl-2 border-l-2 border-primary/20 space-y-3 pt-1">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Trigger Status</Label>
+                          <Select value={globalSettings.receiptTrigger} onValueChange={(v: any) => setGlobalSettings({ ...globalSettings, receiptTrigger: v })}>
+                            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="NEW">New</SelectItem>
+                              <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+                              <SelectItem value="WAITING_FOR_RECEIVING">Waiting for Receiving</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="space-y-0.5">
+                      <Label>Push to WMS (推送到WMS)</Label>
+                      <p className="text-xs text-muted-foreground">Synchronize receipt data with the warehouse management system (将入库数据同步至仓库管理系统)</p>
+                    </div>
+                    <Switch checked={globalSettings.pushToWMS} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, pushToWMS: c })} />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="space-y-0.5">
+                      <Label>Auto-Close PO (自动关单)</Label>
+                      <p className="text-xs text-muted-foreground">Automatically close PO when fully received (全额收货后自动关闭采购单)</p>
+                    </div>
+                    <Switch checked={globalSettings.autoClosePO} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, autoClosePO: c })} />
+                  </div>
+
+                </CardContent>
+              </Card>
+
+              {/* 3. System Defaults */}
+              <Card className="md:col-span-2 shadow-sm bg-muted/5 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" /> System Defaults (Fallbacks)
+                  </CardTitle>
+                  <CardDescription>Applied only when NO rules are matched</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Default Target Warehouse</Label>
+                    <Select defaultValue="US-EAST">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="US-EAST">US East Coast (Primary)</SelectItem>
+                        <SelectItem value="US-WEST">US West Coast</SelectItem>
+                        <SelectItem value="CN-SH">Shanghai Consolidation</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Default Fulfillment Workflow</Label>
+                    <Select defaultValue="STANDARD">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="STANDARD">Standard Receipt</SelectItem>
+                        <SelectItem value="CROSS_DOCK">Cross Dock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+            </div>
+
+          </TabsContent>
+        </Tabs>
+      </div>
     </MainLayout>
   )
 }
