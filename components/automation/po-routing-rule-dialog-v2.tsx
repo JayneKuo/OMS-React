@@ -14,9 +14,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { 
   CheckCircle, 
   X, 
-  Warehouse, 
-  Package, 
-  Route,
   Settings,
   Filter,
   Zap,
@@ -24,39 +21,14 @@ import {
   Search
 } from "lucide-react"
 import { toast } from "sonner"
-
-interface RoutingRule {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  priority: number
-  conditions: {
-    suppliers?: string[]
-    warehouses?: string[]
-    productCategories?: string[]
-    orderSources?: string[]
-    orderTypes?: string[]
-  }
-  actions: {
-    autoCreateReceipt: boolean
-    autoReceiveVirtualWarehouse: boolean
-    pushToWMS: boolean
-    wmsEndpoint?: string
-    warehouseRouting?: {
-      type: "SINGLE" | "SPLIT_BY_SKU" | "SPLIT_BY_QUANTITY"
-      warehouses: string[]
-    }
-  }
-  createdAt: string
-  updatedAt: string
-}
+import { PORoutingActionsConfig } from "./po-routing-actions-config"
+import type { RuleAction, RoutingRule as ImportedRoutingRule } from "@/lib/types/routing-rule"
 
 interface PORoutingRuleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  rule: RoutingRule | null
-  onSave: (rule: RoutingRule) => void
+  rule: ImportedRoutingRule | null
+  onSave: (rule: ImportedRoutingRule) => void
 }
 
 // 可选的条件字段（基于PO单据字段）
@@ -156,17 +128,15 @@ const availableConditions = [
 ]
 
 export function PORoutingRuleDialogV2({ open, onOpenChange, rule, onSave }: PORoutingRuleDialogProps) {
-  const [formData, setFormData] = React.useState<Partial<RoutingRule>>({
+  const [formData, setFormData] = React.useState<Partial<ImportedRoutingRule>>({
     name: "",
     description: "",
     enabled: true,
     priority: 1,
-    conditions: {},
-    actions: {
-      autoCreateReceipt: false,
-      autoReceiveVirtualWarehouse: false,
-      pushToWMS: false
-    }
+    type: "FACTORY_DIRECT",
+    conditionLogic: "AND",
+    conditions: [],
+    actions: []
   })
 
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -187,12 +157,10 @@ export function PORoutingRuleDialogV2({ open, onOpenChange, rule, onSave }: PORo
           description: "",
           enabled: true,
           priority: 1,
-          conditions: {},
-          actions: {
-            autoCreateReceipt: false,
-            autoReceiveVirtualWarehouse: false,
-            pushToWMS: false
-          }
+          type: "FACTORY_DIRECT",
+          conditionLogic: "AND",
+          conditions: [],
+          actions: []
         })
         setSelectedFields([])
         setFieldValues({})
@@ -206,18 +174,17 @@ export function PORoutingRuleDialogV2({ open, onOpenChange, rule, onSave }: PORo
       return
     }
 
-    const savedRule: RoutingRule = {
+    const savedRule: ImportedRoutingRule = {
       id: rule?.id || Date.now().toString(),
-      name: formData.name,
+      name: formData.name!,
       description: formData.description || "",
+      type: formData.type || "FACTORY_DIRECT",
       enabled: formData.enabled ?? true,
       priority: formData.priority || 1,
-      conditions: fieldValues,
-      actions: formData.actions || {
-        autoCreateReceipt: false,
-        autoReceiveVirtualWarehouse: false,
-        pushToWMS: false
-      },
+      executionMode: formData.executionMode || "FIRST_MATCH",
+      conditionLogic: formData.conditionLogic || "AND",
+      conditions: formData.conditions || [],
+      actions: formData.actions || [],
       createdAt: rule?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -530,72 +497,11 @@ export function PORoutingRuleDialogV2({ open, onOpenChange, rule, onSave }: PORo
 
             <Separator />
 
-            {/* Actions */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                <h3 className="text-base font-semibold">设置动作</h3>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors group">
-                  <div className="space-y-0.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
-                      <Label className="text-sm font-medium cursor-pointer">自动创建收货单</Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-6">
-                      PO到达时自动创建收货记录
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.actions?.autoCreateReceipt}
-                    onCheckedChange={(checked) => setFormData({
-                      ...formData,
-                      actions: { ...formData.actions!, autoCreateReceipt: checked }
-                    })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors group">
-                  <div className="space-y-0.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Warehouse className="h-4 w-4 text-green-600" />
-                      <Label className="text-sm font-medium cursor-pointer">虚拟仓自动收货</Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-6">
-                      虚拟仓库自动标记为已收货
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.actions?.autoReceiveVirtualWarehouse}
-                    onCheckedChange={(checked) => setFormData({
-                      ...formData,
-                      actions: { ...formData.actions!, autoReceiveVirtualWarehouse: checked }
-                    })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors group">
-                  <div className="space-y-0.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Route className="h-4 w-4 text-purple-600" />
-                      <Label className="text-sm font-medium cursor-pointer">推送到WMS</Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-6">
-                      发送数据到外部WMS系统
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.actions?.pushToWMS}
-                    onCheckedChange={(checked) => setFormData({
-                      ...formData,
-                      actions: { ...formData.actions!, pushToWMS: checked }
-                    })}
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Actions - 使用新版本 */}
+            <PORoutingActionsConfig
+              actions={formData.actions || []}
+              onChange={(actions) => setFormData({ ...formData, actions })}
+            />
           </div>
         </div>
 
