@@ -3,8 +3,9 @@
 import * as React from "react"
 import { Search, X, ChevronDown, Filter, SlidersHorizontal, Settings2, SearchX, GripVertical, ListFilter } from "lucide-react"
 import { AdvancedSearchDialog, SearchField, AdvancedSearchValues, AdvancedSearchFilter } from "./advanced-search-dialog"
-import { BatchSearchDialog } from "./batch-search-dialog"
+import { BatchSearchPopover, BatchSearchField } from "./batch-search-popover"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -20,6 +21,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   Popover,
   PopoverContent,
@@ -37,8 +44,9 @@ export interface FilterOption {
 export interface FilterConfig {
   id: string
   label: string
-  options: FilterOption[]
-  type?: "single" | "multiple"
+  options?: FilterOption[]
+  type?: "single" | "multiple" | "input" | "batch"
+  placeholder?: string
 }
 
 export interface ActiveFilter {
@@ -54,6 +62,102 @@ export interface ColumnConfig {
   label: string
   visible: boolean
   defaultVisible?: boolean
+}
+
+// Internal component for Batch Filter Popover Content
+const BatchFilterPopoverContent = ({
+  filter,
+  initialValue,
+  onApply,
+  onCancel,
+  onClear
+}: {
+  filter: FilterConfig;
+  initialValue: string;
+  onApply: (value: string) => void;
+  onCancel: () => void;
+  onClear: () => void;
+}) => {
+  const [value, setValue] = React.useState(initialValue)
+
+  // Calc real-time count
+  const items = React.useMemo(() => {
+    return value.split(/[,\s\n]+/).filter(v => v.trim() !== "")
+  }, [value])
+
+  return (
+    <PopoverContent align="start" className="w-80 p-0 shadow-xl border-primary/20">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b bg-muted/30">
+        <span className="text-sm font-semibold flex items-center gap-2">
+          <ListFilter className="h-4 w-4 text-primary" />
+          {filter.label}
+        </span>
+        {initialValue && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            onClick={() => {
+              setValue("")
+              onClear()
+            }}
+          >
+            清空
+          </Button>
+        )}
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">批量输入单号</span>
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-primary/10 text-primary border-primary/20">
+              已识别: {items.length} 个
+            </Badge>
+          </div>
+          <div className="relative group/textarea">
+            <Textarea
+              placeholder={filter.placeholder || "请输入内容，支持逗号、空格或换行分隔..."}
+              className="min-h-[140px] text-xs resize-none focus-visible:ring-primary/30 border-muted-foreground/20 pr-8"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              autoFocus
+            />
+            {value && (
+              <button
+                onClick={() => setValue("")}
+                className="absolute right-2 top-2 p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover/textarea:opacity-100 transition-opacity bg-background/80 rounded-md shadow-sm border border-border"
+                title="清空文字内容"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground px-1 italic">
+            * 粘贴 Excel 列或手动输入，系统自动识别有效位
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 pt-2 border-t border-muted/50">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 h-8 text-xs bg-background"
+            onClick={onCancel}
+          >
+            取消
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 h-8 text-xs shadow-sm bg-primary hover:bg-primary/90"
+            onClick={() => onApply(value)}
+          >
+            搜索
+          </Button>
+        </div>
+      </div>
+    </PopoverContent>
+  )
 }
 
 interface FilterBarProps {
@@ -72,8 +176,9 @@ interface FilterBarProps {
   onAdvancedSearch?: (values: AdvancedSearchValues, filters: AdvancedSearchFilter[]) => void
   // Batch search
   enableBatchSearch?: boolean
-  batchSearchField?: string
-  onBatchSearch?: (orderNumbers: string[]) => void
+  batchSearchFields?: BatchSearchField[]
+  batchSearchVariant?: "default" | "icon"
+  onBatchSearch?: (criteria: Record<string, string[]>) => void
   className?: string
 }
 
@@ -90,7 +195,8 @@ export function FilterBar({
   advancedSearchFields = [],
   onAdvancedSearch,
   enableBatchSearch = false,
-  batchSearchField = "订单编号",
+  batchSearchFields = [{ label: "订单编号", value: "orderNo" }],
+  batchSearchVariant = "default",
   onBatchSearch,
   className,
 }: FilterBarProps) {
@@ -98,14 +204,15 @@ export function FilterBar({
   const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
   const [advancedSearchFilters, setAdvancedSearchFilters] = React.useState<AdvancedSearchFilter[]>([])
   const [showAdvanced, setShowAdvanced] = React.useState(false)
-  const [showBatchSearch, setShowBatchSearch] = React.useState(false)
   const [filterSearches, setFilterSearches] = React.useState<Record<string, string>>({})
   const [moreFiltersSearch, setMoreFiltersSearch] = React.useState("")
   const [visibleFilterCount, setVisibleFilterCount] = React.useState(filters.length)
-  
+  const [openPopoverId, setOpenPopoverId] = React.useState<string | null>(null)
+
+
   // Use external search value if provided (controlled), otherwise use internal state (uncontrolled)
   const searchValue = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue
-  
+
   const filterContainerRef = React.useRef<HTMLDivElement>(null)
   const rightActionsRef = React.useRef<HTMLDivElement>(null)
 
@@ -113,26 +220,26 @@ export function FilterBar({
   React.useEffect(() => {
     const calculateVisibleFilters = () => {
       if (!filterContainerRef.current || !rightActionsRef.current) return
-      
+
       const container = filterContainerRef.current.parentElement
       if (!container) return
-      
+
       const containerWidth = container.offsetWidth
       const searchWidth = 384 // max-w-md = 384px
       const rightActionsWidth = rightActionsRef.current.offsetWidth
       const gap = 8 // gap-2 = 8px
       const moreButtonWidth = 60 // "..." button approximate width
       const filterButtonWidth = 120 // approximate width per filter button
-      
+
       const availableWidth = containerWidth - searchWidth - rightActionsWidth - (gap * 4) - moreButtonWidth
       const maxFilters = Math.floor(availableWidth / (filterButtonWidth + gap))
-      
+
       setVisibleFilterCount(Math.max(1, Math.min(maxFilters, filters.length)))
     }
 
     calculateVisibleFilters()
     window.addEventListener('resize', calculateVisibleFilters)
-    
+
     return () => window.removeEventListener('resize', calculateVisibleFilters)
   }, [filters.length])
 
@@ -152,7 +259,7 @@ export function FilterBar({
       )
 
       let newFilters: ActiveFilter[]
-      
+
       if (existingIndex >= 0) {
         // Remove filter
         newFilters = prev.filter((_, index) => index !== existingIndex)
@@ -183,6 +290,29 @@ export function FilterBar({
     })
   }
 
+  const handleInputChange = (filter: FilterConfig, value: string) => {
+    setActiveFilters((prev) => {
+      const filteredPrev = prev.filter((f) => f.filterId !== filter.id)
+      let newFilters: ActiveFilter[]
+      if (value.trim()) {
+        newFilters = [
+          ...filteredPrev,
+          {
+            filterId: filter.id,
+            filterLabel: filter.label,
+            optionId: "input-value",
+            optionLabel: value,
+            optionValue: value,
+          },
+        ]
+      } else {
+        newFilters = filteredPrev
+      }
+      onFiltersChange?.(newFilters)
+      return newFilters
+    })
+  }
+
   const handleRemoveFilter = (filter: ActiveFilter) => {
     setActiveFilters((prev) => {
       const newFilters = prev.filter(
@@ -206,6 +336,32 @@ export function FilterBar({
     })
   }
 
+  const handleBatchInputChange = (filter: FilterConfig, value: string) => {
+    // Split by comma, space or newline and filter empty strings
+    const values = value.split(/[,\s\n]+/).filter(v => v.trim() !== "")
+
+    setActiveFilters((prev) => {
+      const filteredPrev = prev.filter((f) => f.filterId !== filter.id)
+      let newFilters: ActiveFilter[]
+      if (values.length > 0) {
+        newFilters = [
+          ...filteredPrev,
+          {
+            filterId: filter.id,
+            filterLabel: filter.label,
+            optionId: "batch-value",
+            optionLabel: `批量(${values.length})`,
+            optionValue: values.join(","), // Store as comma separated string for filtering logic
+          },
+        ]
+      } else {
+        newFilters = filteredPrev
+      }
+      onFiltersChange?.(newFilters)
+      return newFilters
+    })
+  }
+
   const handleAdvancedSearch = (values: AdvancedSearchValues, filters: AdvancedSearchFilter[]) => {
     setAdvancedSearchFilters(filters)
     onAdvancedSearch?.(values, filters)
@@ -214,7 +370,7 @@ export function FilterBar({
   const handleClearAll = () => {
     setActiveFilters([])
     setAdvancedSearchFilters([])
-    setSearchValue("")
+    handleSearchChange("")
     onSearchChange?.("")
     onFiltersChange?.([])
     onAdvancedSearch?.({}, [])
@@ -232,7 +388,7 @@ export function FilterBar({
 
   const handleColumnToggle = (columnId: string) => {
     if (!onColumnsChange) return
-    const updatedColumns = columns.map(col => 
+    const updatedColumns = columns.map(col =>
       col.id === columnId ? { ...col, visible: !col.visible } : col
     )
     onColumnsChange(updatedColumns)
@@ -268,7 +424,7 @@ export function FilterBar({
 
   const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
     e.preventDefault()
-    
+
     if (!draggedColumn || draggedColumn === targetColumnId || !onColumnsChange) {
       return
     }
@@ -298,75 +454,155 @@ export function FilterBar({
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 pr-9"
+            className="pl-9 pr-16" // Increase right padding for batch button and clear button
           />
-          {searchValue && (
-            <button
-              onClick={() => handleSearchChange("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchValue && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="text-muted-foreground hover:text-foreground p-0.5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Embedded Batch Search Trigger */}
+            {enableBatchSearch && onBatchSearch && (
+              <BatchSearchPopover
+                onSearchAction={onBatchSearch}
+                fields={batchSearchFields}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                    title="批量搜索"
+                  >
+                    <ListFilter className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </div>
+
+        {/* Removed standalone icon button next to search */}
+
+        {/* Batch Search (Icon only variant placed next to search) */}
+
 
         {/* Filter Buttons Container */}
         <div ref={filterContainerRef} className="flex items-center gap-2 flex-1 min-w-0">
           {/* Visible Filter Popovers */}
           {filters.slice(0, visibleFilterCount).map((filter) => {
+            if (filter.type === "input") {
+              const activeFilter = activeFilters.find((f) => f.filterId === filter.id)
+              const inputValue = activeFilter?.optionValue || ""
+
+              return (
+                <div key={filter.id} className="relative flex-shrink-0 w-36 group">
+                  <Input
+                    placeholder={filter.label}
+                    value={inputValue}
+                    onChange={(e) => handleInputChange(filter, e.target.value)}
+                    className="h-9 px-3 pr-8 text-sm bg-background border-dashed focus:border-solid hover:bg-accent/50 transition-all border-muted-foreground/30 focus:border-primary"
+                  />
+                  {inputValue && (
+                    <button
+                      onClick={() => handleInputChange(filter, "")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              )
+            }
+
             const activeCount = getActiveFilterCount(filter.id)
             const hasActiveFilters = activeCount > 0
             const filterSearch = filterSearches[filter.id] || ""
-            
+
             // Filter options based on search
-            const filteredOptions = filter.options.filter(option =>
+            const filteredOptions = (filter.options || []).filter(option =>
               option.label.toLowerCase().includes(filterSearch.toLowerCase())
             )
-            
+
             return (
-              <Popover key={filter.id}>
+              <Popover
+                key={filter.id}
+                open={openPopoverId === filter.id}
+                onOpenChange={(open) => setOpenPopoverId(open ? filter.id : null)}
+              >
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2 whitespace-nowrap flex-shrink-0">
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "gap-2 whitespace-nowrap flex-shrink-0 transition-all",
+                      hasActiveFilters && "border-primary/50 bg-primary/5"
+                    )}
+                  >
                     {filter.label}
                     {activeCount > 0 && (
-                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                        {activeCount}
+                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-primary text-primary-foreground border-none">
+                        {filter.type === "batch"
+                          ? `项(${activeFilters.find(f => f.filterId === filter.id)?.optionValue.split(",").length || 0})`
+                          : activeCount}
                       </Badge>
                     )}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
+                    {hasActiveFilters ? (
+                      <X
+                        className="h-3.5 w-3.5 ml-1 opacity-40 hover:opacity-100 hover:text-destructive transition-all"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleClearFilterType(filter.id)
+                        }}
+                      />
+                    ) : (
+                      <ChevronDown className={cn("h-4 w-4 opacity-50 transition-transform", openPopoverId === filter.id && "rotate-180")} />
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-64 p-0">
-                  <div className="flex items-center justify-between px-3 py-2 border-b">
-                    <span className="text-sm font-semibold">{filter.label}</span>
-                    {hasActiveFilters && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => {
-                          // Clear all filters for this filter type
-                          setActiveFilters((prev) => {
-                            const newFilters = prev.filter((f) => f.filterId !== filter.id)
-                            onFiltersChange?.(newFilters)
-                            return newFilters
-                          })
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Search input for filter options */}
-                  <div className="p-2 border-b">
+
+                {filter.type === "batch" ? (
+                  <BatchFilterPopoverContent
+                    filter={filter}
+                    initialValue={activeFilters.find(f => f.filterId === filter.id)?.optionValue?.replace(/,/g, "\n") || ""}
+                    onApply={(val) => {
+                      handleBatchInputChange(filter, val)
+                      setOpenPopoverId(null)
+                    }}
+                    onCancel={() => setOpenPopoverId(null)}
+                    onClear={() => {
+                      handleClearFilterType(filter.id)
+                      setOpenPopoverId(null)
+                    }}
+                  />
+                ) : (
+                  <PopoverContent align="start" className="w-80 p-0">
+                    <div className="flex items-center justify-between px-3 py-2 border-b">
+                      <span className="text-sm font-semibold">{filter.label}</span>
+                      {hasActiveFilters && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => handleClearFilterType(filter.id)}
+                        >
+                          清空
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="p-3 space-y-3">
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                          placeholder={`Search ${filter.label.toLowerCase()}...`}
+                          placeholder={`搜索 ${filter.label.toLowerCase()}...`}
                           value={filterSearch}
                           onChange={(e) => setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))}
-                          className="h-8 pl-7 pr-7 text-sm"
+                          className="h-8 pl-7 pr-7 text-xs"
                         />
                         {filterSearch && (
                           <button
@@ -377,29 +613,30 @@ export function FilterBar({
                           </button>
                         )}
                       </div>
-                    </div>
-                  
-                  <div className="p-1 max-h-[300px] overflow-y-auto">
-                    {filteredOptions.length > 0 ? (
-                      filteredOptions.map((option) => (
-                        <label
-                          key={option.id}
-                          className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
-                        >
-                          <Checkbox
-                            checked={isFilterActive(filter.id, option.id)}
-                            onCheckedChange={() => handleFilterToggle(filter, option)}
-                          />
-                          <span className="text-sm flex-1">{option.label}</span>
-                        </label>
-                      ))
-                    ) : (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        No results found
+
+                      <div className="p-1 max-h-[300px] overflow-y-auto">
+                        {filteredOptions.length > 0 ? (
+                          filteredOptions.map((option) => (
+                            <label
+                              key={option.id}
+                              className="flex items-center gap-2 px-2 py-2 hover:bg-primary-hover/10 hover:text-primary rounded-sm cursor-pointer transition-colors"
+                            >
+                              <Checkbox
+                                checked={isFilterActive(filter.id, option.id)}
+                                onCheckedChange={() => handleFilterToggle(filter, option)}
+                              />
+                              <span className="text-sm flex-1">{option.label}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                            无搜索结果
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </PopoverContent>
+                    </div>
+                  </PopoverContent>
+                )}
               </Popover>
             )
           })}
@@ -410,18 +647,18 @@ export function FilterBar({
             const hiddenFilters = filters.slice(visibleFilterCount)
             const filteredHiddenFilters = moreFiltersSearch
               ? hiddenFilters.filter(f => {
-                  const searchLower = moreFiltersSearch.toLowerCase()
-                  // Match filter name
-                  if (f.label.toLowerCase().includes(searchLower)) {
-                    return true
-                  }
-                  // Match any option label
-                  return f.options.some(opt => 
-                    opt.label.toLowerCase().includes(searchLower)
-                  )
-                })
+                const searchLower = moreFiltersSearch.toLowerCase()
+                // Match filter name
+                if (f.label.toLowerCase().includes(searchLower)) {
+                  return true
+                }
+                // Match any option label (if they exist)
+                return (f.options || []).some(opt =>
+                  opt.label.toLowerCase().includes(searchLower)
+                )
+              })
               : hiddenFilters
-            
+
             return (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -436,7 +673,7 @@ export function FilterBar({
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>更多筛选</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  
+
                   {/* Search input for more filters */}
                   <div className="p-2 border-b">
                     <div className="relative">
@@ -464,28 +701,28 @@ export function FilterBar({
                       )}
                     </div>
                   </div>
-                  
+
                   {filteredHiddenFilters.length > 0 ? (
                     filteredHiddenFilters.map((filter) => {
                       const activeCount = getActiveFilterCount(filter.id)
                       const hasActiveFilters = activeCount > 0
                       const filterSearch = filterSearches[filter.id] || ""
-                      
+
                       // Check if this filter matches by option content
                       const searchLower = moreFiltersSearch.toLowerCase()
-                      const matchedByOption = moreFiltersSearch && 
+                      const matchedByOption = moreFiltersSearch &&
                         !filter.label.toLowerCase().includes(searchLower) &&
-                        filter.options.some(opt => opt.label.toLowerCase().includes(searchLower))
-                      
+                        (filter.options || []).some(opt => opt.label.toLowerCase().includes(searchLower))
+
                       // Filter options based on search - use moreFiltersSearch if matched by option
                       const effectiveSearch = matchedByOption ? moreFiltersSearch : filterSearch
-                      const filteredOptions = filter.options.filter(option =>
+                      const filteredOptions = (filter.options || []).filter(option =>
                         option.label.toLowerCase().includes(effectiveSearch.toLowerCase())
                       )
-                      
+
                       // Show match count if matched by option
                       const matchCount = matchedByOption ? filteredOptions.length : 0
-                      
+
                       return (
                         <DropdownMenuSub key={filter.id}>
                           <DropdownMenuSubTrigger className="flex items-center justify-between">
@@ -526,42 +763,42 @@ export function FilterBar({
                                   </Button>
                                 )}
                               </div>
-                              
+
                               {/* Search input for filter options */}
                               <div className="p-2 border-b sticky top-[41px] bg-popover z-10">
-                                  <div className="relative">
-                                    <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                      placeholder={`Search ${filter.label.toLowerCase()}...`}
-                                      value={effectiveSearch}
-                                      onChange={(e) => {
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                  <Input
+                                    placeholder={`Search ${filter.label.toLowerCase()}...`}
+                                    value={effectiveSearch}
+                                    onChange={(e) => {
+                                      e.stopPropagation()
+                                      setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))
+                                      // Clear parent search if user starts typing in child
+                                      if (matchedByOption) {
+                                        setMoreFiltersSearch("")
+                                      }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="h-8 pl-7 pr-7 text-sm"
+                                  />
+                                  {effectiveSearch && (
+                                    <button
+                                      onClick={(e) => {
                                         e.stopPropagation()
-                                        setFilterSearches(prev => ({ ...prev, [filter.id]: e.target.value }))
-                                        // Clear parent search if user starts typing in child
+                                        setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))
                                         if (matchedByOption) {
                                           setMoreFiltersSearch("")
                                         }
                                       }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="h-8 pl-7 pr-7 text-sm"
-                                    />
-                                    {effectiveSearch && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setFilterSearches(prev => ({ ...prev, [filter.id]: "" }))
-                                          if (matchedByOption) {
-                                            setMoreFiltersSearch("")
-                                          }
-                                        }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                    )}
-                                  </div>
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                 </div>
-                              
+                              </div>
+
                               <div className="p-1 max-h-[300px] overflow-y-auto">
                                 {filteredOptions.length > 0 ? (
                                   filteredOptions.map((option) => (
@@ -602,25 +839,8 @@ export function FilterBar({
         {/* Right side actions */}
         <div ref={rightActionsRef} className="flex items-center gap-2 flex-shrink-0">
           {/* Batch Search */}
-          {enableBatchSearch && onBatchSearch && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="whitespace-nowrap"
-                onClick={() => setShowBatchSearch(true)}
-              >
-                <ListFilter className="mr-2 h-4 w-4" />
-                批量搜索
-              </Button>
-              <BatchSearchDialog
-                open={showBatchSearch}
-                onOpenChange={setShowBatchSearch}
-                onSearch={onBatchSearch}
-                fieldLabel={batchSearchField}
-              />
-            </>
-          )}
+          {/* Batch Search (Default/Text variant placed in right actions) */}
+
 
           {/* Advanced Search */}
           {advancedSearchFields.length > 0 && onAdvancedSearch && (
@@ -640,7 +860,7 @@ export function FilterBar({
               }
             />
           )}
-          
+
           {/* Column Visibility Control */}
           {columns.length > 0 && (
             <DropdownMenu>
@@ -653,9 +873,9 @@ export function FilterBar({
               <DropdownMenuContent align="end" className="w-[280px] max-h-[400px] overflow-y-auto">
                 <DropdownMenuLabel className="flex items-center justify-between py-2">
                   <span>Toggle columns</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-7 px-2 text-xs"
                     onClick={(e) => {
                       e.preventDefault()
@@ -737,7 +957,7 @@ export function FilterBar({
       {(activeFilters.length > 0 || advancedSearchFilters.length > 0 || searchValue) && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">已选筛选:</span>
-          
+
           {searchValue && (
             <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
               搜索: {searchValue}

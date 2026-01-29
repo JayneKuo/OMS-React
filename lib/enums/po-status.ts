@@ -6,6 +6,7 @@
 // PO 状态枚举
 export enum POStatus {
   NEW = 'NEW',
+  PROCESSING = 'PROCESSING', // 通用处理中状态，涵盖运输和收货过程
   IN_TRANSIT = 'IN_TRANSIT',
   WAITING_FOR_RECEIVING = 'WAITING_FOR_RECEIVING',
   RECEIVING = 'RECEIVING',
@@ -48,6 +49,11 @@ export const PO_STATUS_STYLES: Record<POStatus, StatusStyle> = {
     variant: 'default',
     color: 'gray',
     description: 'Newly created, not yet fulfilled'
+  },
+  [POStatus.PROCESSING]: {
+    variant: 'processing',
+    color: 'blue',
+    description: 'In processing (shipping or receiving)'
   },
   [POStatus.IN_TRANSIT]: {
     variant: 'processing',
@@ -160,6 +166,10 @@ export const STATUS_LABELS = {
   [POStatus.NEW]: {
     en: 'New',
     cn: '新建'
+  },
+  [POStatus.PROCESSING]: {
+    en: 'Processing',
+    cn: '处理中'
   },
   [POStatus.IN_TRANSIT]: {
     en: 'In Transit',

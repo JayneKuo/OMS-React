@@ -4,6 +4,7 @@ import * as React from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,12 +12,38 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { POSendDialog } from "@/components/purchase/po-send-dialog"
+import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { 
   FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send, 
   Download, Eye, Copy, AlertCircle, Calendar, Building, User, MapPin, Clock, 
   TrendingUp, RefreshCw, ExternalLink, Phone, Mail, History, Info, XCircle,
-  FilePlus, Loader2, Lock
+  FilePlus, Loader2, Lock, MoreHorizontal, Pencil, Ban
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
@@ -47,9 +74,9 @@ const mockPODetail = {
   
   // Financial
   totalOrderQty: 500,
-  shippedQty: 75,
-  receivedQty: 50,
-  totalAmount: 12500.00,
+  shippedQty: 260,
+  receivedQty: 265,
+  totalAmount: 29500.00,
   currency: "USD",
   paymentTerms: "NET 30",
   deliveryTerms: "FOB Destination",
@@ -67,9 +94,12 @@ const mockPODetail = {
   sentToSupplier: true,
   lastSentDate: "2024-01-15T11:00:00Z",
   
-  // Line Items
+  // Line Items - 体现所有编辑场景
   lineItems: [
     {
+      // 场景: 有运单有入库，也有直接入库
+      // 运单发货60，其中50已入库，10在途
+      // 另有直接入库20（无运单）
       id: "1",
       lineNo: 1,
       skuCode: "SKU001",
@@ -79,22 +109,74 @@ const mockPODetail = {
       uom: "PCS",
       unitPrice: 50.00,
       lineAmount: 5000.00,
-      shippedQty: 0,
-      receivedQty: 0,
+      shippedQty: 60,      // 运单发货总数
+      receivedQty: 70,     // 入库总数（关联运单50 + 直接入库20）
+      fulfilledQty: 80,    // 后端计算: 在途10 + 已入库70 = 80
       returnedQty: 0,
     },
     {
+      // 场景: 无实绩 - 可删除
       id: "2",
       lineNo: 2,
       skuCode: "SKU002",
       productName: "MacBook Pro",
-      specifications: "14-inch, M3 Pro, 512GB SSD",
+      specifications: "14-inch, M3 Pro",
       quantity: 50,
       uom: "PCS",
       unitPrice: 150.00,
       lineAmount: 7500.00,
       shippedQty: 0,
       receivedQty: 0,
+      fulfilledQty: 0,
+      returnedQty: 0,
+    },
+    {
+      // 场景: 有发货在途，部分已入库
+      // 运单发货30，其中15已入库，15在途
+      id: "3",
+      lineNo: 3,
+      skuCode: "SKU003",
+      productName: "iPad Pro",
+      specifications: "12.9-inch, M2",
+      quantity: 100,
+      uom: "PCS",
+      unitPrice: 80.00,
+      lineAmount: 8000.00,
+      shippedQty: 30,      // 发货30
+      receivedQty: 15,     // 入库15（都是关联运单的）
+      fulfilledQty: 30,    // 后端计算: 在途15 + 已入库15 = 30
+      returnedQty: 0,
+    },
+    {
+      // 场景: 全部完成
+      id: "4",
+      lineNo: 4,
+      skuCode: "SKU004",
+      productName: "AirPods Pro",
+      specifications: "2nd Gen",
+      quantity: 200,
+      uom: "PCS",
+      unitPrice: 25.00,
+      lineAmount: 5000.00,
+      shippedQty: 200,
+      receivedQty: 200,
+      fulfilledQty: 200,
+      returnedQty: 0,
+    },
+    {
+      // 场景: 只有直接入库，没有运单
+      id: "5",
+      lineNo: 5,
+      skuCode: "SKU005",
+      productName: "Apple Watch Ultra",
+      specifications: "49mm, Titanium",
+      quantity: 50,
+      uom: "PCS",
+      unitPrice: 80.00,
+      lineAmount: 4000.00,
+      shippedQty: 0,       // 没有运单
+      receivedQty: 25,     // 直接入库25
+      fulfilledQty: 25,    // 后端计算: 0 + 25 = 25
       returnedQty: 0,
     },
   ],
@@ -205,6 +287,8 @@ const mockPODetail = {
       qualityStatus: "PASSED",
       damageQty: 0,
       rejectedQty: 0,
+      pushedToWarehouse: true,
+      pushedDate: "2024-01-20T10:00:00Z",
     },
     {
       id: "2",
@@ -220,6 +304,8 @@ const mockPODetail = {
       qualityStatus: "PASSED",
       damageQty: 0,
       rejectedQty: 0,
+      pushedToWarehouse: true,
+      pushedDate: "2024-01-18T15:00:00Z",
     },
     {
       id: "3",
@@ -235,6 +321,25 @@ const mockPODetail = {
       qualityStatus: "PARTIAL_DAMAGE",
       damageQty: 2,
       rejectedQty: 0,
+      pushedToWarehouse: false,
+      pushedDate: null,
+    },
+    {
+      id: "4",
+      receiptNo: "RCP202401250001",
+      wmsReceiptNo: null, // 未推送到仓库，没有WMS单号
+      receiptDate: "2024-01-25T16:30:00Z",
+      receivedQty: 35,
+      receivedBy: "赵六",
+      receiptStatus: "NEW",
+      notes: "新收货单，待推送到仓库",
+      relatedShipment: "SHP202401150001",
+      warehouseLocation: "待分配",
+      qualityStatus: "PENDING",
+      damageQty: 0,
+      rejectedQty: 0,
+      pushedToWarehouse: false,
+      pushedDate: null,
     },
   ],
   
@@ -557,13 +662,21 @@ export default function PODetailPage() {
   const [activeSideTab, setActiveSideTab] = React.useState("routing")
   const [isLoading, setIsLoading] = React.useState(false)
   const [showSendDialog, setShowSendDialog] = React.useState(false)
+  const [showEditDialog, setShowEditDialog] = React.useState(false)
+  const [showCancelDialog, setShowCancelDialog] = React.useState(false)
+  const [showCloseLineDialog, setShowCloseLineDialog] = React.useState(false)
+  const [showProductSelectionDialog, setShowProductSelectionDialog] = React.useState(false)
+  const [selectedLineForClose, setSelectedLineForClose] = React.useState<typeof mockPODetail.lineItems[0] | null>(null)
+  const [editedLineItems, setEditedLineItems] = React.useState(mockPODetail.lineItems)
+  const [editErrors, setEditErrors] = React.useState<Record<string, string>>({})
   const [selectedReceipt, setSelectedReceipt] = React.useState<string | null>(mockPODetail.receiptRecords[0]?.id || null)
   const [selectedShipment, setSelectedShipment] = React.useState<string | null>(mockPODetail.shipmentRecords[0]?.id || null)
+  const [poData, setPOData] = React.useState(mockPODetail)
 
   // 根据PO状态生成进度步骤
   const progressSteps = React.useMemo(() => {
-    return getProgressSteps(mockPODetail.status)
-  }, [mockPODetail.status])
+    return getProgressSteps(poData.status)
+  }, [poData.status])
 
 
   // Refresh handler
@@ -619,29 +732,29 @@ export default function PODetailPage() {
                 </Button>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">{mockPODetail.orderNo}</h1>
+                    <h1 className="text-2xl font-bold">{poData.orderNo}</h1>
                     <div className="flex items-center gap-2">
-                      <Badge className={statusConfig[mockPODetail.status as keyof typeof statusConfig].color}>
-                        {statusConfig[mockPODetail.status as keyof typeof statusConfig].label}
+                      <Badge className={statusConfig[poData.status as keyof typeof statusConfig]?.color || "bg-gray-100 text-gray-800"}>
+                        {statusConfig[poData.status as keyof typeof statusConfig]?.label || poData.status}
                       </Badge>
-                      {mockPODetail.shippingStatus && (
-                        <Badge variant="outline" className={shippingStatusConfig[mockPODetail.shippingStatus as keyof typeof shippingStatusConfig].color}>
-                          {shippingStatusConfig[mockPODetail.shippingStatus as keyof typeof shippingStatusConfig].label}
+                      {poData.shippingStatus && (
+                        <Badge variant="outline" className={shippingStatusConfig[poData.shippingStatus as keyof typeof shippingStatusConfig]?.color}>
+                          {shippingStatusConfig[poData.shippingStatus as keyof typeof shippingStatusConfig]?.label}
                         </Badge>
                       )}
-                      {mockPODetail.receivingStatus && (
-                        <Badge variant="outline" className={receivingStatusConfig[mockPODetail.receivingStatus as keyof typeof receivingStatusConfig].color}>
-                          {receivingStatusConfig[mockPODetail.receivingStatus as keyof typeof receivingStatusConfig].label}
+                      {poData.receivingStatus && (
+                        <Badge variant="outline" className={receivingStatusConfig[poData.receivingStatus as keyof typeof receivingStatusConfig]?.color}>
+                          {receivingStatusConfig[poData.receivingStatus as keyof typeof receivingStatusConfig]?.label}
                         </Badge>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Building className="h-3 w-3" />
-                    <span>供应商: {mockPODetail.supplierName}</span>
+                    <span>供应商: {poData.supplierName}</span>
                     <span>•</span>
                     <Clock className="h-3 w-3" />
-                    <span>创建时间: {new Date(mockPODetail.created).toLocaleDateString()}</span>
+                    <span>创建时间: {new Date(poData.created).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -662,9 +775,9 @@ export default function PODetailPage() {
                     <p>刷新数据</p>
                   </TooltipContent>
                 </Tooltip>
-                <Button variant="outline" size="sm" onClick={() => router.push(`/purchase/po/${mockPODetail.id}/edit`)}>
-                  <Edit className="h-4 w-4" />
-                  <span className="ml-2">编辑</span>
+                <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
+                  <Pencil className="h-4 w-4" />
+                  <span className="ml-2">编辑明细</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowSendDialog(true)}>
                   <Send className="h-4 w-4" />
@@ -674,6 +787,32 @@ export default function PODetailPage() {
                   <Download className="h-4 w-4" />
                   <span className="ml-2">下载</span>
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="ml-2">更多</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => router.push(`/purchase/po/${poData.id}/edit`)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      编辑订单
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Copy className="h-4 w-4 mr-2" />
+                      复制订单
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-600"
+                      onClick={() => setShowCancelDialog(true)}
+                    >
+                      <Ban className="h-4 w-4 mr-2" />
+                      取消订单
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -803,7 +942,7 @@ export default function PODetailPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {mockPODetail.lineItems.map((item) => (
+                            {poData.lineItems.map((item) => (
                               <TableRow key={item.id} className="hover:bg-muted/50">
                                 <TableCell className="text-xs p-3">
                                   <Badge variant="outline" className="text-xs">
@@ -850,19 +989,19 @@ export default function PODetailPage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Total Qty:</span>
-                            <span className="font-medium">{mockPODetail.totalOrderQty}</span>
+                            <span className="font-medium">{poData.totalOrderQty}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Shipped:</span>
-                            <span className="font-medium text-purple-600 dark:text-purple-400">{mockPODetail.shippedQty}</span>
+                            <span className="font-medium text-purple-600 dark:text-purple-400">{poData.shippedQty}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Received:</span>
-                            <span className="font-medium text-green-600 dark:text-green-400">{mockPODetail.receivedQty}</span>
+                            <span className="font-medium text-green-600 dark:text-green-400">{poData.receivedQty}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Total Amount:</span>
-                            <span className="font-bold">{mockPODetail.currency} {mockPODetail.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                            <span className="font-bold">{poData.currency} {poData.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                           </div>
                         </div>
                       </div>
@@ -901,15 +1040,26 @@ export default function PODetailPage() {
                               >
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="font-mono text-sm font-medium">{receipt.receiptNo}</div>
-                                  <Badge className={
-                                    receipt.receiptStatus === 'CLOSED' 
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                      : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                                  }>
-                                    {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' : receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' : 'In Progress'}
-                                  </Badge>
+                                  <div className="flex flex-col items-end gap-1">
+                                    <Badge className={
+                                      receipt.receiptStatus === 'CLOSED' 
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                        : receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                                        : receipt.receiptStatus === 'NEW'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                    }>
+                                      {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' : 
+                                       receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' : 
+                                       receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
+                                    </Badge>
+                                    {!receipt.pushedToWarehouse && (
+                                      <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                                        Not Pushed
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                                 <div className="text-xs text-muted-foreground space-y-1">
                                   <div>Warehouse: {mockPODetail.warehouseName}</div>
@@ -948,10 +1098,24 @@ export default function PODetailPage() {
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
-                                    <Button variant="outline" size="sm">
-                                      <Download className="h-4 w-4 mr-2" />
-                                      Download
-                                    </Button>
+                                    {!receipt.pushedToWarehouse ? (
+                                      <Button 
+                                        variant="default" 
+                                        size="sm"
+                                        onClick={() => {
+                                          console.log("Push to warehouse:", receipt.receiptNo)
+                                          // 实际应用中调用API推送到仓库
+                                        }}
+                                      >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Push to Warehouse
+                                      </Button>
+                                    ) : (
+                                      <Button variant="outline" size="sm">
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
 
@@ -2169,15 +2333,417 @@ export default function PODetailPage() {
           open={showSendDialog}
           onOpenChange={setShowSendDialog}
           poData={{
-            orderNo: mockPODetail.orderNo,
-            supplierName: mockPODetail.supplierName,
-            supplierEmail: mockPODetail.contactEmail,
-            totalAmount: mockPODetail.totalAmount,
-            currency: mockPODetail.currency,
-            itemCount: mockPODetail.lineItems.length,
+            orderNo: poData.orderNo,
+            supplierName: poData.supplierName,
+            supplierEmail: poData.contactEmail,
+            totalAmount: poData.totalAmount,
+            currency: poData.currency,
+            itemCount: poData.lineItems.length,
           }}
           onSend={handleSendPO}
         />
+
+        {/* PO Edit Dialog - Inline Implementation */}
+        <Dialog open={showEditDialog} onOpenChange={(open) => {
+          setShowEditDialog(open)
+          if (open) {
+            setEditedLineItems([...poData.lineItems])
+            setEditErrors({})
+          }
+        }}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                编辑 PO 明细 - {poData.orderNo}
+              </DialogTitle>
+              <DialogDescription>
+                修改订单数量、删除行项目或新增商品。已执行的实绩（已发货/已收货）不可逆。
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-auto">
+              {/* 提示信息 */}
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <p className="font-medium">Edit Rules:</p>
+                    <ul className="mt-1 space-y-1 text-xs">
+                      <li>• <span className="text-green-600">Increase Qty</span>: No restrictions</li>
+                      <li>• <span className="text-orange-600">Decrease Qty</span>: Min value is Fulfilled (max of shipped/received)</li>
+                      <li>• <span className="text-orange-600">Close Line</span>: Set qty to Fulfilled, release remaining ATP</li>
+                      <li>• <span className="text-red-600">Delete</span>: Only lines with no fulfillment can be deleted</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* 新增商品按钮 */}
+              <div className="mb-4 flex justify-end">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowProductSelectionDialog(true)}
+                >
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+
+              {/* 行项目表格 */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="text-sm font-medium p-3 w-16">Line</TableHead>
+                      <TableHead className="text-sm font-medium p-3">Product</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-28 text-center">Order Qty</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-20 text-center">Shipped</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-20 text-center">Received</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-20 text-center">Fulfilled</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-24 text-right">Amount</TableHead>
+                      <TableHead className="text-sm font-medium p-3 w-32 text-center">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editedLineItems.map((item) => {
+                      // fulfilledQty 由后端计算，用于校验最小可减数量
+                      const fulfilledQty = (item as any).fulfilledQty || 0
+                      const hasExecution = fulfilledQty > 0
+                      const remainingQty = item.quantity - fulfilledQty
+                      const hasError = !!editErrors[item.id]
+                      const isNew = item.id.startsWith('new-')
+
+                      return (
+                        <TableRow key={item.id} className={`hover:bg-muted/50 ${hasError ? "bg-red-50 dark:bg-red-900/10" : ""}`}>
+                          <TableCell className="text-xs p-3">
+                            <Badge variant={isNew ? "default" : "outline"} className="text-xs">
+                              {isNew ? "新" : item.lineNo.toString().padStart(2, '0')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs p-3">
+                            <div className="space-y-1">
+                              <div className="font-medium">{item.productName}</div>
+                              <div className="text-muted-foreground">SKU: {item.skuCode || "待选择"}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs p-3">
+                            <div className="space-y-1">
+                              <Input
+                                type="number"
+                                value={item.quantity}
+                                min={fulfilledQty}
+                                onChange={(e) => {
+                                  const newQty = parseInt(e.target.value) || 0
+                                  if (newQty < fulfilledQty) {
+                                    setEditErrors(prev => ({
+                                      ...prev,
+                                      [item.id]: `Cannot be less than Fulfilled (${fulfilledQty})`
+                                    }))
+                                  } else {
+                                    setEditErrors(prev => {
+                                      const newErrors = { ...prev }
+                                      delete newErrors[item.id]
+                                      return newErrors
+                                    })
+                                  }
+                                  setEditedLineItems(prev => prev.map(i => 
+                                    i.id === item.id 
+                                      ? { ...i, quantity: newQty, lineAmount: newQty * i.unitPrice }
+                                      : i
+                                  ))
+                                }}
+                                className={`h-8 w-20 text-center ${hasError ? "border-red-500" : ""}`}
+                              />
+                              {hasError && (
+                                <p className="text-xs text-red-600">{editErrors[item.id]}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs p-3 text-center">
+                            <span className={item.shippedQty > 0 ? "text-purple-600 dark:text-purple-400 font-medium" : "text-muted-foreground"}>
+                              {item.shippedQty}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs p-3 text-center">
+                            <span className={item.receivedQty > 0 ? "text-green-600 dark:text-green-400 font-medium" : "text-muted-foreground"}>
+                              {item.receivedQty}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs p-3 text-center">
+                            <span className={fulfilledQty > 0 ? "text-orange-600 dark:text-orange-400 font-medium" : "text-muted-foreground"}>
+                              {fulfilledQty}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs p-3 text-right font-mono">
+                            ${item.lineAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell className="text-xs p-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {hasExecution ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-xs text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-700 dark:hover:bg-orange-900/20"
+                                      onClick={() => {
+                                        setSelectedLineForClose(item)
+                                        setShowCloseLineDialog(true)
+                                      }}
+                                      disabled={item.quantity === fulfilledQty}
+                                    >
+                                      <Lock className="h-3 w-3 mr-1" />
+                                      {item.quantity === fulfilledQty ? "Closed" : "Close Line"}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {item.quantity === fulfilledQty 
+                                      ? "This line is already closed" 
+                                      : `Close remaining ${remainingQty} units, release ATP`
+                                    }
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                                  onClick={() => {
+                                    setEditedLineItems(prev => prev.filter(i => i.id !== item.id))
+                                  }}
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* 汇总 */}
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-4 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">总数量:</span>
+                    <span className="font-medium">{editedLineItems.reduce((sum, i) => sum + i.quantity, 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">总金额:</span>
+                    <span className="font-bold">${editedLineItems.reduce((sum, i) => sum + i.lineAmount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">行数:</span>
+                    <span className="font-medium">{editedLineItems.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">变更:</span>
+                    <span className={JSON.stringify(editedLineItems) !== JSON.stringify(poData.lineItems) ? "text-orange-600 font-medium" : "text-muted-foreground"}>
+                      {JSON.stringify(editedLineItems) !== JSON.stringify(poData.lineItems) ? "Modified" : "No Changes"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  setPOData(prev => ({
+                    ...prev,
+                    lineItems: editedLineItems as typeof prev.lineItems,
+                    totalOrderQty: editedLineItems.reduce((sum, i) => sum + i.quantity, 0),
+                    totalAmount: editedLineItems.reduce((sum, i) => sum + i.lineAmount, 0),
+                  }))
+                  setShowEditDialog(false)
+                }}
+                disabled={Object.keys(editErrors).length > 0}
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Close Line Confirmation Dialog */}
+        <AlertDialog open={showCloseLineDialog} onOpenChange={setShowCloseLineDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-orange-500" />
+                Confirm Close Line
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  <p>
+                    This line has fulfillment and cannot be deleted. Set quantity to Fulfilled value{' '}
+                    <span className="font-bold text-foreground">
+                      {selectedLineForClose ? (selectedLineForClose as any).fulfilledQty || 0 : 0}
+                    </span>
+                    {' '}and close remaining{' '}
+                    <span className="font-bold text-foreground">
+                      {selectedLineForClose ? selectedLineForClose.quantity - ((selectedLineForClose as any).fulfilledQty || 0) : 0}
+                    </span> 
+                    {' '}units?
+                  </p>
+                  
+                  {selectedLineForClose && (
+                    <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Product:</span>
+                        <span className="font-medium">{selectedLineForClose.productName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Current Qty:</span>
+                        <span>{selectedLineForClose.quantity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Shipped:</span>
+                        <span className="text-purple-600">{selectedLineForClose.shippedQty}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Received:</span>
+                        <span className="text-green-600">{selectedLineForClose.receivedQty}</span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between">
+                        <span className="text-muted-foreground">Qty After Close:</span>
+                        <span className="font-bold text-orange-600">
+                          {(selectedLineForClose as any).fulfilledQty || 0}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <Info className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-orange-800 dark:text-orange-200">
+                      After closing, remaining ATP will be released. This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (selectedLineForClose) {
+                    const fulfilledQty = (selectedLineForClose as any).fulfilledQty || 0
+                    setEditedLineItems(prev => prev.map(i => 
+                      i.id === selectedLineForClose.id 
+                        ? { ...i, quantity: fulfilledQty, lineAmount: fulfilledQty * i.unitPrice }
+                        : i
+                    ))
+                  }
+                  setShowCloseLineDialog(false)
+                  setSelectedLineForClose(null)
+                }}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Confirm Close
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Product Selection Dialog */}
+        <ProductSelectionDialog
+          open={showProductSelectionDialog}
+          onOpenChange={setShowProductSelectionDialog}
+          onProductsSelected={(products) => {
+            const newItems = products.map((product, index) => ({
+              id: `new-${Date.now()}-${index}`,
+              lineNo: editedLineItems.length + index + 1,
+              skuCode: product.sku,
+              productName: product.productName,
+              specifications: product.specifications,
+              quantity: 1,
+              uom: product.uom,
+              unitPrice: product.unitPrice,
+              lineAmount: product.unitPrice,
+              shippedQty: 0,
+              receivedQty: 0,
+              returnedQty: 0,
+            }))
+            setEditedLineItems(prev => [...prev, ...newItems])
+          }}
+          selectedProductIds={editedLineItems.map(item => item.skuCode)}
+        />
+
+        {/* PO Cancel Dialog - Inline Implementation */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                {poData.shippedQty > 0 || poData.receivedQty > 0 ? (
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+                {poData.shippedQty > 0 || poData.receivedQty > 0 ? "Cannot Cancel Entire Order" : "Cancel Order"}
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  {poData.shippedQty > 0 || poData.receivedQty > 0 ? (
+                    <p>Order has shipped/received items and cannot be voided. Recommend executing "Close" operation to close remaining {poData.totalOrderQty - Math.max(poData.shippedQty, poData.receivedQty)} unfulfilled units.</p>
+                  ) : (
+                    <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
+                  )}
+                  
+                  <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Order No:</span>
+                      <span className="font-mono font-medium">{poData.orderNo}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Order Qty:</span>
+                      <span>{poData.totalOrderQty}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Shipped:</span>
+                      <span className={poData.shippedQty > 0 ? "text-purple-600 font-medium" : ""}>
+                        {poData.shippedQty}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Received:</span>
+                      <span className={poData.receivedQty > 0 ? "text-green-600 font-medium" : ""}>
+                        {poData.receivedQty}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (poData.shippedQty > 0 || poData.receivedQty > 0) {
+                    setPOData(prev => ({ ...prev, status: "CLOSED" }))
+                  } else {
+                    setPOData(prev => ({ ...prev, status: "CANCELLED" }))
+                  }
+                }}
+                className={poData.shippedQty > 0 || poData.receivedQty > 0 
+                  ? "bg-orange-600 hover:bg-orange-700" 
+                  : "bg-red-600 hover:bg-red-700"
+                }
+              >
+                {poData.shippedQty > 0 || poData.receivedQty > 0 ? "Close Order" : "Confirm Cancel"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </MainLayout>
     </TooltipProvider>
   )

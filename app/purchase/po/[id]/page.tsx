@@ -186,6 +186,8 @@ const mockPODetail = {
       qualityStatus: "PASSED",
       damageQty: 0,
       rejectedQty: 0,
+      pushedToWarehouse: true,
+      pushedDate: "2024-01-20T10:00:00Z",
     },
     {
       id: "2",
@@ -200,6 +202,8 @@ const mockPODetail = {
       qualityStatus: "PASSED",
       damageQty: 0,
       rejectedQty: 0,
+      pushedToWarehouse: true,
+      pushedDate: "2024-01-18T15:00:00Z",
     },
     {
       id: "3",
@@ -214,6 +218,8 @@ const mockPODetail = {
       qualityStatus: "PARTIAL_DAMAGE",
       damageQty: 2,
       rejectedQty: 0,
+      pushedToWarehouse: false,
+      pushedDate: null,
     },
   ],
   
@@ -1060,7 +1066,9 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                               <TableHead>仓库位置</TableHead>
                               <TableHead>损坏数量</TableHead>
                               <TableHead>拒收数量</TableHead>
+                              <TableHead>推送状态</TableHead>
                               <TableHead>备注</TableHead>
+                              <TableHead>操作</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1104,7 +1112,42 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                                   <TableCell className={receipt.rejectedQty > 0 ? "text-red-600 font-medium" : "text-muted-foreground"}>
                                     {receipt.rejectedQty}
                                   </TableCell>
+                                  <TableCell>
+                                    {receipt.pushedToWarehouse ? (
+                                      <div className="flex flex-col">
+                                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400">
+                                          <CheckCircle className="h-3 w-3 mr-1" />
+                                          已推送
+                                        </Badge>
+                                        {receipt.pushedDate && (
+                                          <span className="text-xs text-muted-foreground mt-1">
+                                            {new Date(receipt.pushedDate).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <Badge variant="outline" className="text-muted-foreground">
+                                        未推送
+                                      </Badge>
+                                    )}
+                                  </TableCell>
                                   <TableCell className="max-w-xs truncate">{receipt.notes}</TableCell>
+                                  <TableCell>
+                                    {!receipt.pushedToWarehouse && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() => {
+                                          console.log("Push to warehouse:", receipt.receiptNo)
+                                          // 实际应用中调用API推送到仓库
+                                        }}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        推送到仓库
+                                      </Button>
+                                    )}
+                                  </TableCell>
                                 </TableRow>
                               )
                             })}

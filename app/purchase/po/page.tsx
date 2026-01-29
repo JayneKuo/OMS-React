@@ -260,7 +260,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP005",
     destination: "South Warehouse - Miami",
     warehouseName: "South WH",
-    status: "PROCESSING" as POStatus, // Changed from PARTIAL_RECEIPT
+    status: POStatus.PROCESSING,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "MANUAL",
@@ -329,7 +329,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP007",
     destination: "Main Warehouse - Los Angeles",
     warehouseName: "Main Warehouse",
-    status: "PROCESSING" as POStatus, // Changed from RECEIVING
+    status: POStatus.PROCESSING,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.PARTIAL_RECEIVED,
     dataSource: "PR_CONVERSION",
@@ -363,7 +363,7 @@ const mockPOs: PurchaseOrder[] = [
     supplierNo: "SUP008",
     destination: "West Fulfillment Center - Seattle",
     warehouseName: "West FC",
-    status: "PROCESSING" as POStatus, // Changed from WAITING_FOR_RECEIVING
+    status: POStatus.PROCESSING,
     shippingStatus: ShippingStatus.ARRIVED,
     receivingStatus: ReceivingStatus.NOT_RECEIVED,
     dataSource: "MANUAL",
@@ -1175,39 +1175,79 @@ export default function POPage() {
                 }, variant: undefined, disabled: undefined },
                 { label: t('cancel'), action: () => console.log("Cancel PO", row.orderNo), variant: "destructive", disabled: undefined },
               ]
+            case POStatus.PROCESSING:
             case POStatus.IN_TRANSIT:
             case POStatus.WAITING_FOR_RECEIVING:
             case POStatus.RECEIVING:
             case POStatus.PARTIAL_RECEIPT:
-              // 运输中和收货相关状态的操作
-              return [
+              // 运输中和收货相关状态的操作 - 根据实际状态动态判断
+              const processingActions: { label: string; action: () => void; variant?: string; disabled?: boolean }[] = [
                 { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('createShipment'), action: () => router.push(`/purchase/shipments/create?poId=${row.id}`), variant: undefined, disabled: undefined },
-                { label: t('markArrived'), action: () => {
-                  // 标记送达：更新运输状态
-                  setFilteredData(prev => prev.map(po => {
-                    if (po.id === row.id) {
-                      return {
-                        ...po,
-                        shippingStatus: ShippingStatus.ARRIVED,
-                        updated: new Date().toISOString(),
-                      }
-                    }
-                    return po
-                  }))
-                  console.log("Mark arrived", row.orderNo)
-                }, variant: undefined, disabled: undefined },
-                { label: t('createReceipt'), action: () => {
-                  // 本地仓库：打开弹窗，一步完成入库和收货
-                  // 第三方仓库：跳转到入库请求创建页面
-                  if (isLocalWarehouse) {
-                    setCurrentPOForReceipt(row)
-                    setShowLocalWarehouseReceiptDialog(true)
-                  } else {
-                    router.push(`/purchase/receipts/create?poId=${row.id}`)
-                  }
-                }, variant: undefined, disabled: undefined },
               ]
+              
+              // 未发送邮件 -> 可以发送
+              if (!row.sentToSupplier) {
+                processingActions.push({
+                  label: t('send'),
+                  action: () => {
+                    setCurrentPOForSend(row)
+                    setShowSendDialog(true)
+                  },
+                  variant: undefined,
+                  disabled: undefined
+                })
+              }
+              
+              // 未全部发运 (shippedQty < totalOrderQty) -> 可以创建发运
+              if (row.shippedQty < row.totalOrderQty) {
+                processingActions.push({
+                  label: t('createShipment'),
+                  action: () => router.push(`/purchase/shipments/create?poId=${row.id}`),
+                  variant: undefined,
+                  disabled: undefined
+                })
+              }
+              
+              // 物流状态不是已到达 -> 可以标记到达
+              if (row.shippingStatus && row.shippingStatus !== ShippingStatus.ARRIVED) {
+                processingActions.push({
+                  label: t('markArrived'),
+                  action: () => {
+                    setFilteredData(prev => prev.map(po => {
+                      if (po.id === row.id) {
+                        return {
+                          ...po,
+                          shippingStatus: ShippingStatus.ARRIVED,
+                          updated: new Date().toISOString(),
+                        }
+                      }
+                      return po
+                    }))
+                    console.log("Mark arrived", row.orderNo)
+                  },
+                  variant: undefined,
+                  disabled: undefined
+                })
+              }
+              
+              // 未全部收货 (receivedQty < totalOrderQty) -> 可以创建收货/入库单
+              if (row.receivedQty < row.totalOrderQty) {
+                processingActions.push({
+                  label: t('createReceipt'),
+                  action: () => {
+                    if (isLocalWarehouse) {
+                      setCurrentPOForReceipt(row)
+                      setShowLocalWarehouseReceiptDialog(true)
+                    } else {
+                      router.push(`/purchase/receipts/create?poId=${row.id}`)
+                    }
+                  },
+                  variant: undefined,
+                  disabled: undefined
+                })
+              }
+              
+              return processingActions
             case POStatus.CLOSED:
               return [
                 { label: t('view'), action: () => router.push(`/purchase/po/${row.id}`), variant: undefined, disabled: undefined },

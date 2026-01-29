@@ -35,7 +35,7 @@ export const translations = {
     page: '页',
     of: '共',
     items: '项',
-    
+
     // ==================== 导航和模块 ====================
     dashboard: '仪表板',
     orders: '订单管理',
@@ -51,7 +51,7 @@ export const translations = {
     events: '事件管理',
     workspace: '工作空间',
     pom: 'POM管理',
-    
+
     // 导航相关
     tenant: '租户',
     merchant: '商户',
@@ -69,14 +69,14 @@ export const translations = {
     system: '系统',
     logout: '退出登录',
     settings: '设置',
-    
+
     // 采购子模块
     purchaseRequest: '采购申请',
     purchaseOrder: '采购订单',
     advanceShipNotice: '运单跟踪',
     receipts: '仓库收货',
     receiptConfirm: '收货确认',
-    
+
     // ==================== PR相关 ====================
     prNo: 'PR编号',
     businessNo: '业务编号',
@@ -89,7 +89,7 @@ export const translations = {
     budgetProject: '预算项目',
     notes: '备注',
     remark: '备注',
-    
+
     // PR列表页筛选和表头
     prStatus: 'PR状态',
     exceptionMark: '异常标记',
@@ -104,7 +104,7 @@ export const translations = {
     currentApprover: '当前审批人',
     budgetProjectCostCenter: '预算项目/成本中心',
     relatedPOInfo: '关联PO信息',
-    
+
     // PR详情页字段
     requestNumber: '请求编号',
     departmentBusinessUnit: '部门/事业部',
@@ -116,7 +116,7 @@ export const translations = {
     targetWarehouseDetail: '目标仓库',
     latestShipDateDetail: '最晚发货日期',
     multiWarehouse: '多仓库',
-    
+
     // 异常处理页面
     exceptionHandling: '异常处理',
     exceptionOverview: '异常概览',
@@ -134,41 +134,41 @@ export const translations = {
     retrying: '重试中...',
     back: '返回',
     editPR: '编辑PR',
-    
+
     // 严重程度
     LOW_SEVERITY: '低',
     MEDIUM_SEVERITY: '中',
     HIGH_SEVERITY: '高',
     CRITICAL_SEVERITY: '严重',
-    
+
     // PR类型
     regularPurchase: '常规采购',
     stockReplenishment: '备货',
     projectPurchase: '项目采购',
     internalTransfer: '内部调拨',
-    
 
-    
+
+
     // PO生成状态
     notGeneratedPO: '未生成PO',
     partiallyGeneratedPO: '部分生成PO',
     fullyGeneratedPO: '已完全生成PO',
-    
 
-    
+
+
     // 按钮和操作
     saveDraft: '保存草稿',
     saveAndSubmit: '保存并提交',
     selectOrEnterSupplier: '选择或输入供应商',
-    
+
     // 交付备注字段
     deliveryNotesField: '交付备注',
-    
+
     // 详情页面标签
     productDetailsLabel: '商品明细',
     relatedPOInfoLabel: '关联PO信息',
     approvalProcessLabel: '审批流程',
-    
+
     // 报价文件管理相关
     quoteFileManagement: '供应商报价管理',
     quoteFiles: '报价文件',
@@ -181,7 +181,7 @@ export const translations = {
     uploadDate: '上传时间',
     description: '描述',
     noQuoteFiles: '暂无报价文件，请上传供应商报价文件',
-    
+
     // 编辑页面
     editPurchaseRequest: '编辑采购申请',
     createPurchaseRequest: '新建采购申请',
@@ -192,7 +192,7 @@ export const translations = {
     selectPRType: '选择PR类型',
     notesField: '备注',
     purchaseBackgroundUsage: '说明采购背景、用途等',
-    
+
     // 编辑页面标签
     targetWarehouseLabel: '目标仓库',
     selectTargetWarehouseLabel: '选择目标仓库',
@@ -203,7 +203,7 @@ export const translations = {
     shippingAddressLabel: '收货地址',
     deliveryNotesLabel: '交付备注',
     batchSettingsLabel: '批量设置',
-    
+
     // 交付要求
     deliveryRequirements: '交付要求',
     targetWarehouse: '目标仓库',
@@ -493,7 +493,7 @@ export const translations = {
     selectOrEnterSupplierPlaceholder: '选择或输入供应商',
     quoteManagementButton: '报价管理',
     advancedManagementButton: '高级管理',
-    
+
     // PO生成弹窗
     generatePurchaseOrder: '生成采购订单 (PO)',
     prNumberLabel: 'PR编号',
@@ -540,21 +540,21 @@ export const translations = {
     enterSpecialRequirements: '输入特殊要求或备注信息...',
     generatePOWithItems: '生成PO',
     fillAllRequiredFields: '请填写所有必填字段，包括每个供应商的详细信息',
-    
+
     // 付款方式
     telegraphicTransfer: '电汇 (T/T)',
     letterOfCredit: '信用证 (L/C)',
     documentsAgainstPayment: '付款交单 (D/P)',
     documentsAgainstAcceptance: '承兑交单 (D/A)',
     cash: '现金',
-    
+
     // 运输方式
     seaTransport: '海运',
     airTransport: '空运',
     expressDelivery: '快递',
     landTransport: '陆运',
     multimodalTransport: '多式联运',
-    
+
     // PR详情页相关翻译
     shippingContactPersonDetail: '收货联系人',
     receivingContactPersonLabel: '收货联系人',
@@ -595,7 +595,7 @@ export const translations = {
     apartmentFloorInfo: '公寓号、楼层等补充信息',
     deliveryNotes: '交付备注',
     specialDeliveryRequirements: '特殊交付要求、注意事项等',
-    
+
     // 商品明细
     productDetails: '商品明细',
     batchSettings: '批量设置',
@@ -621,7 +621,7 @@ export const translations = {
     businessPurpose: '业务用途',
     notesFieldTable: '备注',
     actionsField: '操作',
-    
+
     // 产品选择弹窗
     selectProducts: '选择商品',
     searchProductsPlaceholder: '搜索商品名称、SKU、规格或品牌...',
@@ -642,7 +642,7 @@ export const translations = {
     inStock: '有库存',
     outOfStock: '缺货',
     addSelectedProducts: '添加选中商品 ({0})',
-    
+
     // 供应商报价弹窗
     supplierQuoteManagement: '供应商报价管理',
     supplierQuote: '供应商报价',
@@ -655,7 +655,7 @@ export const translations = {
     selectValidDate: '选择有效期',
     uploadQuoteFile: '上传报价文件',
     pleaseSelectSupplierAndPrice: '请选择供应商并输入报价',
-    
+
     // SN/批次管理弹窗
     snLotManagement: 'SN/批次管理',
     serialNumberManagement: '序列号管理',
@@ -666,7 +666,7 @@ export const translations = {
     enterLotNumbers: '输入批次号（每行一个）',
     snLotNotes: 'SN/批次备注',
     enterNotes: '输入备注信息',
-    
+
     // ==================== 状态 ====================
     DRAFT: '草稿',
     SUBMITTED: '新建',
@@ -681,7 +681,7 @@ export const translations = {
     CONFIRMED: '已确认',
     SHIPPED: '已发货',
     RECEIVED: '已收货',
-    
+
     // 状态标签页用的小写版本
     draftStatus: '草稿',
     submittedStatus: '已提交',
@@ -690,7 +690,7 @@ export const translations = {
     rejectedStatus: '拒绝',
 
     closedStatus: '已关闭',
-    
+
     // 优先级
     LOW: '低',
     NORMAL: '普通',
@@ -699,14 +699,14 @@ export const translations = {
     normal: '普通',
     urgent: '紧急',
     veryUrgent: '非常紧急',
-    
+
     // 收货类型
     STANDARD: '标准',
     CROSS_DOCK: '直通',
     DROP_SHIP: '直发',
     RETURN_TO_VENDOR: '退回供应商',
     TRANSFER: '调拨',
-    
+
     // ==================== 操作 ====================
     generatePO: '生成PO',
     continueGeneratePO: '继续生成PO',
@@ -727,7 +727,7 @@ export const translations = {
     types: '种',
     all: '全部',
     viewAll: '查看全部',
-    
+
     // 状态标签页（小写版本）
     draft: '草稿',
     submitted: '已提交',
@@ -751,11 +751,11 @@ export const translations = {
     approvalHistory: '审批历史',
     relatedPO: '关联PO',
     quoteFilesTab: '报价文件',
-    
+
     // ==================== PO相关翻译 ====================
     purchaseOrders: '采购订单',
     managePurchaseOrders: '管理和跟踪供应商采购订单',
-    
+
 
     poNo: 'PO编号',
     originalPoNo: '原始PO编号',
@@ -781,17 +781,17 @@ export const translations = {
     purchaseOrderDate: '采购订单日期',
     warehouseName: '仓库名称',
     itemCount: '商品数量',
-    
+
     // PO状态体系
     shippingStatus: '运输状态',
     receivingStatus: '收货状态',
     dataSource: '来源',
-    
+
     // 主状态（PO Contract State）
     CREATED: '已创建',
     PENDING_CONFIRMATION: '待确认',
     PARTIALLY_RECEIVED: '部分收货',
-    
+
     // 运输状态（Shipping Status）
     NOT_SHIPPED: '未发运',
     ASN_CREATED: '已创建ASN',
@@ -799,13 +799,13 @@ export const translations = {
     IN_TRANSIT: '在途',
     ARRIVED_AT_WAREHOUSE: '到仓',
     SHIPMENT_CLOSED: '发运已关闭',
-    
+
     // 收货状态（Receiving Status）
     NOT_RECEIVED: '未收货',
     IN_RECEIVING: '收货中',
     FULLY_RECEIVED: '全部收货',
     OVER_RECEIVED: '超收',
-    
+
     // 状态描述
     noASNCreated: '没有ASN',
     asnCreatedNotShipped: '创建了ASN，但供应商尚未发运',
@@ -818,18 +818,18 @@ export const translations = {
     partialLinesReceived: '部分行收货完成',
     allLinesReceived: '所有行收货完成',
     overReceivedAbnormal: '超收（异常）',
-    
+
     // 来源
     MANUAL: '手动创建',
     PR_CONVERSION: 'PR转单',
     API_IMPORT: '接口导入',
-    
+
     // PO数量字段
     totalOrderQty: '订购总数量',
     shippedQty: '已发运数量',
     receivedQty: '已收货数量',
     asnCount: 'ASN数量',
-    
+
     // PO新增编辑页面
     createPurchaseOrder: '新建采购订单',
     createNewPurchaseOrder: '创建新的采购订单',
@@ -859,7 +859,7 @@ export const translations = {
     saveAndSend: '保存并发送',
     attachments: '附件',
     enterAdditionalNotes: '输入附加备注信息',
-    
+
     // PO详情页面
     poHeaderInfo: 'PO头信息',
     warehouseInfo: '仓库信息',
@@ -876,14 +876,14 @@ export const translations = {
     carrier: '承运商',
     trackingNo: '跟踪号',
     estimatedArrival: '预计到达',
-    
+
     // PO编辑页面权限
     limitedEditPermissions: '编辑权限受限',
     prConversionEditLimitations: 'PR转单的PO编辑权限受限，部分字段不可修改',
     statusEditLimitations: '当前状态下编辑权限受限',
-    
 
-    
+
+
     // PO操作
     track: '跟踪',
     receive: '收货',
@@ -900,7 +900,7 @@ export const translations = {
     viewASN: '查看ASN',
     viewReceipts: '查看收货记录',
     viewRTV: '查看退供记录',
-    
+
     // 批量操作
     batchSend: '批量发送',
     batchResend: '批量重发',
@@ -920,11 +920,11 @@ export const translations = {
     createManuallyPO: '手动创建',
     importFromFilePO: '从文件导入',
     downloadTemplatePO: '下载模板',
-    
 
-    
 
-    
+
+
+
     // ==================== 搜索和筛选 ====================
     searchPlaceholder: '搜索PR编号、业务单号、申请人、部门或备注...',
     searchPOPlaceholder: '搜索PO编号、原始PO编号、参考编号、供应商或目的地...',
@@ -939,19 +939,19 @@ export const translations = {
     exampleEmployeeNumber: '例如：EMP001',
     enterApproverName: '输入审批人姓名',
     exampleBudgetProject: '例如：Q1-Marketing',
-    
+
     // ==================== 批量操作 ====================
     batchSubmit: '批量提交',
     batchGeneratePO: '批量生成PO',
     noAvailableActions: '此状态无可用操作',
     downloadTemplate: '下载模板',
-    
+
     // 报价文件管理状态
     pendingReview: '待审核',
     sentStatus: '已发送',
     receivedStatus: '已收到',
     overdueStatus: '已逾期',
-    
+
     // 询价管理
     quoteRequestManagement: '询价请求管理',
     addQuoteRequest: '新增询价',
@@ -964,7 +964,7 @@ export const translations = {
     noQuoteRequests: '暂无询价请求，点击"新增询价"开始管理询价',
     statusLabel2: '状态',
     actionsLabel2: '操作',
-    
+
     // PO Create Page New Fields
     selectPriority: '选择优先级',
     enterDepartment: '输入部门',
@@ -977,7 +977,7 @@ export const translations = {
     handlingFee: '操作费',
     otherCharge: '其他费用',
     isShippingTaxable: '运费需纳税',
-    
+
     // Product Line New Fields
     length: '长度',
     width: '宽度',
@@ -990,7 +990,7 @@ export const translations = {
     noSNRequired: '无需SN',
     requiresLot: '需要批次',
     noLotRequired: '无需批次',
-    
+
     // Cost Summary
     costSummary: '费用汇总',
     productTotals: '商品合计',
@@ -1004,14 +1004,14 @@ export const translations = {
     no: '否',
     grandTotal: '总计',
     includesAllCostsAndTaxes: '包含所有费用和税额',
-    
+
     // Address Fields
     postalCode: '邮政编码',
-    
+
     // New address and contact fields
     deliveryContactAndAddress: '交付联系人与地址',
     supplierContactAndAddress: '供应商联系人与地址',
-    
+
     // Missing keys
     contactPerson: '联系人',
     selected: '已选择',
@@ -1082,13 +1082,13 @@ export const translations = {
     selectCountry: '选择国家',
     enterQuantity: '输入数量',
     enterUnitPrice: '输入单价',
-    
+
     // New cost cards translations
     productSummary: '商品汇总',
     totalItems: '商品总数',
     totalQuantity: '总数量',
     orderTotal: '订单总计',
-    
+
     // SN/LOT List translations
     snList: 'SN列表',
     lotList: 'LOT列表',
@@ -1096,11 +1096,11 @@ export const translations = {
     viewLotList: '查看LOT列表',
     addSNList: '添加SN列表',
     addLotList: '添加LOT列表',
-    
+
     // SN/LOT Management Dialog translations
     snHint: '提示: 如果不指定具体序列号，将在收货时记录实际收到的序列号',
     lotHint: '提示: 如果不指定具体批次号，将在收货时记录实际收到的批次号',
-    
+
     // Additional shipment creation translations
     summary: '汇总',
     systemGenerated: '系统生成',
@@ -1115,7 +1115,7 @@ export const translations = {
     purchaseQuantity: '采购数量',
     pieces: '件',
     saveSettings: '保存设置',
-    
+
     // PO Status and Actions - Enhanced
     NEW: '新建',
     IN_TRANSIT: '运输中',
@@ -1125,13 +1125,13 @@ export const translations = {
     CLOSED: '已关闭',
     CANCELLED: '已取消',
     EXCEPTION: '异常',
-    
+
     // Shipping Status
     SHIPPED: '已发货',
     IN_TRANSIT: '运输中',
     ARRIVED: '已到达',
     SHIPPING_EXCEPTION: '运输异常',
-    
+
     // ==================== Shipment相关翻译 ====================
     shipment: '运输单',
     shipments: '运输单列表',
@@ -1168,7 +1168,7 @@ export const translations = {
     originCountry: '起运国家',
     destinationCountry: '目的国家',
     skuItem: 'SKU/商品',
-    
+
     // Shipment操作
     updateTracking: '更新追踪',
     markArrived: '标记到达',
@@ -1181,14 +1181,14 @@ export const translations = {
     createManuallyShipment: '手动创建',
     importFromFileShipment: '从文件导入',
     downloadTemplateShipment: '下载模板',
-    
+
     // Shipment批量操作
     batchUpdateTracking: '批量更新追踪',
     batchMarkArrived: '批量标记到达',
     batchMarkException: '批量标记异常',
     batchCreateReceiving: '批量创建收货请求',
     batchResolveException: '批量处理异常',
-    
+
     // Shipment创建页面
     createNewShipment: '创建新的运输单',
     fromPO: '来源PO',
@@ -1377,19 +1377,19 @@ export const translations = {
     intermodal: 'Intermodal（多式联运）',
     internal: 'Internal（内部运输）',
     virtual: 'Virtual（虚拟运输）',
-    
+
     // Receiving Status
     NOT_RECEIVED: '未收货',
     PARTIAL_RECEIVED: '部分收货',
     RECEIVED: '已收货',
-    
+
     // Legacy Status (for backward compatibility)
     PENDING_APPROVAL: '待审批',
     PENDING_SUPPLIER_CONFIRMATION: '待供应商确认',
     IN_FULFILLMENT: '备货中',
     PARTIALLY_SHIPPED: '部分发货',
     FULLY_SHIPPED: '全部发货',
-    
+
     // PO Actions - Enhanced
     saveAsNew: '保存为新建',
     withdraw: '撤回',
@@ -1411,7 +1411,67 @@ export const translations = {
     manualClose: '手动关闭',
     resolveAndContinue: '修正后继续',
     acceptVarianceClose: '接受差异关闭',
-    none: '无'
+    none: '无',
+
+    // ==================== 商品管理 ====================
+    sheinProductList: 'Shein 商品列表',
+    productList: '商品列表',
+    manageProductStatusDesc: '管理渠道商品的同步、价格与库存状态',
+    publishedProduct: '已刊登商品',
+    publishHistory: '发布历史',
+    draftBox: '草稿箱',
+    productDetailInfo: '商品基础信息',
+    variantInfo: 'SKU/变体',
+    priceStrategy: '价格体系',
+    stockAndStatus: '库存/状态',
+    salesPrice: '销售价',
+    lastSyncTime: '更新时间',
+    regularPriceLabel: '刊登价',
+    salePriceLabel: '折扣价',
+    productIdLabel: 'Product ID',
+    spuCodeLabel: 'SPU Code',
+    parentSkuLabel: 'Parent SKU',
+    productNameLabel: '商品名称',
+    brand: '品牌',
+    type: '类型',
+    source: '来源',
+    publishedChannels: '发布渠道',
+    internalItemId: '内部 ID',
+    mapping: '映射',
+    allCount: '全部',
+    draftStatus: '草稿',
+    activeStatus: '有效',
+    inactiveStatus: '无效',
+    batchPriceEdit: '批量修改价格',
+    batchStockEdit: '批量修改库存',
+    batchSetNewValue: '统一设定新值',
+    batchIncreasePrice: '基于原价上调',
+    batchDecreasePrice: '基于原价下调',
+    targetPriceField: '目标价格字段',
+    onlyRegularPrice: '仅销售价',
+    onlySalePrice: '仅折扣价',
+    editBoth: '同时修改',
+    selectedSkus: '已选变体',
+    inverseSelection: '反选所有 SKU',
+    batchPriceCenter: '批量价格调整中心',
+    inventoryAllocation: '智能库存分配管理',
+    syncingToServer: '正在同步至服务器...',
+    confirmExecution: '确认并执行变更',
+    laterAction: '稍后再说',
+    riskWarning: '风险预警',
+    submitRiskDesc: '提交后将自动计算溢价并推送到渠道。建议在修改大额库存或核心商品价格前先进行小范围测试。',
+    batchQuickFill: '全量快速填充',
+    batchFillRegularPrice: '统一设定刊登价',
+    batchFillSalePrice: '统一设定折扣价',
+    batchApplyBtn: '一键应用',
+    individualEditTitle: '变体明细改价',
+    originalPriceShort: '原',
+    salePriceShort: '折',
+    adjustByPercent: '百分比比例调整',
+    adjustByAmount: '固定数值加减',
+    targetSkuCount: '目标变体数',
+    noSkuSelected: '请选择变体',
+    currentValue: '当前参考值'
   },
   en: {
     // ==================== Common ====================
@@ -1442,7 +1502,7 @@ export const translations = {
     page: 'Page',
     of: 'of',
     items: 'items',
-    
+
     // ==================== Navigation and Modules ====================
     dashboard: 'Dashboard',
     orders: 'Orders',
@@ -1458,7 +1518,7 @@ export const translations = {
     events: 'Events',
     workspace: 'Workspace',
     pom: 'POM',
-    
+
     // Navigation related
     tenant: 'Tenant',
     merchant: 'Merchant',
@@ -1476,14 +1536,14 @@ export const translations = {
     system: 'System',
     logout: 'Logout',
     settings: 'Settings',
-    
+
     // Purchase sub-modules
     purchaseRequest: 'Purchase Request',
     purchaseOrder: 'Purchase Order',
     advanceShipNotice: 'Shipment Tracking',
     receipts: 'Warehouse Receipt',
     receiptConfirm: 'Receipt Confirmation',
-    
+
     // ==================== PR Related ====================
     prNo: 'Request ID',
     businessNo: 'Business Ref',
@@ -1496,7 +1556,7 @@ export const translations = {
     budgetProject: 'Project Code',
     notes: 'Comments',
     remark: 'Remark',
-    
+
     // PR List Filters and Headers
     prStatus: 'Status',
     exceptionMark: 'Exception',
@@ -1511,7 +1571,7 @@ export const translations = {
     currentApprover: 'Approver',
     budgetProjectCostCenter: 'Project/Cost Center',
     relatedPOInfo: 'PO Information',
-    
+
     // PR Detail Page Fields
     requestNumber: 'Request ID',
     departmentBusinessUnit: 'Department/Business Unit',
@@ -1523,7 +1583,7 @@ export const translations = {
     targetWarehouseDetail: 'Delivery Location',
     latestShipDateDetail: 'Latest Ship Date',
     multiWarehouse: 'Multiple Locations',
-    
+
     // Exception Handling Page
     exceptionHandling: 'Exception Handling',
     exceptionOverview: 'Exception Overview',
@@ -1541,44 +1601,44 @@ export const translations = {
     retrying: 'Retrying...',
     back: 'Back',
     editPR: 'Edit PR',
-    
+
     // Severity Levels
     LOW_SEVERITY: 'Low',
     MEDIUM_SEVERITY: 'Medium',
     HIGH_SEVERITY: 'High',
     CRITICAL_SEVERITY: 'Critical',
-    
+
     // PR Types
     regularPurchase: 'Regular Purchase',
     stockReplenishment: 'Stock Replenishment',
     projectPurchase: 'Project Purchase',
     internalTransfer: 'Internal Transfer',
-    
 
-    
+
+
     // PO Generation Status
     notGeneratedPO: 'Not Generated PO',
     partiallyGeneratedPO: 'Partially Generated PO',
     fullyGeneratedPO: 'Fully Generated PO',
-    
 
-    
+
+
     // Table Related
     lineNumber: 'Line No.',
-    
+
     // Buttons and Actions
     saveDraft: 'Save Draft',
     saveAndSubmit: 'Save and Submit',
     selectOrEnterSupplier: 'Select or enter supplier',
-    
+
     // Delivery Notes Field
     deliveryNotesField: 'Delivery Notes',
-    
+
     // Detail Page Labels
     productDetailsLabel: 'Product Details',
     relatedPOInfoLabel: 'Related PO Information',
     approvalProcessLabel: 'Approval Process',
-    
+
     // Quote File Management
     quoteFileManagement: 'Supplier Quote Management',
     quoteFiles: 'Quote Files',
@@ -1591,7 +1651,7 @@ export const translations = {
     uploadDate: 'Upload Date',
     description: 'Description',
     noQuoteFiles: 'No quote files, please upload supplier quote files',
-    
+
     // Edit Page
     editPurchaseRequest: 'Edit Purchase Request',
     createPurchaseRequest: 'Create Purchase Request',
@@ -1602,7 +1662,7 @@ export const translations = {
     selectPRType: 'Select PR Type',
     notesField: 'Notes',
     purchaseBackgroundUsage: 'Describe purchase background, usage, etc.',
-    
+
     // Edit Page Labels
     targetWarehouseLabel: 'Target Warehouse',
     selectTargetWarehouseLabel: 'Select Target Warehouse',
@@ -1613,7 +1673,7 @@ export const translations = {
     shippingAddressLabel: 'Shipping Address',
     deliveryNotesLabel: 'Delivery Notes',
     batchSettingsLabel: 'Batch Settings',
-    
+
     // Delivery Requirements
     deliveryRequirements: 'Delivery Requirements',
     targetWarehouse: 'Target Warehouse',
@@ -1762,7 +1822,67 @@ export const translations = {
     enterLotBatchNo: 'Enter Lot/Batch No.',
     selectLocation: 'Select Location',
     allowOverReceiving: 'Allow Over-Receiving',
-    overReceivingTolerance: 'Over-Receiving Tolerance',
+    receivingTolerance: 'Receiving Tolerance',
+
+    // ==================== Product Management ====================
+    sheinProductList: 'Shein Product List',
+    productList: 'Product List',
+    manageProductStatusDesc: 'Manage channel product synchronization, price and inventory status',
+    publishedProduct: 'Published Products',
+    publishHistory: 'Publish History',
+    draftBox: 'Drafts',
+    productDetailInfo: 'Product Basic Info',
+    variantInfo: 'SKU/Variant',
+    priceStrategy: 'Price Strategy',
+    stockAndStatus: 'Stock/Status',
+    salesPrice: 'Sales Price',
+    lastSyncTime: 'Update Time',
+    regularPriceLabel: 'Regular Price',
+    salePriceLabel: 'Sale Price',
+    productIdLabel: 'Product ID',
+    spuCodeLabel: 'SPU Code',
+    parentSkuLabel: 'Parent SKU',
+    productNameLabel: 'Product Name',
+    brand: 'Brand',
+    type: 'Type',
+    source: 'Source',
+    publishedChannels: 'Published Channels',
+    internalItemId: 'Internal Item ID',
+    mapping: 'Mapping',
+    allCount: 'All',
+    draftStatus: 'Draft',
+    activeStatus: 'Active',
+    inactiveStatus: 'Inactive',
+    batchPriceEdit: 'Batch Price Adjustment',
+    batchStockEdit: 'Batch Inventory Adjustment',
+    batchSetNewValue: 'Set Uniform Value',
+    batchIncreasePrice: 'Increase Based on Base',
+    batchDecreasePrice: 'Decrease Based on Base',
+    targetPriceField: 'Target Price Field',
+    onlyRegularPrice: 'Regular Price Only',
+    onlySalePrice: 'Sale Price Only',
+    editBoth: 'Update Both',
+    selectedSkus: 'Selected Variants',
+    inverseSelection: 'Inverse Selection',
+    batchPriceCenter: 'Batch Price Adjustment Center',
+    inventoryAllocation: 'Intelligent Inventory Allocation',
+    syncingToServer: 'Syncing to server...',
+    confirmExecution: 'Confirm Selection',
+    laterAction: 'Later',
+    riskWarning: 'Risk Warning',
+    submitRiskDesc: 'Calculating premiums and pushing to channels after submission. High-volume testing is advised.',
+    batchQuickFill: 'Quick Batch Fill',
+    batchFillRegularPrice: 'Uniform Regular Price',
+    batchFillSalePrice: 'Uniform Sale Price',
+    batchApplyBtn: 'Apply to All',
+    individualEditTitle: 'Individual SKU Pricing',
+    originalPriceShort: 'Reg',
+    salePriceShort: 'Sale',
+    adjustByPercent: 'Percentage Adjustment',
+    adjustByAmount: 'Fixed Value Offset',
+    targetSkuCount: 'Target SKUs',
+    noSkuSelected: 'No SKU selected',
+    currentValue: 'Current Value',
     number: 'Number',
     autoClosePO: 'Auto Close PO on Receipt Completion',
     receiptSettingsAndAttachments: 'Receipt Settings & Attachments',
@@ -1891,7 +2011,7 @@ export const translations = {
     selectOrEnterSupplierPlaceholder: 'Select or enter supplier',
     quoteManagementButton: 'Quote Management',
     advancedManagementButton: 'Advanced Management',
-    
+
     // PO Generation Dialog
     generatePurchaseOrder: 'Generate Purchase Order (PO)',
     prNumberLabel: 'PR Number',
@@ -1938,21 +2058,21 @@ export const translations = {
     enterSpecialRequirements: 'Enter special requirements or notes...',
     generatePOWithItems: 'Generate PO',
     fillAllRequiredFields: 'Please fill in all required fields, including detailed information for each supplier',
-    
+
     // Payment Methods
     telegraphicTransfer: 'Telegraphic Transfer (T/T)',
     letterOfCredit: 'Letter of Credit (L/C)',
     documentsAgainstPayment: 'Documents Against Payment (D/P)',
     documentsAgainstAcceptance: 'Documents Against Acceptance (D/A)',
     cash: 'Cash',
-    
+
     // Shipping Methods
     seaTransport: 'Sea Transport',
     airTransport: 'Air Transport',
     expressDelivery: 'Express Delivery',
     landTransport: 'Land Transport',
     multimodalTransport: 'Multimodal Transport',
-    
+
     // PR Detail Page Related Translations
     shippingContactPersonDetail: 'Shipping Contact Person',
     receivingContactPersonLabel: 'Receiving Contact Person',
@@ -1993,7 +2113,7 @@ export const translations = {
     apartmentFloorInfo: 'Apartment, floor, etc.',
     deliveryNotes: 'Delivery Notes',
     specialDeliveryRequirements: 'Special delivery requirements, notes, etc.',
-    
+
     // Product Details
     productDetails: 'Product Details',
     batchSettings: 'Batch Settings',
@@ -2018,7 +2138,7 @@ export const translations = {
     businessPurpose: 'Business Purpose',
     notesFieldTable: 'Notes',
     actionsField: 'Actions',
-    
+
     // Product Selection Dialog
     selectProducts: 'Select Products',
     searchProductsPlaceholder: 'Search product name, SKU, specifications or brand...',
@@ -2039,7 +2159,7 @@ export const translations = {
     inStock: 'In Stock',
     outOfStock: 'Out of Stock',
     addSelectedProducts: 'Add Selected Products ({0})',
-    
+
     // Supplier Quote Dialog
     supplierQuoteManagement: 'Supplier Quote Management',
     supplierQuote: 'Supplier Quote',
@@ -2052,7 +2172,7 @@ export const translations = {
     selectValidDate: 'Select valid date',
     uploadQuoteFile: 'Upload quote file',
     pleaseSelectSupplierAndPrice: 'Please select supplier and enter price',
-    
+
     // SN/Lot Management Dialog
     snLotManagement: 'SN/Lot Management',
     serialNumberManagement: 'Serial Number Management',
@@ -2063,7 +2183,7 @@ export const translations = {
     enterLotNumbers: 'Enter lot numbers (one per line)',
     snLotNotes: 'SN/Lot Notes',
     enterNotes: 'Enter notes',
-    
+
     // ==================== Status ====================
     DRAFT: 'Draft',
     SUBMITTED: 'New',
@@ -2078,13 +2198,13 @@ export const translations = {
     CONFIRMED: 'Confirmed',
     SHIPPED: 'Shipped',
     RECEIVED: 'Received',
-    
+
     // Status tabs lowercase versions
     exception: 'Exception',
     partialPO: 'Partial PO',
     fullPO: 'Full PO',
     closed: 'Closed',
-    
+
     // Priority
     LOW: 'Low',
     NORMAL: 'Normal',
@@ -2093,7 +2213,7 @@ export const translations = {
     normal: 'Normal',
     urgent: 'Urgent',
     veryUrgent: 'Very Urgent',
-    
+
     // Status labels lowercase versions
     draftStatus: 'Draft',
     submittedStatus: 'Submitted',
@@ -2102,14 +2222,14 @@ export const translations = {
     rejectedStatus: 'Rejected',
 
     closedStatus: 'Closed',
-    
+
     // Receipt Type
     STANDARD: 'Standard',
     CROSS_DOCK: 'Cross Dock',
     DROP_SHIP: 'Drop Ship',
     RETURN_TO_VENDOR: 'Return to Vendor',
     TRANSFER: 'Transfer',
-    
+
     // ==================== Actions ====================
     generatePO: 'Generate PO',
     continueGeneratePO: 'Continue Generate PO',
@@ -2130,7 +2250,7 @@ export const translations = {
     types: 'types',
     all: 'All',
     viewAll: 'View All',
-    
+
     // Status tabs (lowercase versions)
     draft: 'Draft',
     submitted: 'Submitted',
@@ -2150,7 +2270,7 @@ export const translations = {
     approvalHistory: 'Approval History',
     relatedPO: 'Purchase Orders',
     quoteFilesTab: 'Quotations',
-    
+
     // PO Actions
     track: 'Track',
     receive: 'Receive',
@@ -2167,7 +2287,7 @@ export const translations = {
     viewASN: 'View ASN',
     viewReceipts: 'View Receipts',
     viewRTV: 'View RTV',
-    
+
     // Batch Actions
     batchSend: 'Batch Send',
     batchResend: 'Batch Resend',
@@ -2187,11 +2307,11 @@ export const translations = {
     createManuallyPO: 'Create Manually',
     importFromFilePO: 'Import from File',
     downloadTemplatePO: 'Download Template',
-    
+
     // PO Related Translations
     purchaseOrders: 'Purchase Orders',
     managePurchaseOrders: 'Manage and track purchase orders from suppliers',
-    
+
 
     poNo: 'PO No.',
     originalPoNo: 'Original PO No.',
@@ -2219,17 +2339,17 @@ export const translations = {
     itemCount: 'Item Count',
     searchPOPlaceholder: 'Search by PO No., Original PO No., Reference No., Supplier, or Destination...',
     searchReceiptsPlaceholder: 'Search by Inbound Request No., Receipt No., PO No., Supplier, or Warehouse...',
-    
+
     // PO Status System
     shippingStatus: 'Shipping Status',
     receivingStatus: 'Receiving Status',
     dataSource: 'Data Source',
-    
+
     // Contract State
     CREATED: 'Created',
     PENDING_CONFIRMATION: 'Pending Confirmation',
     PARTIALLY_RECEIVED: 'Partially Received',
-    
+
     // Shipping Status
     NOT_SHIPPED: 'Not Shipped',
     ASN_CREATED: 'ASN Created',
@@ -2237,13 +2357,13 @@ export const translations = {
     IN_TRANSIT: 'In Transit',
     ARRIVED_AT_WAREHOUSE: 'Arrived at Warehouse',
     SHIPMENT_CLOSED: 'Shipment Closed',
-    
+
     // Receiving Status
     NOT_RECEIVED: 'Not Received',
     IN_RECEIVING: 'Receiving',
     FULLY_RECEIVED: 'Fully Received',
     OVER_RECEIVED: 'Over Received',
-    
+
     // Status Descriptions
     noASNCreated: 'No ASN created',
     asnCreatedNotShipped: 'ASN created but supplier has not shipped yet',
@@ -2256,18 +2376,18 @@ export const translations = {
     partialLinesReceived: 'Partial lines received',
     allLinesReceived: 'All lines received',
     overReceivedAbnormal: 'Over received (abnormal)',
-    
+
     // Data Source
     MANUAL: 'Manual',
     PR_CONVERSION: 'PR Conversion',
     API_IMPORT: 'API Import',
-    
+
     // PO Quantity Fields
     totalOrderQty: 'Total Order Qty',
     shippedQty: 'Shipped Qty',
     receivedQty: 'Received Qty',
     asnCount: 'ASN Count',
-    
+
     // PO Create/Edit Pages
     createPurchaseOrder: 'Create Purchase Order',
     createNewPurchaseOrder: 'Create new purchase order',
@@ -2297,7 +2417,7 @@ export const translations = {
     saveAndSend: 'Save and Send',
     attachments: 'Attachments',
     enterAdditionalNotes: 'Enter additional notes',
-    
+
     // PO Detail Page
     poHeaderInfo: 'PO Header Information',
     warehouseInfo: 'Warehouse Information',
@@ -2314,12 +2434,12 @@ export const translations = {
     carrier: 'Carrier',
     trackingNo: 'Tracking No.',
     estimatedArrival: 'Estimated Arrival',
-    
+
     // PO Edit Permissions
     limitedEditPermissions: 'Limited Edit Permissions',
     prConversionEditLimitations: 'PO converted from PR has limited edit permissions, some fields cannot be modified',
     statusEditLimitations: 'Edit permissions are limited under current status',
-    
+
     // Search and Filter
     searchPlaceholder: 'Search by Request ID, Business Ref, Requestor, Department or Comments...',
     prNumber: 'Request ID',
@@ -2332,19 +2452,19 @@ export const translations = {
     exampleEmployeeNumber: 'e.g.: EMP001',
     enterApproverName: 'Enter approver name',
     exampleBudgetProject: 'e.g.: Q1-MKT-001',
-    
+
     // Batch Actions
     batchSubmit: 'Batch Submit',
     batchGeneratePO: 'Batch Generate PO',
     noAvailableActions: 'No available actions for this status',
     downloadTemplate: 'Download Template',
-    
+
     // Quote File Management Status
     pendingReview: 'Pending Review',
     sentStatus: 'Sent',
     receivedStatus: 'Received',
     overdueStatus: 'Overdue',
-    
+
     // Quote Request Management
     quoteRequestManagement: 'Quote Request Management',
     addQuoteRequest: 'Add Quote Request',
@@ -2357,7 +2477,7 @@ export const translations = {
     noQuoteRequests: 'No quote requests, click "Add Quote Request" to start managing quotes',
     statusLabel2: 'Status',
     actionsLabel2: 'Actions',
-    
+
     // PO Create Page New Fields
     selectPriority: 'Select Priority',
     enterDepartment: 'Enter Department',
@@ -2370,7 +2490,7 @@ export const translations = {
     handlingFee: 'Handling Fee',
     otherCharge: 'Other Charge',
     isShippingTaxable: 'Is Shipping Taxable',
-    
+
     // Product Line New Fields
     length: 'Length',
     width: 'Width',
@@ -2383,7 +2503,7 @@ export const translations = {
     noSNRequired: 'No SN Required',
     requiresLot: 'Requires Lot',
     noLotRequired: 'No Lot Required',
-    
+
     // Cost Summary
     costSummary: 'Cost Summary',
     productTotals: 'Product Totals',
@@ -2397,14 +2517,14 @@ export const translations = {
     no: 'No',
     grandTotal: 'Grand Total',
     includesAllCostsAndTaxes: 'Includes all costs and taxes',
-    
+
     // Address Fields
     postalCode: 'Postal Code',
-    
+
     // New address and contact fields
     deliveryContactAndAddress: 'Delivery Contact & Address',
     supplierContactAndAddress: 'Supplier Contact & Address',
-    
+
     // Missing keys
     contactPerson: 'Contact Person',
     selected: 'Selected',
@@ -2415,13 +2535,13 @@ export const translations = {
     selectCountry: 'Select Country',
     enterQuantity: 'Enter Quantity',
     enterUnitPrice: 'Enter Unit Price',
-    
+
     // New cost cards translations
     productSummary: 'Product Summary',
     totalItems: 'Total Items',
     totalQuantity: 'Total Quantity',
     orderTotal: 'Order Total',
-    
+
     // SN/LOT List translations
     snList: 'SN List',
     lotList: 'LOT List',
@@ -2429,7 +2549,7 @@ export const translations = {
     viewLotList: 'View LOT List',
     addSNList: 'Add SN List',
     addLotList: 'Add LOT List',
-    
+
     // SN/LOT Management Dialog translations
     snHint: 'Tip: If no specific serial numbers are specified, actual received serial numbers will be recorded during receipt',
     lotHint: 'Tip: If no specific lot numbers are specified, actual received lot numbers will be recorded during receipt',
@@ -2440,7 +2560,7 @@ export const translations = {
     purchaseQuantity: 'Purchase Quantity',
     pieces: 'pieces',
     saveSettings: 'Save Settings',
-    
+
     // PO Status and Actions - Enhanced
     NEW: 'New',
     IN_TRANSIT: 'In Transit',
@@ -2450,13 +2570,13 @@ export const translations = {
     CLOSED: 'Closed',
     CANCELLED: 'Cancelled',
     EXCEPTION: 'Exception',
-    
+
     // Shipping Status
     SHIPPED: 'Shipped',
     IN_TRANSIT: 'In Transit',
     ARRIVED: 'Arrived',
     SHIPPING_EXCEPTION: 'Exception',
-    
+
     // ==================== Shipment Related Translations ====================
     shipment: 'Shipment',
     shipments: 'Shipments',
@@ -2493,7 +2613,7 @@ export const translations = {
     originCountry: 'Origin Country',
     destinationCountry: 'Destination Country',
     skuItem: 'SKU/Item',
-    
+
     // Shipment Actions
     updateTracking: 'Update Tracking',
     markArrived: 'Mark Arrived',
@@ -2506,14 +2626,14 @@ export const translations = {
     createManuallyShipment: 'Create Manually',
     importFromFileShipment: 'Import from File',
     downloadTemplateShipment: 'Download Template',
-    
+
     // Shipment Batch Actions
     batchUpdateTracking: 'Batch Update Tracking',
     batchMarkArrived: 'Batch Mark Arrived',
     batchMarkException: 'Batch Mark Exception',
     batchCreateReceiving: 'Batch Create Receiving',
     batchResolveException: 'Batch Resolve Exception',
-    
+
     // Shipment Create Page
     createNewShipment: 'Create new shipment',
     fromPO: 'From PO',
@@ -2701,19 +2821,19 @@ export const translations = {
     intermodal: 'Intermodal',
     internal: 'Internal',
     virtual: 'Virtual',
-    
+
     // Receiving Status
     NOT_RECEIVED: 'Not Received',
     PARTIAL_RECEIVED: 'Partial Received',
     RECEIVED: 'Received',
-    
+
     // Legacy Status (for backward compatibility)
     PENDING_APPROVAL: 'Pending Approval',
     PENDING_SUPPLIER_CONFIRMATION: 'Pending Supplier Confirmation',
     IN_FULFILLMENT: 'In Fulfillment',
     PARTIALLY_SHIPPED: 'Partially Shipped',
     FULLY_SHIPPED: 'Fully Shipped',
-    
+
     // PO Actions - Enhanced
     saveAsNew: 'Save as NEW',
     withdraw: 'Withdraw',
@@ -2736,7 +2856,7 @@ export const translations = {
     resolveAndContinue: 'Resolve & Continue',
     acceptVarianceClose: 'Accept Variance',
     none: 'None',
-    
+
     // Additional shipment creation translations
     summary: 'Summary',
     systemGenerated: 'System Generated',
@@ -2773,27 +2893,27 @@ const notifyLanguageChange = (lang: Language) => {
 // 国际化Hook - 优化性能
 export function useI18n() {
   const [language, setLanguage] = React.useState<Language>(globalLanguage)
-  
+
   React.useEffect(() => {
     // 添加监听器
     const listener = (lang: Language) => {
       setLanguage(lang)
     }
     languageListeners.add(listener)
-    
+
     // 清理函数
     return () => {
       languageListeners.delete(listener)
     }
   }, [])
-  
+
   // 使用 useMemo 缓存翻译函数，避免每次渲染都创建新函数
   const t = React.useMemo(() => {
     return (key: TranslationKey): string => {
       return translations[language][key] || key
     }
   }, [language])
-  
+
   // 使用 useCallback 缓存语言切换函数
   const switchLanguage = React.useCallback((lang: Language) => {
     if (typeof window !== 'undefined') {
@@ -2801,6 +2921,6 @@ export function useI18n() {
     }
     notifyLanguageChange(lang)
   }, [])
-  
+
   return { t, language, switchLanguage }
 }

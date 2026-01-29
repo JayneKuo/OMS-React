@@ -10,7 +10,7 @@ import { DataTableWithStickyHeader } from "@/components/data-table/data-table-wi
 import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 import { SearchField, AdvancedSearchValues } from "@/components/data-table/advanced-search-dialog"
 import { OrderNumberCell } from "@/components/ui/order-number-cell"
-import { 
+import {
   Download, Plus, Package, ArrowLeft, RefreshCw, Edit, Send,
   FileText, Building, Clock, MapPin, Phone, Truck, ShoppingCart, Home, User, Info, Sun, Moon,
   MoreVertical, Eye, Trash2, X
@@ -31,14 +31,14 @@ const generateMockOrders = () => {
     '重庆汽车制造', '苏州工业园区', '青岛海运集团', '大连化工有限', '长沙建材公司',
     '郑州食品加工', '济南机械制造', '福州电子商务', '厦门进出口贸易', '合肥新能源科技'
   ]
-  
+
   const suppliers = [
     'ABC Suppliers Inc.', 'Global Trading Co.', 'Tech Distributors Ltd.', 'Premium Goods Supply',
     'Reliable Parts Co.', 'Digital Solutions Ltd.', 'MedTech Supplies', 'Optics International',
     'Aerospace Components', 'Marine Equipment Co.', 'Industrial Materials Ltd.', 'Smart Tech Supply',
     'Quality Products Inc.', 'Express Logistics Co.', 'Advanced Manufacturing'
   ]
-  
+
   const addresses = [
     '北京市朝阳区建国路88号SOHO现代城A座1001室',
     '上海市浦东新区陆家嘴环路1000号',
@@ -51,9 +51,9 @@ const generateMockOrders = () => {
     '西安市高新区锦业路1号',
     '天津市滨海新区新港二号路'
   ]
-  
+
   const statuses: Array<'pending' | 'processing' | 'shipped' | 'completed'> = ['pending', 'processing', 'shipped', 'completed']
-  
+
   const orders = []
   for (let i = 1; i <= 100; i++) {
     const status = statuses[Math.floor(Math.random() * statuses.length)]
@@ -64,7 +64,7 @@ const generateMockOrders = () => {
     const items = Math.floor(Math.random() * 20) + 1
     const daysAgo = Math.floor(Math.random() * 90)
     const date = new Date(2024, 11, 31 - daysAgo).toISOString().split('T')[0]
-    
+
     orders.push({
       id: String(i),
       orderNo: `ORD-2024-${String(1000 + i).padStart(4, '0')}`,
@@ -74,10 +74,13 @@ const generateMockOrders = () => {
       date,
       items,
       address,
-      supplier
+
+      supplier,
+      channelOrderNo: `CHN-${String(1000 + i).padStart(4, '0')}`,
+      sourceNo: `SRC-${String(1000 + i).padStart(4, '0')}`
     })
   }
-  
+
   return orders
 }
 
@@ -143,7 +146,7 @@ export default function RealLayoutDemo() {
     // Search filter
     if (searchValue) {
       const searchLower = searchValue.toLowerCase()
-      filtered = filtered.filter(o => 
+      filtered = filtered.filter(o =>
         o.orderNo.toLowerCase().includes(searchLower) ||
         o.customer.toLowerCase().includes(searchLower)
       )
@@ -155,6 +158,24 @@ export default function RealLayoutDemo() {
         filtered = filtered.filter(o => o.status === filter.optionValue)
       } else if (filter.filterId === "customer") {
         filtered = filtered.filter(o => o.customer === filter.optionValue)
+      } else if (filter.filterId === "channelOrderNo") {
+        // Handle batch input (comma-separated)
+        const searchValues = filter.optionValue.split(",").map(v => v.trim().toLowerCase()).filter(Boolean)
+        if (searchValues.length > 0) {
+          filtered = filtered.filter(o => {
+            const val = ((o as any).channelOrderNo || "").toLowerCase()
+            return searchValues.some(v => val.includes(v))
+          })
+        }
+      } else if (filter.filterId === "sourceNo") {
+        // Handle batch input (comma-separated)
+        const searchValues = filter.optionValue.split(",").map(v => v.trim().toLowerCase()).filter(Boolean)
+        if (searchValues.length > 0) {
+          filtered = filtered.filter(o => {
+            const val = ((o as any).sourceNo || "").toLowerCase()
+            return searchValues.some(v => val.includes(v))
+          })
+        }
       }
     })
 
@@ -162,7 +183,20 @@ export default function RealLayoutDemo() {
     if (Object.keys(advancedSearchValues).length > 0) {
       filtered = filtered.filter(o => {
         return Object.entries(advancedSearchValues).every(([key, value]) => {
-          // 处理批量搜索（数组）
+          // 处理智能全搜（Smart Match）
+          if (key === "_smart_batch" && Array.isArray(value)) {
+            // 只要有任意一个字段匹配任意一个搜索值即可 (OR logic across fields, OR logic across values)
+            // Check if ANY of the target fields matches ANY of the search values
+            const targetFields = ["orderNo", "refNo", "channelOrderNo"]
+            const order = o as any
+            return value.some(v =>
+              targetFields.some(field =>
+                order[field] && typeof order[field] === 'string' && order[field].toLowerCase().includes(v.toLowerCase())
+              )
+            )
+          }
+
+          // 处理常规批量搜索（数组）
           if (Array.isArray(value)) {
             const orderValue = o[key as keyof typeof o]
             if (typeof orderValue === 'string') {
@@ -182,7 +216,7 @@ export default function RealLayoutDemo() {
 
     setFilteredData(filtered)
     setCurrentPage(1)
-  }, [activeTab, searchValue, activeFilters, advancedSearchValues, listType]) // 添加listType依赖
+  }, [activeTab, searchValue, activeFilters, advancedSearchValues, listType])
 
   // Paginated data - 根据当前页和每页数量切片数据
   const paginatedData = useMemo(() => {
@@ -193,10 +227,10 @@ export default function RealLayoutDemo() {
 
   // Status counts - 根据listType计算
   const statusCounts = useMemo(() => {
-    const dataToCount = listType === "history" 
+    const dataToCount = listType === "history"
       ? mockOrders.filter(o => o.status === "completed")
       : mockOrders.filter(o => o.status !== "completed")
-    
+
     const counts: Record<string, number> = {
       all: dataToCount.length,
       pending: 0,
@@ -212,6 +246,19 @@ export default function RealLayoutDemo() {
 
   // Filter configs
   const filterConfigs: FilterConfig[] = [
+
+    {
+      id: "channelOrderNo",
+      label: "渠道单号",
+      type: "batch",
+      placeholder: "匹配渠道单号..."
+    },
+    {
+      id: "sourceNo",
+      label: "来源单号",
+      type: "batch",
+      placeholder: "匹配来源单号..."
+    },
     {
       id: "status",
       label: "状态",
@@ -348,9 +395,9 @@ export default function RealLayoutDemo() {
 
   // Advanced search fields
   const advancedSearchFields: SearchField[] = [
-    { 
-      id: "orderNo", 
-      label: "订单编号", 
+    {
+      id: "orderNo",
+      label: "订单编号",
       placeholder: "ORD-2024-1001\nORD-2024-1002\nORD-2024-1003",
       type: "batch",
       maxItems: 100
@@ -368,8 +415,8 @@ export default function RealLayoutDemo() {
       width: "150px",
       defaultVisible: true,
       cell: (row) => (
-        <OrderNumberCell 
-          orderNumber={row.orderNo} 
+        <OrderNumberCell
+          orderNumber={row.orderNo}
           onClick={() => setSelectedOrderId(row.id)}
         />
       ),
@@ -453,7 +500,7 @@ export default function RealLayoutDemo() {
               发送
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-destructive"
               onClick={() => toast.error("删除失败", { description: "您没有权限删除此订单" })}
             >
@@ -607,6 +654,52 @@ export default function RealLayoutDemo() {
                   setAdvancedSearchValues(values)
                   setAdvancedSearchFilters(filters || [])
                 }}
+                enableBatchSearch={true}
+                batchSearchFields={[
+                  { label: "订单编号", value: "orderNo", placeholder: "请输入..." },
+                  { label: "客户订单号", value: "refNo", placeholder: "请输入..." },
+                  { label: "渠道单号", value: "channelOrderNo", placeholder: "请输入..." },
+                ]}
+                batchSearchVariant="icon"
+                onBatchSearch={(criteria) => {
+                  const newValues = { ...advancedSearchValues }
+
+                  // Map field value to label
+                  const fieldLabels: Record<string, string> = {
+                    orderNo: "订单编号",
+                    refNo: "客户订单号",
+                    channelOrderNo: "渠道单号"
+                  }
+
+                  // 1. Clear old batch filters
+                  Object.keys(fieldLabels).forEach(key => delete newValues[key])
+
+                  // 2. Add new batch filters (and update filters list later)
+                  Object.entries(criteria).forEach(([field, values]) => {
+                    if (values && values.length > 0) {
+                      newValues[field] = values
+                    }
+                  })
+                  setAdvancedSearchValues(newValues)
+
+                  // Update UI filters
+                  let updatedFilters = advancedSearchFilters.filter(f => !Object.keys(fieldLabels).includes(f.fieldId))
+                  Object.entries(criteria).forEach(([field, values]) => {
+                    if (values && values.length > 0) {
+                      updatedFilters.push({
+                        fieldId: field,
+                        fieldLabel: fieldLabels[field] || field,
+                        value: values,
+                        displayValue: `批量(${values.length})`
+                      })
+                    }
+                  })
+                  setAdvancedSearchFilters(updatedFilters)
+
+
+                }}
+
+
               />
               {showSpecs && (
                 <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
@@ -616,110 +709,114 @@ export default function RealLayoutDemo() {
             </div>
 
             {/* Show active filters */}
-            {activeFilters.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap relative">
-                <span className="text-sm text-muted-foreground">已选筛选:</span>
-                {activeFilters.map((filter, index) => (
-                  <Badge key={index} className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-                    {filter.optionLabel}
-                    <button
-                      onClick={() => {
-                        setActiveFilters(activeFilters.filter((_, i) => i !== index))
-                      }}
-                      className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setActiveFilters([])}
-                  className="h-6 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                >
-                  清除全部
-                </Button>
-                {showSpecs && (
-                  <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
-                    Active Filters: Badge variant="secondary" | 带X按钮可删除 | 清除全部按钮
-                  </div>
-                )}
-              </div>
-            )}
+            {
+              activeFilters.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap relative">
+                  <span className="text-sm text-muted-foreground">已选筛选:</span>
+                  {activeFilters.map((filter, index) => (
+                    <Badge key={index} className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
+                      {filter.optionLabel}
+                      <button
+                        onClick={() => {
+                          setActiveFilters(activeFilters.filter((_, i) => i !== index))
+                        }}
+                        className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilters([])}
+                    className="h-6 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    清除全部
+                  </Button>
+                  {showSpecs && (
+                    <div className="absolute -bottom-6 left-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
+                      Active Filters: Badge variant="secondary" | 带X按钮可删除 | 清除全部按钮
+                    </div>
+                  )}
+                </div>
+              )
+            }
 
             {/* Batch Operations Bar */}
-            {selectedRows.length > 0 && (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="py-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium">
-                        已选择 <span className="text-primary">{selectedRows.length}</span> 项
-                      </span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setSelectedRows([])}
-                        className="h-8 text-xs"
-                      >
-                        取消选择
-                      </Button>
+            {
+              selectedRows.length > 0 && (
+                <Card className="border-primary/20 bg-primary/5">
+                  <CardContent className="py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">
+                          已选择 <span className="text-primary">{selectedRows.length}</span> 项
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedRows([])}
+                          className="h-8 text-xs"
+                        >
+                          取消选择
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => toast.success("批量导出成功", { description: `已导出 ${selectedRows.length} 条订单数据` })}
+                        >
+                          <Download className="h-4 w-4" />
+                          批量导出
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => toast.success("批量发送成功", { description: `已向 ${selectedRows.length} 个客户发送订单` })}
+                        >
+                          <Send className="h-4 w-4" />
+                          批量发送
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2">
+                              更多操作
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => toast.info("批量编辑", { description: "正在打开批量编辑对话框..." })}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              批量编辑
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info("批量打印", { description: `正在准备打印 ${selectedRows.length} 个订单...` })}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              批量打印
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.warning("批量归档", { description: "归档后订单将移至历史记录" })}>
+                              <Package className="mr-2 h-4 w-4" />
+                              批量归档
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => toast.error("批量删除失败", { description: "部分订单已发货，无法删除" })}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              批量删除
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => toast.success("批量导出成功", { description: `已导出 ${selectedRows.length} 条订单数据` })}
-                      >
-                        <Download className="h-4 w-4" />
-                        批量导出
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => toast.success("批量发送成功", { description: `已向 ${selectedRows.length} 个客户发送订单` })}
-                      >
-                        <Send className="h-4 w-4" />
-                        批量发送
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-2">
-                            更多操作
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toast.info("批量编辑", { description: "正在打开批量编辑对话框..." })}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            批量编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => toast.info("批量打印", { description: `正在准备打印 ${selectedRows.length} 个订单...` })}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            批量打印
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => toast.warning("批量归档", { description: "归档后订单将移至历史记录" })}>
-                            <Package className="mr-2 h-4 w-4" />
-                            批量归档
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => toast.error("批量删除失败", { description: "部分订单已发货，无法删除" })}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            批量删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )
+            }
 
             {/* Data Table with Sticky Header */}
             <div className="relative">
@@ -741,7 +838,7 @@ export default function RealLayoutDemo() {
                 </div>
               )}
             </div>
-          </div>
+          </div >
         ) : (
           // Detail View
           <div className="space-y-4">
@@ -797,7 +894,7 @@ export default function RealLayoutDemo() {
                         导出PDF
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => toast.error("删除失败", { description: "该订单已发货，无法删除" })}
                       >
@@ -1070,9 +1167,9 @@ export default function RealLayoutDemo() {
             <Button variant="outline" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 toast.success("操作成功", { description: "数据已成功保存到服务器" })
                 setTimeout(() => toast.error("操作失败", { description: "网络连接超时，请重试" }), 300)
@@ -1084,7 +1181,7 @@ export default function RealLayoutDemo() {
             </Button>
           </div>
         </div>
-      </MainLayout>
-    </TooltipProvider>
+      </MainLayout >
+    </TooltipProvider >
   )
 }
