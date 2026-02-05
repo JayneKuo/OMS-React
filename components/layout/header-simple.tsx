@@ -91,6 +91,7 @@ export function HeaderSimple() {
     { title: t('automation'), href: "/automation" },
     { title: t('customerManagement'), href: "/customer-management" },
     { title: t('merchantManagement'), href: "/merchant-management" },
+    { title: t('clientPortal'), href: "/client-portal" },
   ], [t])
   
   const [selectedTenant, setSelectedTenant] = React.useState(tenants[0])

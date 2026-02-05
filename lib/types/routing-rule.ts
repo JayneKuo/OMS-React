@@ -2,7 +2,15 @@
 // Based on US OMS systems (Pipe17, Oracle OMS, ShipStation, etc.)
 // Uses IF-THEN (Condition-Action) pattern
 
-export type RuleType = "FACTORY_DIRECT" | "SKU_BASED" | "SUPPLIER_BASED" | "WAREHOUSE_BASED" | "CUSTOM"
+export type RuleType =
+  | "HOLD_ORDER"          // 暂停订单
+  | "SPLIT_ORDER"         // 订单拆分
+  | "MERGE_ORDER"         // 订单合并
+  | "LOGISTICS_MERGE"     // 设定物流合并
+  | "SPLIT_PR"            // 采购请求拆分
+  | "SPLIT_PO"            // 采购订单拆分
+  | "PO_ROUTING"          // 采购订单路由
+  | "CUSTOM"              // 自定义规则
 
 // Rule execution mode
 export type ExecutionMode = "FIRST_MATCH" | "CHAIN" | "ALL_MATCH"
@@ -31,6 +39,69 @@ export type ConditionOperator =
 
 // Condition fields
 export type ConditionField =
+  // 基础信息
+  | "orderSource"           // 订单来源
+  | "orderType"             // 订单类型
+  | "orderPlatform"         // 订单平台
+  | "orderStation"          // 订单站点
+  | "orderStore"            // 订单店铺
+  | "shippingTime"          // 发货时间
+  | "expectedShippingTime"  // 剩余发货时间
+  | "paymentTime"           // 付款时间
+
+  // 仓储物流
+  | "shippingWarehouse"     // 发货仓库
+  | "carrier"               // 物流商
+  | "shippingMethod"        // 物流方式
+  | "recipientCountry"      // 收货国家/地区
+  | "recipientState"        // 收货省/州
+  | "recipientCity"         // 收货城市
+  | "recipientPostalCode"   // 收货邮编
+  | "addressType"           // 地址类型
+  | "isEncryptedAddress"    // 地址是否加密
+  | "detailedAddress"       // 详细地址字符
+  | "addressLength"         // 地址字段长度
+  | "doorNumber"            // 门牌号
+
+  // 订单信息
+  | "orderMSKU"             // 订单MSKU
+  | "orderProduct"          // 订单产品
+  | "productCategory"       // 产品分类
+  | "productCount"          // 产品件数
+  | "orderTotalAmount"      // 订单总金额
+  | "productQuantity"       // 产品数量
+  | "estimatedSize"         // 估算尺寸
+  | "estimatedWeight"       // 估算重量
+  | "estimatedVolume"       // 估算体积
+  | "customerSelectedCarrier" // 客选物流
+  | "customerPaidShipping"  // 客付运费
+  | "specialAttribute"      // 特殊属性
+  | "grossProfit"           // 毛利润率
+  | "longestSide"           // 长宽高
+  | "secondLongestSide"     // 次长边
+  | "lengthPlusGirth"       // 长+(宽+高)×2
+  | "productTag"            // 产品标签
+  | "productStatus"         // 产品状态
+  | "shippingDeadline"      // 发货截止时间
+  | "orderTaxNumber"        // 订单税号
+  | "estimatedShipping"     // 预估运费
+  | "isGift"                // 是否赠品
+
+  // 风险控制 (Risk Control)
+  | "riskScore"             // 风险评分
+  | "riskLevel"             // 风险等级
+  | "riskCategory"          // 风险类别
+  | "fraudScore"            // 欺诈评分
+  | "creditScore"           // 信用评分
+  | "blacklistMatch"        // 黑名单匹配
+  | "suspiciousActivity"    // 可疑活动
+  | "orderFrequency"        // 订单频率
+  | "addressChangeCount"    // 地址变更次数
+  | "paymentAttempts"       // 支付尝试次数
+  | "returnRate"            // 退货率
+  | "chargebackHistory"     // 拒付历史
+
+  // Legacy fields (保留兼容)
   | "purchaseType"
   | "poType"
   | "poStatus"
@@ -58,7 +129,6 @@ export type ConditionField =
   | "region"
   | "location"
   | "paymentMethod"
-  | "shippingMethod"
   | "incoterm"
   | "leadTime"
   | "tags"
@@ -144,7 +214,29 @@ export interface PriorityAction {
 export interface HoldAction {
   type: "HOLD_ORDER"
   reason: string
-  releaseCondition?: string
+  holdType: "CREDIT" | "COMPLIANCE" | "REVIEW" | "CAPACITY" | "RISK" | "CUSTOM"
+
+  // Hold Duration (暂停时长)
+  durationType: "HOURS" | "DAYS" | "DATE_RANGE" | "MANUAL"
+  durationValue?: number  // For HOURS/DAYS
+  durationStartDate?: string  // For DATE_RANGE
+  durationEndDate?: string    // For DATE_RANGE
+
+  // Release Conditions (释放条件)
+  autoRelease: boolean
+  releaseConditions?: {
+    type: "TIME_BASED" | "APPROVAL_BASED" | "CONDITION_BASED"
+    approvers?: string[]  // Required approvers
+    conditions?: string[] // Conditions that must be met
+  }
+
+  // Risk Control (风险控制)
+  riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  riskCategory?: "FRAUD" | "CREDIT" | "COMPLIANCE" | "QUALITY" | "PAYMENT" | "OTHER"
+
+  // Approval & Notification
+  requiresApproval?: boolean
+  notifyUsers?: string[]
 }
 
 export interface SplitAction {

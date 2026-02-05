@@ -648,6 +648,25 @@ export default function POPage() {
 
   // Define filter configurations with simplified status system
   const filterConfigs: FilterConfig[] = [
+    // Independent batch filter fields for PO No., Original PO No., Reference No.
+    {
+      id: "orderNo",
+      label: t('poNo'),
+      type: "batch",
+      placeholder: "PO202403150001\nPO202403150002\nPO202403150003",
+    },
+    {
+      id: "originalPoNo",
+      label: t('originalPoNo'),
+      type: "batch",
+      placeholder: "EXT-PO-2024-001\nEXT-PO-2024-002\nEXT-PO-2024-003",
+    },
+    {
+      id: "referenceNo",
+      label: t('referenceNo'),
+      type: "batch",
+      placeholder: "REF202403150001\nREF202403150002\nREF202403150003",
+    },
     {
       id: "status",
       label: t('status'),
@@ -827,7 +846,25 @@ export default function POPage() {
 
     // Apply active filters
     activeFilters.forEach(filter => {
-      if (filter.filterId === "status") {
+      if (filter.filterId === "orderNo") {
+        // PO No. batch filter - split by comma and match any
+        const values = filter.optionValue.split(',').map(v => v.trim().toLowerCase())
+        filtered = filtered.filter(po => 
+          values.some(val => po.orderNo.toLowerCase().includes(val))
+        )
+      } else if (filter.filterId === "originalPoNo") {
+        // Original PO No. batch filter - split by comma and match any
+        const values = filter.optionValue.split(',').map(v => v.trim().toLowerCase())
+        filtered = filtered.filter(po => 
+          values.some(val => po.originalPoNo.toLowerCase().includes(val))
+        )
+      } else if (filter.filterId === "referenceNo") {
+        // Reference No. batch filter - split by comma and match any
+        const values = filter.optionValue.split(',').map(v => v.trim().toLowerCase())
+        filtered = filtered.filter(po => 
+          values.some(val => po.referenceNo.toLowerCase().includes(val))
+        )
+      } else if (filter.filterId === "status") {
         filtered = filtered.filter(po => po.status === filter.optionValue)
       } else if (filter.filterId === "shippingStatus") {
         filtered = filtered.filter(po => po.shippingStatus === filter.optionValue)

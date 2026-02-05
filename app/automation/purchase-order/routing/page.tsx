@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { PORoutingRuleDialogV3 } from "@/components/automation/po-routing-rule-dialog-v3"
+import { PORoutingRuleDialogV4 } from "@/components/automation/po-routing-rule-dialog-v4"
 import { cn } from "@/lib/utils"
 import type { RoutingRule, FactoryDirectActions } from "@/lib/types/routing-rule"
 import {
@@ -150,7 +150,7 @@ export default function POOrderRoutingPage() {
       id: "rule-1",
       name: "Factory Direct Fulfillment",
       description: "Route factory-direct POs through FG staging warehouse",
-      type: "FACTORY_DIRECT",
+      type: "PO_ROUTING",
       enabled: true,
       priority: 1,
       executionMode: "FIRST_MATCH",
@@ -207,7 +207,7 @@ export default function POOrderRoutingPage() {
       id: `rule-${Date.now()}`,
       name: "",
       description: "",
-      type: "FACTORY_DIRECT",
+      type: "CUSTOM",
       enabled: true,
       priority: routingRules.length + 1,
       executionMode: "FIRST_MATCH",
@@ -303,9 +303,12 @@ export default function POOrderRoutingPage() {
                         {/* Icon */}
                         <div className={cn(
                           "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                          rule.type === "FACTORY_DIRECT" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
+                          rule.type === "PO_ROUTING" ? "bg-purple-100 text-purple-600" : 
+                          rule.type === "SPLIT_PO" ? "bg-blue-100 text-blue-600" :
+                          rule.type === "SPLIT_PR" ? "bg-green-100 text-green-600" :
+                          "bg-gray-100 text-gray-600"
                         )}>
-                          {rule.type === "FACTORY_DIRECT" ? <Truck className="h-5 w-5" /> : <Route className="h-5 w-5" />}
+                          {rule.type === "PO_ROUTING" ? <Truck className="h-5 w-5" /> : <Route className="h-5 w-5" />}
                         </div>
 
                         {/* Info */}
@@ -383,8 +386,8 @@ export default function POOrderRoutingPage() {
               </div>
             )}
 
-            {/* V3 Dialog Component */}
-            <PORoutingRuleDialogV3
+            {/* V4 Dialog Component - With Rule Type Support */}
+            <PORoutingRuleDialogV4
               open={isRuleDialogOpen}
               onOpenChange={setIsRuleDialogOpen}
               rule={selectedRule}

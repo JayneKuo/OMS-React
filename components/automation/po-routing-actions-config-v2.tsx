@@ -170,17 +170,32 @@ interface PORoutingActionsConfigV2Props {
     actions: RuleAction[]
     onChange: (actions: RuleAction[]) => void
     locale?: "en" | "zh"
+    ruleType?: string
+    recommendedActions?: RuleAction["type"][]
 }
 
 export function PORoutingActionsConfigV2({
     actions,
     onChange,
-    locale = "zh"
+    locale = "zh",
+    ruleType,
+    recommendedActions = []
 }: PORoutingActionsConfigV2Props) {
     const [showActionPicker, setShowActionPicker] = React.useState(false)
     const [expandedActions, setExpandedActions] = React.useState<Set<number>>(new Set([0]))
 
     const t = (en: string, zh: string) => locale === "zh" ? zh : en
+
+    // Filter actions based on rule type
+    const availableActions = React.useMemo(() => {
+        if (!ruleType || ruleType === "CUSTOM" || recommendedActions.length === 0) {
+            return actionTypes
+        }
+        // Show recommended actions first, then others
+        const recommended = actionTypes.filter(a => recommendedActions.includes(a.type))
+        const others = actionTypes.filter(a => !recommendedActions.includes(a.type))
+        return [...recommended, ...others]
+    }, [ruleType, recommendedActions])
 
     const addAction = (type: RuleAction["type"]) => {
         const newAction = createDefaultAction(type)
@@ -247,25 +262,37 @@ export function PORoutingActionsConfigV2({
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
+                        {recommendedActions.length > 0 && ruleType !== "CUSTOM" && (
+                            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                                <p className="text-xs text-blue-700 dark:text-blue-300">
+                                    {t("⭐ Recommended actions are shown first", "⭐ 推荐动作优先显示")}
+                                </p>
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {actionTypes.map(actionType => (
-                                <Button
-                                    key={actionType.type}
-                                    variant="outline"
-                                    className="h-auto p-3 flex flex-col items-start gap-1 hover:bg-primary/10 hover:border-primary"
-                                    onClick={() => addAction(actionType.type)}
-                                >
-                                    <div className="flex items-center gap-2 w-full">
-                                        {actionType.icon}
-                                        <span className="text-sm font-medium">
-                                            {locale === "zh" ? actionType.labelZh : actionType.label}
+                            {availableActions.map(actionType => {
+                                const isRecommended = recommendedActions.includes(actionType.type)
+                                return (
+                                    <Button
+                                        key={actionType.type}
+                                        variant="outline"
+                                        className={`h-auto p-3 flex flex-col items-start gap-1 hover:bg-primary/10 hover:border-primary ${isRecommended ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : ""
+                                            }`}
+                                        onClick={() => addAction(actionType.type)}
+                                    >
+                                        <div className="flex items-center gap-2 w-full">
+                                            {actionType.icon}
+                                            <span className="text-sm font-medium">
+                                                {locale === "zh" ? actionType.labelZh : actionType.label}
+                                            </span>
+                                            {isRecommended && <span className="text-xs">⭐</span>}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground text-left">
+                                            {locale === "zh" ? actionType.descriptionZh : actionType.description}
                                         </span>
-                                    </div>
-                                    <span className="text-xs text-muted-foreground text-left">
-                                        {locale === "zh" ? actionType.descriptionZh : actionType.description}
-                                    </span>
-                                </Button>
-                            ))}
+                                    </Button>
+                                )
+                            })}
                         </div>
                         <div className="flex justify-end mt-3">
                             <Button variant="ghost" size="sm" onClick={() => setShowActionPicker(false)}>
@@ -719,6 +746,7 @@ function HoldActionPanel({ action, onChange, locale }: { action: HoldAction; onC
 
     return (
         <div className="space-y-4 pt-4">
+            {/* Hold Type */}
             <div className="space-y-2">
                 <Label className="text-sm font-medium">{t("Hold Type", "暂停类型")}</Label>
                 <Select
@@ -733,10 +761,13 @@ function HoldActionPanel({ action, onChange, locale }: { action: HoldAction; onC
                         <SelectItem value="COMPLIANCE">{t("Compliance Hold", "合规暂停")}</SelectItem>
                         <SelectItem value="REVIEW">{t("Manual Review", "人工审核")}</SelectItem>
                         <SelectItem value="CAPACITY">{t("Capacity Hold", "产能暂停")}</SelectItem>
+                        <SelectItem value="RISK">{t("Risk Control", "风险控制")}</SelectItem>
                         <SelectItem value="CUSTOM">{t("Custom", "自定义")}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+
+            {/* Reason */}
             <div className="space-y-2">
                 <Label className="text-sm font-medium">{t("Reason", "原因")}</Label>
                 <Input
@@ -745,12 +776,199 @@ function HoldActionPanel({ action, onChange, locale }: { action: HoldAction; onC
                     placeholder={t("Enter hold reason", "输入暂停原因")}
                 />
             </div>
+
+            <Separator />
+
+            {/* Duration Type */}
+            <div className="space-y-2">
+                <Label className="text-sm font-medium">{t("Hold Duration", "暂停时长")}</Label>
+                <Select
+                    value={action.durationType || "MANUAL"}
+                    onValueChange={(value: any) => onChange({ ...action, durationType: value })}
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="HOURS">{t("Hours", "小时")}</SelectItem>
+                        <SelectItem value="DAYS">{t("Days", "天")}</SelectItem>
+                        <SelectItem value="DATE_RANGE">{t("Date Range", "时间段")}</SelectItem>
+                        <SelectItem value="MANUAL">{t("Manual Release", "手动释放")}</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Duration Value (for HOURS/DAYS) */}
+            {(action.durationType === "HOURS" || action.durationType === "DAYS") && (
+                <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                        {action.durationType === "HOURS" ? t("Number of Hours", "小时数") : t("Number of Days", "天数")}
+                    </Label>
+                    <Input
+                        type="number"
+                        value={action.durationValue || ""}
+                        onChange={(e) => onChange({ ...action, durationValue: Number(e.target.value) })}
+                        placeholder={t("Enter duration", "输入时长")}
+                    />
+                </div>
+            )}
+
+            {/* Date Range (for DATE_RANGE) */}
+            {action.durationType === "DATE_RANGE" && (
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">{t("Start Date", "开始日期")}</Label>
+                        <Input
+                            type="date"
+                            value={action.durationStartDate || ""}
+                            onChange={(e) => onChange({ ...action, durationStartDate: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">{t("End Date", "结束日期")}</Label>
+                        <Input
+                            type="date"
+                            value={action.durationEndDate || ""}
+                            onChange={(e) => onChange({ ...action, durationEndDate: e.target.value })}
+                        />
+                    </div>
+                </div>
+            )}
+
+            <Separator />
+
+            {/* Auto Release */}
+            <ToggleOption
+                label={t("Auto Release", "自动释放")}
+                description={t("Automatically release hold when conditions are met", "满足条件时自动释放暂停")}
+                checked={action.autoRelease || false}
+                onCheckedChange={(checked) => onChange({ ...action, autoRelease: checked })}
+            />
+
+            {/* Release Conditions */}
+            {action.autoRelease && (
+                <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">{t("Release Trigger", "释放触发条件")}</Label>
+                        <Select
+                            value={action.releaseConditions?.type || "TIME_BASED"}
+                            onValueChange={(value: any) => onChange({
+                                ...action,
+                                releaseConditions: { ...action.releaseConditions, type: value }
+                            })}
+                        >
+                            <SelectTrigger className="bg-white dark:bg-zinc-900">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="TIME_BASED">{t("Time Based (Auto expire)", "基于时间 (自动过期)")}</SelectItem>
+                                <SelectItem value="APPROVAL_BASED">{t("Approval Based (Manual approve)", "基于审批 (人工批准)")}</SelectItem>
+                                <SelectItem value="CONDITION_BASED">{t("Condition Based (System event)", "基于条件 (系统事件)")}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Dynamic config based on release type */}
+                    {action.releaseConditions?.type === "CONDITION_BASED" && (
+                        <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">
+                                {t("Specify the system condition to release this hold:", "指定触发释放的系统条件：")}
+                            </Label>
+                            <Input
+                                placeholder={t("e.g. Uploaded Valid ID, Payment Verified...", "例如：已上传有效证件，支付已验证...")}
+                                value={action.releaseConditions?.conditions?.[0] || ""}
+                                onChange={(e) => onChange({
+                                    ...action,
+                                    releaseConditions: {
+                                        ...action.releaseConditions,
+                                        type: "CONDITION_BASED",
+                                        conditions: [e.target.value]
+                                    }
+                                })}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Approval - Applicable to ALL hold types */}
+            <Separator />
             <ToggleOption
                 label={t("Requires Approval", "需要审批")}
                 description={t("Hold must be released by approver", "暂停必须由审批人解除")}
                 checked={action.requiresApproval || false}
                 onCheckedChange={(checked) => onChange({ ...action, requiresApproval: checked })}
             />
+
+            {/* Risk Details - ONLY for RISK hold type */}
+            {action.holdType === "RISK" && (
+                <div className="space-y-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mt-4">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        {t("Risk Details", "风险详情")}
+                    </Label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">{t("Risk Level", "风险等级")}</Label>
+                            <Select
+                                value={action.riskLevel || "MEDIUM"}
+                                onValueChange={(value: any) => onChange({ ...action, riskLevel: value })}
+                            >
+                                <SelectTrigger className="h-9 bg-white dark:bg-zinc-900">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="LOW">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                                            {t("Low", "低")}
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="MEDIUM">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                            {t("Medium", "中")}
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="HIGH">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                            {t("High", "高")}
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="CRITICAL">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                                            {t("Critical", "紧急")}
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">{t("Risk Category", "风险类别")}</Label>
+                            <Select
+                                value={action.riskCategory || "OTHER"}
+                                onValueChange={(value: any) => onChange({ ...action, riskCategory: value })}
+                            >
+                                <SelectTrigger className="h-9 bg-white dark:bg-zinc-900">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="FRAUD">{t("Fraud", "欺诈")}</SelectItem>
+                                    <SelectItem value="CREDIT">{t("Credit", "信用")}</SelectItem>
+                                    <SelectItem value="COMPLIANCE">{t("Compliance", "合规")}</SelectItem>
+                                    <SelectItem value="QUALITY">{t("Quality", "质量")}</SelectItem>
+                                    <SelectItem value="PAYMENT">{t("Payment", "支付")}</SelectItem>
+                                    <SelectItem value="OTHER">{t("Other", "其他")}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
