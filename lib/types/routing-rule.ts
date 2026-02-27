@@ -100,6 +100,8 @@ export type ConditionField =
   | "paymentAttempts"       // 支付尝试次数
   | "returnRate"            // 退货率
   | "chargebackHistory"     // 拒付历史
+  | "riskRecommendation"    // 建议策略
+
 
   // Legacy fields (保留兼容)
   | "purchaseType"
@@ -161,6 +163,11 @@ export type ActionType =
   | "SET_PRIORITY" // Set order priority
   | "HOLD_ORDER" // Put order on hold
   | "SPLIT_ORDER" // Split order by criteria
+  | "CANCEL_ORDER" // Cancel order
+  | "AUTO_APPROVE" // Auto approve
+  | "ASSIGN_BUYER" // Assign buyer
+  | "CREATE_ASN" // Create ASN
+  | "SCHEDULE_RECEIPT" // Schedule receipt
   | "CUSTOM" // Custom action
 
 export interface WorkflowAction {
@@ -176,6 +183,8 @@ export interface WorkflowAction {
     destinationWarehouse?: string
     dropshipSupplier?: string
     crossDockWarehouse?: string
+    autoCreateReceipt?: boolean
+    pushToWMS?: boolean
   }
 }
 
@@ -183,14 +192,16 @@ export interface WarehouseAction {
   type: "ASSIGN_WAREHOUSE"
   warehouseId: string
   warehouseName: string
+  warehouseType?: "PRIMARY" | "BACKUP" | "OVERFLOW"
 }
 
 export interface NotificationAction {
   type: "SEND_NOTIFICATION"
-  channel: "EMAIL" | "WEBHOOK" | "SMS"
+  channel: "EMAIL" | "WEBHOOK" | "SMS" | "SLACK" | "TEAMS"
   recipients: string[]
   template?: string
   message?: string
+  triggerEvent?: "IMMEDIATE" | "ON_CREATE" | "ON_STATUS_CHANGE" | "ON_RECEIPT"
 }
 
 export interface WebhookAction {
@@ -204,34 +215,60 @@ export interface WebhookAction {
 export interface TagAction {
   type: "ADD_TAG"
   tags: string[]
+  removeExisting?: boolean
 }
 
 export interface PriorityAction {
   type: "SET_PRIORITY"
   priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
+  reason?: string
 }
 
 export interface HoldAction {
   type: "HOLD_ORDER"
   reason: string
-  holdType: "CREDIT" | "COMPLIANCE" | "REVIEW" | "CAPACITY" | "RISK" | "CUSTOM"
+  // Updated Types: PRESALE added
+  holdType: "CREDIT" | "COMPLIANCE" | "REVIEW" | "CAPACITY" | "RISK" | "PRESALE" | "CUSTOM"
 
-  // Hold Duration (暂停时长)
-  durationType: "HOURS" | "DAYS" | "DATE_RANGE" | "MANUAL"
+  // Hold Duration (暂停时长) - For Custom/Review
+  durationType?: "HOURS" | "DAYS" | "DATE_RANGE" | "MANUAL"
   durationValue?: number  // For HOURS/DAYS
   durationStartDate?: string  // For DATE_RANGE
   durationEndDate?: string    // For DATE_RANGE
 
+  // Release Criteria (New Generic Structure)
+  releaseCriteria?: {
+    type: "RISK_ASSESSMENT" | "DOCUMENT_UPLOAD" | "PAYMENT_CONFIRMATION" | "MANUAL_APPROVAL" | "TIME_ELAPSED"
+
+    // For RISK_ASSESSMENT
+    criteriaLogic?: "AND" | "OR" // Match logic: All conditions met vs Any condition met
+    allowedRiskLevels?: string[] // e.g., ["LOW", "NONE"]
+    allowedRecommendations?: ("ACCEPT" | "INVESTIGATE" | "CANCEL" | "NONE")[] // Changed to array for multi-select support
+    requiredRecommendation?: "ACCEPT" | "INVESTIGATE" // Deprecated, keep for backward compat if needed, or remove. I will keep for now but make optional.
+
+    // For TIME_ELAPSED
+    autoReleaseAfterHours?: number
+
+    // Fallback/Escalation if timeout or failure
+    timeoutAction?: "NOTIFY" | "CANCEL" | "KEEP_HELD" | "FORCE_RELEASE"
+  }
+
+  // Release/Timeout Strategy (New Unified Field)
+  timeoutAction?: "NOTIFY" | "CANCEL" | "KEEP_HELD" | "FORCE_RELEASE"
+
   // Release Conditions (释放条件)
-  autoRelease: boolean
+  autoRelease?: boolean
   releaseConditions?: {
     type: "TIME_BASED" | "APPROVAL_BASED" | "CONDITION_BASED"
     approvers?: string[]  // Required approvers
     conditions?: string[] // Conditions that must be met
   }
 
-  // Risk Control (风险控制)
-  riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  // Risk Control (风险控制) - Enhanced
+  riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "NONE" | "PENDING" // Single selection (Legacy or simple)
+  riskLevels?: string[] // Multiple selection: "LOW", "MEDIUM", "HIGH", "NONE", "PENDING"
+  riskRecommendation?: "ACCEPT" | "INVESTIGATE" | "CANCEL" | "NONE" // Shopify recommendation
+  riskLogic?: "AND" | "OR" // Match logic: All conditions met vs Any condition met
   riskCategory?: "FRAUD" | "CREDIT" | "COMPLIANCE" | "QUALITY" | "PAYMENT" | "OTHER"
 
   // Approval & Notification
@@ -241,12 +278,43 @@ export interface HoldAction {
 
 export interface SplitAction {
   type: "SPLIT_ORDER"
-  splitBy: "WAREHOUSE" | "SUPPLIER" | "CATEGORY" | "LINE_ITEM"
+  splitBy: "WAREHOUSE" | "SUPPLIER" | "CATEGORY" | "LINE_ITEM" | "SKU" | "SHIP_DATE"
+  createSeparatePOs?: boolean
+}
+
+export interface CancelAction {
+  type: "CANCEL_ORDER"
+  reason: string
+  note?: string
+}
+
+export interface AutoApproveAction {
+  type: "AUTO_APPROVE"
+  approvalLevel?: number
+}
+
+export interface AssignBuyerAction {
+  type: "ASSIGN_BUYER"
+  buyerId: string
+  buyerName: string
+}
+
+export interface CreateASNAction {
+  type: "CREATE_ASN"
+  autoPopulate?: boolean
+}
+
+export interface ScheduleReceiptAction {
+  type: "SCHEDULE_RECEIPT"
+  daysBeforeArrival?: number
 }
 
 export interface CustomAction {
   type: "CUSTOM"
   actionId: string
+  // Properties used in UI default creator
+  actionName?: string
+  parameters?: Record<string, any>
   config: Record<string, any>
 }
 
@@ -259,6 +327,11 @@ export type RuleAction =
   | PriorityAction
   | HoldAction
   | SplitAction
+  | CancelAction
+  | AutoApproveAction
+  | AssignBuyerAction
+  | CreateASNAction
+  | ScheduleReceiptAction
   | CustomAction
 
 

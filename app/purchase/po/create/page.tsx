@@ -10,13 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Trash2, Save, Send, ArrowLeft, ShoppingBag, Settings, Building, Calendar, MapPin } from "lucide-react"
+import { FileText, ShoppingCart, Truck, Package, CheckCircle, Plus, Trash2, Save, Send, ArrowLeft, ShoppingBag, Settings, Building, Calendar, MapPin, Download, Upload, AlertCircle, X, CheckCircle2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
 import { SNLotManagementDialog } from "@/components/purchase/sn-lot-management-dialog"
+import { LeaveConfirmDialog } from "@/components/ui/leave-confirm-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 const sidebarItems = [
   { title: "PR (Purchase Request)", href: "/purchase/pr", icon: <FileText className="h-4 w-4" /> },
@@ -99,7 +101,6 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
     taxRate: '',
     notes: '',
     requiresSerialNumber: false,
-    requiresLotNumber: false,
   })
 
   const handleApply = () => {
@@ -109,8 +110,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
     if (batchData.taxRate) onBatchUpdate('taxRate', parseFloat(batchData.taxRate))
     if (batchData.notes) onBatchUpdate('notes', batchData.notes)
     onBatchUpdate('requiresSerialNumber', batchData.requiresSerialNumber)
-    onBatchUpdate('requiresLotNumber', batchData.requiresLotNumber)
-    
+
     // Reset form
     setBatchData({
       quantity: '',
@@ -119,7 +119,6 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
       taxRate: '',
       notes: '',
       requiresSerialNumber: false,
-      requiresLotNumber: false,
     })
     onOpenChange(false)
   }
@@ -130,7 +129,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
         <DialogHeader>
           <DialogTitle>{t('batchSettings')} ({selectedCount} {t('items')})</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="batchQuantity">{t('quantity')}</Label>
@@ -139,14 +138,14 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
               type="number"
               min="1"
               value={batchData.quantity}
-              onChange={(e) => setBatchData({...batchData, quantity: e.target.value})}
+              onChange={(e) => setBatchData({ ...batchData, quantity: e.target.value })}
               placeholder={t('enterQuantity')}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="batchCurrency">{t('currency')}</Label>
-            <Select value={batchData.currency} onValueChange={(value) => setBatchData({...batchData, currency: value})}>
+            <Select value={batchData.currency} onValueChange={(value) => setBatchData({ ...batchData, currency: value })}>
               <SelectTrigger>
                 <SelectValue placeholder={t('selectCurrency')} />
               </SelectTrigger>
@@ -168,7 +167,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
               min="0"
               step="0.01"
               value={batchData.unitPrice}
-              onChange={(e) => setBatchData({...batchData, unitPrice: e.target.value})}
+              onChange={(e) => setBatchData({ ...batchData, unitPrice: e.target.value })}
               placeholder={t('enterUnitPrice')}
             />
           </div>
@@ -182,7 +181,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
               max="100"
               step="0.1"
               value={batchData.taxRate}
-              onChange={(e) => setBatchData({...batchData, taxRate: e.target.value})}
+              onChange={(e) => setBatchData({ ...batchData, taxRate: e.target.value })}
               placeholder="13"
             />
           </div>
@@ -192,7 +191,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
             <Input
               id="batchNotes"
               value={batchData.notes}
-              onChange={(e) => setBatchData({...batchData, notes: e.target.value})}
+              onChange={(e) => setBatchData({ ...batchData, notes: e.target.value })}
               placeholder={t('enterNotes')}
             />
           </div>
@@ -202,24 +201,13 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
               <input
                 type="checkbox"
                 checked={batchData.requiresSerialNumber}
-                onChange={(e) => setBatchData({...batchData, requiresSerialNumber: e.target.checked})}
+                onChange={(e) => setBatchData({ ...batchData, requiresSerialNumber: e.target.checked })}
                 className="rounded"
               />
               {t('requiresSN')}
             </Label>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={batchData.requiresLotNumber}
-                onChange={(e) => setBatchData({...batchData, requiresLotNumber: e.target.checked})}
-                className="rounded"
-              />
-              {t('requiresLot')}
-            </Label>
-          </div>
         </div>
 
         <DialogFooter>
@@ -238,7 +226,7 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
 export default function CreatePOPage() {
   const { t } = useI18n()
   const router = useRouter()
-  
+
   // Basic Information State
   const [poNumber, setPoNumber] = React.useState(`PO${new Date().getFullYear()}${String(Date.now()).slice(-8)}`)
   const [originalPoNo, setOriginalPoNo] = React.useState("")
@@ -247,7 +235,7 @@ export default function CreatePOPage() {
   const [department, setDepartment] = React.useState("")
   const [budgetProject, setBudgetProject] = React.useState("")
   const [purchaseType, setPurchaseType] = React.useState("")
-  
+
   // Supplier & Delivery Information State
   const [supplierInfo, setSupplierInfo] = React.useState({
     supplierName: "",
@@ -256,7 +244,7 @@ export default function CreatePOPage() {
     contactPhone: "",
     contactEmail: "",
   })
-  
+
   // Factory Direct Configuration State
   const [factoryDirectConfig, setFactoryDirectConfig] = React.useState<FactoryDirectConfig>({
     viaFinishedGoodsWarehouse: true,
@@ -268,7 +256,7 @@ export default function CreatePOPage() {
     finalDestinationType: "CUSTOMER",
     finalDestinationName: "",
   })
-  
+
   // Shipping Address Information (supplier contact info)
   const [shippingAddress, setShippingAddress] = React.useState({
     department: "",
@@ -282,7 +270,7 @@ export default function CreatePOPage() {
     address2: "",
     zipCode: "",
   })
-  
+
   // Receiving Address Information (delivery contact info)
   const [receivingAddress, setReceivingAddress] = React.useState({
     department: "",
@@ -296,7 +284,7 @@ export default function CreatePOPage() {
     address2: "",
     zipCode: "",
   })
-  
+
   const [deliveryInfo, setDeliveryInfo] = React.useState({
     warehouse: "",
     warehouseAddress: "",
@@ -306,7 +294,7 @@ export default function CreatePOPage() {
     freightTerms: "",
     incoterm: "",
   })
-  
+
   // Cost Information
   const [costInfo, setCostInfo] = React.useState({
     shippingCost: 0,
@@ -326,33 +314,76 @@ export default function CreatePOPage() {
       setCostInfo(prev => ({ ...prev, shippingTaxAmount: 0 }))
     }
   }, [costInfo.shippingCost, costInfo.shippingTaxRate, costInfo.isShippingTaxable])
-  
+
   // Line Items State
   const [lineItems, setLineItems] = React.useState<POLineItem[]>([])
   const [nextLineNo, setNextLineNo] = React.useState(1)
-  
+
   // Product Selection Dialog State
   const [showProductDialog, setShowProductDialog] = React.useState(false)
-  
+
   // Batch Settings Dialog State
   const [showBatchSettingsDialog, setShowBatchSettingsDialog] = React.useState(false)
-  
+
   // SN/LOT Management Dialog State
   const [showSNLotDialog, setShowSNLotDialog] = React.useState(false)
   const [selectedLineItemForSNLot, setSelectedLineItemForSNLot] = React.useState<string | null>(null)
-  
-  // Attachments State
+
   const [attachments, setAttachments] = React.useState<File[]>([])
   const [notes, setNotes] = React.useState("")
+
+  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
+  const [showLeaveConfirm, setShowLeaveConfirm] = React.useState(false)
+  const [isDirty, setIsDirty] = React.useState(false)
+  const isFirstMount = React.useRef(true)
+
+  // Track changes to mark form as dirty
+  React.useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false
+      return
+    }
+    setIsDirty(true)
+  }, [
+    lineItems,
+    supplierInfo,
+    purchaseType,
+    originalPoNo,
+    referenceNo,
+    notes,
+    attachments,
+    deliveryInfo,
+    receivingAddress,
+    shippingAddress,
+    factoryDirectConfig,
+    priority,
+    department,
+    budgetProject
+  ])
+
+
+  // Handle navigation back/cancel (trigger custom dialog)
+  const handleNavigationBack = () => {
+    if (isDirty) {
+      setShowLeaveConfirm(true)
+    } else {
+      router.back()
+    }
+  }
+
+  const confirmLeave = () => {
+    setShowLeaveConfirm(false)
+    router.back()
+  }
 
   // Add products from selection dialog
   const handleProductsSelected = (products: Product[]) => {
     const defaultTaxRate = 13 // Default tax rate 13%
-    
+
     const newItems: POLineItem[] = products.map(product => {
       const taxAmount = product.unitPrice * (defaultTaxRate / 100)
       const lineAmount = product.unitPrice + taxAmount
-      
+
       return {
         id: `line-${Date.now()}-${product.id}`,
         lineNo: nextLineNo + lineItems.length + products.indexOf(product),
@@ -382,7 +413,7 @@ export default function CreatePOPage() {
         notes: "",
       }
     })
-    
+
     setLineItems([...lineItems, ...newItems])
     setNextLineNo(nextLineNo + newItems.length)
   }
@@ -394,51 +425,51 @@ export default function CreatePOPage() {
 
   // Batch operations for line items
   const [selectedLineItems, setSelectedLineItems] = React.useState<string[]>([])
-  
+
   // Select all line items
   const selectAllLineItems = () => {
     setSelectedLineItems(lineItems.map(item => item.id))
   }
-  
+
   // Deselect all line items
   const deselectAllLineItems = () => {
     setSelectedLineItems([])
   }
-  
+
   // Toggle line item selection
   const toggleLineItemSelection = (id: string) => {
-    setSelectedLineItems(prev => 
-      prev.includes(id) 
+    setSelectedLineItems(prev =>
+      prev.includes(id)
         ? prev.filter(itemId => itemId !== id)
         : [...prev, id]
     )
   }
-  
+
   // Batch remove selected line items
   const batchRemoveLineItems = () => {
     setLineItems(lineItems.filter(item => !selectedLineItems.includes(item.id)))
     setSelectedLineItems([])
   }
-  
+
   // Batch update selected line items
   const batchUpdateLineItems = (field: keyof POLineItem, value: any) => {
     setLineItems(lineItems.map(item => {
       if (selectedLineItems.includes(item.id)) {
         const updatedItem = { ...item, [field]: value }
-        
+
         // Recalculate tax and line amount for price-related fields
         if (field === 'unitPrice' || field === 'taxRate') {
           const unitPrice = field === 'unitPrice' ? value : updatedItem.unitPrice
           const taxRate = field === 'taxRate' ? value : updatedItem.taxRate
-          
+
           const subtotal = updatedItem.quantity * unitPrice
           const taxAmount = subtotal * (taxRate / 100)
           const lineAmount = subtotal + taxAmount
-          
+
           updatedItem.taxAmount = taxAmount
           updatedItem.lineAmount = lineAmount
         }
-        
+
         return updatedItem
       }
       return item
@@ -477,21 +508,21 @@ export default function CreatePOPage() {
     setLineItems(lineItems.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value }
-        
+
         // Recalculate tax and line amount when quantity, unit price, or tax rate changes
         if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
           const quantity = field === 'quantity' ? value : updatedItem.quantity
           const unitPrice = field === 'unitPrice' ? value : updatedItem.unitPrice
           const taxRate = field === 'taxRate' ? value : updatedItem.taxRate
-          
+
           const subtotal = quantity * unitPrice
           const taxAmount = subtotal * (taxRate / 100)
           const lineAmount = subtotal + taxAmount
-          
+
           updatedItem.taxAmount = taxAmount
           updatedItem.lineAmount = lineAmount
         }
-        
+
         // Calculate volume when dimensions change
         if (field === 'length' || field === 'width' || field === 'height') {
           const length = field === 'length' ? value : updatedItem.length || 0
@@ -499,7 +530,7 @@ export default function CreatePOPage() {
           const height = field === 'height' ? value : updatedItem.height || 0
           updatedItem.volume = length * width * height
         }
-        
+
         return updatedItem
       }
       return item
@@ -509,7 +540,7 @@ export default function CreatePOPage() {
   // Calculate totals by currency including cost information
   const totalItems = lineItems.length
   const totalQuantity = lineItems.reduce((sum, item) => sum + item.quantity, 0)
-  
+
   // Calculate totals by currency
   const totalsByCurrency = lineItems.reduce((acc, item) => {
     const currency = item.currency
@@ -526,20 +557,20 @@ export default function CreatePOPage() {
     acc[currency].totalAmount += item.lineAmount
     return acc
   }, {} as Record<string, { subtotal: number; taxAmount: number; totalAmount: number }>)
-  
+
   // Calculate grand total including costs and shipping tax
-  const grandTotal = Object.values(totalsByCurrency).reduce((sum, curr) => sum + curr.totalAmount, 0) + 
-                     costInfo.shippingCost + costInfo.handlingFee + costInfo.otherCharge + costInfo.shippingTaxAmount
+  const grandTotal = Object.values(totalsByCurrency).reduce((sum, curr) => sum + curr.totalAmount, 0) +
+    costInfo.shippingCost + costInfo.handlingFee + costInfo.otherCharge + costInfo.shippingTaxAmount
 
   // Form validation
   const isFormValid = () => {
     return purchaseType &&
-           supplierInfo.supplierName && 
-           deliveryInfo.warehouse && 
-           deliveryInfo.expectedDeliveryDate &&
-           priority &&
-           lineItems.length > 0 &&
-           lineItems.every(item => item.skuCode && item.quantity > 0 && item.unitPrice > 0)
+      supplierInfo.supplierName &&
+      deliveryInfo.warehouse &&
+      deliveryInfo.expectedDeliveryDate &&
+      priority &&
+      lineItems.length > 0 &&
+      lineItems.every(item => item.skuCode && item.quantity > 0 && item.unitPrice > 0)
   }
 
   // Handle file upload
@@ -558,6 +589,7 @@ export default function CreatePOPage() {
   // Handle save as draft
   const handleSaveDraft = () => {
     console.log("Save as draft:", {
+      status: "DRAFT",
       basic: { poNumber, originalPoNo, referenceNo, priority, department, budgetProject, purchaseType },
       supplier: supplierInfo,
       shippingAddress,
@@ -569,16 +601,31 @@ export default function CreatePOPage() {
       notes,
       totals: { totalItems, totalQuantity, totalsByCurrency, grandTotal }
     })
-    // TODO: API call to save draft
+
+    // Simulate successful save
+    toast.success(t('draftSavedSuccess' as any), {
+      description: `PO ${poNumber} saved as draft`
+    })
+
+    setIsDirty(false) // Clear dirty flag after saving
+
+    // Redirect to list page after delay
+    setTimeout(() => {
+      router.push('/purchase/po')
+    }, 1000)
   }
 
-  // Handle save as created
-  const handleSaveAsCreated = () => {
+  // Handle submit PO
+  const handleSubmitPO = () => {
     if (!isFormValid()) {
-      alert("请填写所有必填字段")
+      toast.error(t('formValidationFailed' as any), {
+        description: t('pleaseFillRequiredFields')
+      })
       return
     }
-    console.log("Save as created:", {
+
+    console.log("Submit PO:", {
+      status: "NEW", // Or PROCESSING depending on logic
       basic: { poNumber, originalPoNo, referenceNo, priority, department, budgetProject, purchaseType },
       supplier: supplierInfo,
       shippingAddress,
@@ -590,28 +637,211 @@ export default function CreatePOPage() {
       notes,
       totals: { totalItems, totalQuantity, totalsByCurrency, grandTotal }
     })
-    // TODO: API call to save as created
+
+    // Simulate successful submit
+    toast.success(t('poSubmittedSuccess' as any), {
+      description: `PO ${poNumber} successfully submitted`
+    })
+
+    setIsDirty(false) // Clear dirty flag after submitting
+
+    // Redirect to list page after delay
+    setTimeout(() => {
+      router.push('/purchase/po')
+    }, 1000)
   }
 
-  // Handle save and send
-  const handleSaveAndSend = () => {
-    if (!isFormValid()) {
-      alert("请填写所有必填字段")
+  // ─── Import Feature State ───────────────────────────────────────────────────
+  const [showImportDialog, setShowImportDialog] = React.useState(false)
+  const [importPreviewRows, setImportPreviewRows] = React.useState<Array<{
+    row: Partial<POLineItem> & { _errors: string[]; _lineNo: number }
+  }>>([])
+  const [importLoading, setImportLoading] = React.useState(false)
+  const importFileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Download CSV template
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'SKU Code',
+      'Product Name',
+      'Specifications',
+      'Quantity',
+      'UOM',
+      'Currency',
+      'Unit Price',
+      'Tax Rate (%)',
+      'Notes',
+    ]
+    const exampleRows = [
+      ['SKU-001', 'Sample Product A', 'Color: Red / Size: M', '100', 'PCS', 'USD', '25.00', '13', 'First batch'],
+      ['SKU-002', 'Sample Product B', 'Color: Blue / Size: L', '50', 'SET', 'USD', '89.90', '13', ''],
+    ]
+    const csvContent = [
+      headers.join(','),
+      ...exampleRows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    ].join('\n')
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'po_line_items_template.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success('模板下载成功', { description: '请按模板格式填写产品明细后导入' })
+  }
+
+  // Parse CSV file and open preview dialog
+  const handleImportFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!event.target.files) return
+    // reset input so same file can be re-selected
+    event.target.value = ''
+    if (!file) return
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('格式不支持', { description: '请上传 .csv 格式的文件' })
       return
     }
-    console.log("Save and send:", {
-      basic: { poNumber, originalPoNo, referenceNo, priority, department, budgetProject, purchaseType },
-      supplier: supplierInfo,
-      shippingAddress,
-      receivingAddress,
-      delivery: deliveryInfo,
-      costInfo,
-      lineItems,
-      attachments,
-      notes,
-      totals: { totalItems, totalQuantity, totalsByCurrency, grandTotal }
-    })
-    // TODO: API call to save and send
+
+    setImportLoading(true)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const text = (e.target?.result as string) || ''
+        // Remove BOM if present
+        const cleaned = text.replace(/^\uFEFF/, '')
+        const lines = cleaned.split(/\r?\n/).filter(l => l.trim())
+
+        if (lines.length < 2) {
+          toast.error('文件内容为空', { description: '模板至少需要 1 行数据（不含表头）' })
+          setImportLoading(false)
+          return
+        }
+
+        // Parse CSV respecting quoted fields
+        const parseCSVLine = (line: string): string[] => {
+          const result: string[] = []
+          let current = ''
+          let inQuotes = false
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i]
+            if (char === '"') {
+              inQuotes = !inQuotes
+            } else if (char === ',' && !inQuotes) {
+              result.push(current.trim())
+              current = ''
+            } else {
+              current += char
+            }
+          }
+          result.push(current.trim())
+          return result
+        }
+
+        // Skip header row
+        const dataLines = lines.slice(1)
+        const defaultTaxRate = 13
+
+        const parsedRows = dataLines.map((line, idx) => {
+          const cols = parseCSVLine(line)
+          const errors: string[] = []
+
+          const skuCode = cols[0] || ''
+          const productName = cols[1] || ''
+          const specifications = cols[2] || ''
+          const quantityRaw = cols[3] || ''
+          const uom = cols[4] || 'PCS'
+          const currency = cols[5] || 'USD'
+          const unitPriceRaw = cols[6] || ''
+          const taxRateRaw = cols[7] || String(defaultTaxRate)
+          const notes = cols[8] || ''
+
+          if (!skuCode) errors.push('SKU Code 不能为空')
+          if (!productName) errors.push('Product Name 不能为空')
+          const quantity = parseInt(quantityRaw, 10)
+          if (isNaN(quantity) || quantity <= 0) errors.push('数量必须为正整数')
+          const unitPrice = parseFloat(unitPriceRaw)
+          if (isNaN(unitPrice) || unitPrice < 0) errors.push('单价必须为有效数字')
+          const taxRate = parseFloat(taxRateRaw)
+          const effectiveTaxRate = isNaN(taxRate) ? defaultTaxRate : taxRate
+
+          const qty = isNaN(quantity) ? 1 : quantity
+          const price = isNaN(unitPrice) ? 0 : unitPrice
+          const subtotal = qty * price
+          const taxAmount = subtotal * (effectiveTaxRate / 100)
+          const lineAmount = subtotal + taxAmount
+
+          const row: Partial<POLineItem> & { _errors: string[]; _lineNo: number } = {
+            _lineNo: idx + 2, // 1-based, + header row
+            _errors: errors,
+            id: `import-${Date.now()}-${idx}`,
+            lineNo: lineItems.length + idx + 1,
+            productId: `import-${skuCode}-${idx}`,
+            skuCode,
+            productName,
+            specifications,
+            quantity: qty,
+            uom,
+            currency,
+            unitPrice: price,
+            taxRate: effectiveTaxRate,
+            taxAmount,
+            lineAmount,
+            requiresSerialNumber: false,
+            requiresLotNumber: false,
+            specifiedSerialNumbers: [],
+            specifiedLotNumbers: [],
+            notes,
+          }
+          return { row }
+        })
+
+        setImportPreviewRows(parsedRows)
+        setShowImportDialog(true)
+      } catch (err) {
+        toast.error('解析失败', { description: '文件格式有误，请使用下载的模板' })
+      } finally {
+        setImportLoading(false)
+      }
+    }
+    reader.onerror = () => {
+      toast.error('读取失败', { description: '文件读取出错，请重试' })
+      setImportLoading(false)
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  // Confirm import: append valid rows to line items
+  const handleConfirmImport = () => {
+    const validRows = importPreviewRows
+      .filter(({ row }) => row._errors.length === 0)
+      .map(({ row }) => ({
+        ...row,
+        id: `import-${Date.now()}-${Math.random()}`,
+        lineNo: lineItems.length + importPreviewRows.filter(({ row: r }) => r._errors.length === 0).indexOf(
+          importPreviewRows.find(({ row: r }) => r.skuCode === row.skuCode && r._lineNo === row._lineNo)!
+        ) + 1,
+      } as POLineItem))
+
+    // Re-assign lineNo sequentially
+    const baseNo = lineItems.length
+    const finalRows = validRows.map((row, idx) => ({ ...row, lineNo: baseNo + idx + 1 }))
+
+    setLineItems([...lineItems, ...finalRows])
+    setNextLineNo(lineItems.length + finalRows.length + 1)
+    setShowImportDialog(false)
+    setImportPreviewRows([])
+
+    const errorCount = importPreviewRows.length - validRows.length
+    if (errorCount > 0) {
+      toast.warning(`导入完成（跳过 ${errorCount} 行错误数据）`, {
+        description: `成功导入 ${finalRows.length} 行产品明细`
+      })
+    } else {
+      toast.success(`导入成功`, { description: `已添加 ${finalRows.length} 行产品明细` })
+    }
   }
 
   return (
@@ -620,7 +850,7 @@ export default function CreatePOPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button variant="ghost" size="icon" onClick={handleNavigationBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
@@ -633,13 +863,9 @@ export default function CreatePOPage() {
               <Save className="mr-2 h-4 w-4" />
               {t('saveDraft')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSaveAsCreated} disabled={!isFormValid()}>
-              <Save className="mr-2 h-4 w-4" />
-              {t('saveAsCreated')}
-            </Button>
-            <Button size="sm" onClick={handleSaveAndSend} disabled={!isFormValid()}>
+            <Button size="sm" onClick={handleSubmitPO} disabled={!isFormValid()}>
               <Send className="mr-2 h-4 w-4" />
-              {t('saveAndSend')}
+              {t('submitPO' as any)}
             </Button>
           </div>
         </div>
@@ -666,10 +892,10 @@ export default function CreatePOPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => document.getElementById('logistics-terms')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => document.getElementById('shipping-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="whitespace-nowrap"
             >
-              物流条款
+              发货地址
             </Button>
             <Button
               variant="ghost"
@@ -678,14 +904,6 @@ export default function CreatePOPage() {
               className="whitespace-nowrap"
             >
               收货地址
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => document.getElementById('shipping-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="whitespace-nowrap"
-            >
-              发货地址
             </Button>
             <Button
               variant="ghost"
@@ -791,6 +1009,30 @@ export default function CreatePOPage() {
                   placeholder={t('enterReferenceNo')}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expectedDeliveryDate">
+                  交货日期 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="expectedDeliveryDate"
+                  type="datetime-local"
+                  value={deliveryInfo.expectedDeliveryDate}
+                  onChange={(e) => setDeliveryInfo({ ...deliveryInfo, expectedDeliveryDate: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="latestShippingTime">
+                  最晚发运日期 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="latestShippingTime"
+                  type="datetime-local"
+                  value={deliveryInfo.latestShippingTime}
+                  onChange={(e) => setDeliveryInfo({ ...deliveryInfo, latestShippingTime: e.target.value })}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -812,7 +1054,7 @@ export default function CreatePOPage() {
                 <Input
                   id="supplierName"
                   value={supplierInfo.supplierName}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, supplierName: e.target.value})}
+                  onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierName: e.target.value })}
                   placeholder={t('enterSupplierName')}
                 />
               </div>
@@ -822,7 +1064,7 @@ export default function CreatePOPage() {
                 <Input
                   id="supplierCode"
                   value={supplierInfo.supplierCode || ""}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, supplierCode: e.target.value})}
+                  onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierCode: e.target.value })}
                   placeholder="输入供应商编码"
                 />
               </div>
@@ -832,7 +1074,7 @@ export default function CreatePOPage() {
                 <Input
                   id="contactPerson"
                   value={supplierInfo.contactPerson}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, contactPerson: e.target.value})}
+                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPerson: e.target.value })}
                   placeholder={t('enterContactPerson')}
                 />
               </div>
@@ -842,7 +1084,7 @@ export default function CreatePOPage() {
                 <Input
                   id="contactPhone"
                   value={supplierInfo.contactPhone}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, contactPhone: e.target.value})}
+                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPhone: e.target.value })}
                   placeholder={t('enterContactPhone')}
                 />
               </div>
@@ -853,7 +1095,7 @@ export default function CreatePOPage() {
                   id="contactEmail"
                   type="email"
                   value={supplierInfo.contactEmail}
-                  onChange={(e) => setSupplierInfo({...supplierInfo, contactEmail: e.target.value})}
+                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactEmail: e.target.value })}
                   placeholder={t('enterContactEmail')}
                 />
               </div>
@@ -861,261 +1103,6 @@ export default function CreatePOPage() {
           </CardContent>
         </Card>
 
-        {/* Logistics Terms (物流条款) */}
-        <Card id="logistics-terms">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
-              物流条款
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="expectedDeliveryDate">
-                  交货期日 <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="expectedDeliveryDate"
-                  type="datetime-local"
-                  value={deliveryInfo.expectedDeliveryDate}
-                  onChange={(e) => setDeliveryInfo({...deliveryInfo, expectedDeliveryDate: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="latestShippingTime">
-                  最晚发运时间 <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="latestShippingTime"
-                  type="datetime-local"
-                  value={deliveryInfo.latestShippingTime}
-                  onChange={(e) => setDeliveryInfo({...deliveryInfo, latestShippingTime: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingMethod">运输方式</Label>
-                <Select 
-                  value={deliveryInfo.shippingMethod} 
-                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, shippingMethod: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectShippingMethod')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AIR">{t('airTransport')}</SelectItem>
-                    <SelectItem value="OCEAN">{t('seaTransport')}</SelectItem>
-                    <SelectItem value="TRUCK">{t('landTransport')}</SelectItem>
-                    <SelectItem value="EXPRESS">{t('expressDelivery')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="freightTerms">运费条款</Label>
-                <Select 
-                  value={deliveryInfo.freightTerms} 
-                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, freightTerms: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectFreightTerms')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="COLLECT">{t('collect')}</SelectItem>
-                    <SelectItem value="PREPAID">{t('prepaid')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="incoterm">贸易条款</Label>
-                <Select 
-                  value={deliveryInfo.incoterm} 
-                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, incoterm: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectIncoterm')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FOB">FOB</SelectItem>
-                    <SelectItem value="CIF">CIF</SelectItem>
-                    <SelectItem value="EXW">EXW</SelectItem>
-                    <SelectItem value="DDP">DDP</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Delivery Address (收货地址) */}
-        <Card id="receiving-address">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              收货地址
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="warehouse">
-                  {t('warehouse')} <span className="text-destructive">*</span>
-                </Label>
-                <Select 
-                  value={deliveryInfo.warehouse} 
-                  onValueChange={(value) => setDeliveryInfo({...deliveryInfo, warehouse: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectTargetWarehouse')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WH001">Main Warehouse - Los Angeles</SelectItem>
-                    <SelectItem value="WH002">East Distribution Center - New York</SelectItem>
-                    <SelectItem value="WH003">West Fulfillment Center - Seattle</SelectItem>
-                    <SelectItem value="WH004">Central Warehouse - Chicago</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receivingContactPerson">{t('contactPerson')}</Label>
-                <Input
-                  id="receivingContactPerson"
-                  value={receivingAddress.contactPerson}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, contactPerson: e.target.value})}
-                  placeholder={t('enterContactPerson')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receivingDepartment">{t('department')}</Label>
-                <Input
-                  id="receivingDepartment"
-                  value={receivingAddress.department}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, department: e.target.value})}
-                  placeholder={t('enterDepartment')}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="receivingContactPhone">{t('contactPhone')}</Label>
-                <Input
-                  id="receivingContactPhone"
-                  value={receivingAddress.contactPhone}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, contactPhone: e.target.value})}
-                  placeholder={t('enterContactPhone')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receivingContactEmail">{t('contactEmail')}</Label>
-                <Input
-                  id="receivingContactEmail"
-                  type="email"
-                  value={receivingAddress.contactEmail}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, contactEmail: e.target.value})}
-                  placeholder={t('enterContactEmail')}
-                />
-              </div>
-            </div>
-
-            {/* Address fields in specific layout */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="receivingCountry">
-                  {t('country')} <span className="text-destructive">*</span>
-                </Label>
-                <Select 
-                  value={receivingAddress.country} 
-                  onValueChange={(value) => setReceivingAddress({...receivingAddress, country: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectCountry')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="United States">United States</SelectItem>
-                    <SelectItem value="China">China</SelectItem>
-                    <SelectItem value="Canada">Canada</SelectItem>
-                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                    <SelectItem value="Germany">Germany</SelectItem>
-                    <SelectItem value="Japan">Japan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="receivingState">
-                  {t('stateProvince')} <span className="text-destructive">*</span>
-                </Label>
-                <Select 
-                  value={receivingAddress.state} 
-                  onValueChange={(value) => setReceivingAddress({...receivingAddress, state: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectState')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CA">California</SelectItem>
-                    <SelectItem value="NY">New York</SelectItem>
-                    <SelectItem value="TX">Texas</SelectItem>
-                    <SelectItem value="FL">Florida</SelectItem>
-                    <SelectItem value="IL">Illinois</SelectItem>
-                    <SelectItem value="WA">Washington</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="receivingCity">
-                  {t('cityField')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="receivingCity"
-                  value={receivingAddress.city}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, city: e.target.value})}
-                  placeholder={t('enterCityName')}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="receivingZipCode">{t('zipCodeField')}</Label>
-                <Input
-                  id="receivingZipCode"
-                  value={receivingAddress.zipCode}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, zipCode: e.target.value})}
-                  placeholder={t('postalCode')}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="receivingAddress1">
-                  {t('address1Field')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="receivingAddress1"
-                  value={receivingAddress.address1}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, address1: e.target.value})}
-                  placeholder={t('streetAddress')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="receivingAddress2">{t('address2Optional')}</Label>
-                <Input
-                  id="receivingAddress2"
-                  value={receivingAddress.address2}
-                  onChange={(e) => setReceivingAddress({...receivingAddress, address2: e.target.value})}
-                  placeholder={t('apartmentFloorInfo')}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Shipping Address (发货地址) */}
         <Card id="shipping-address">
@@ -1133,8 +1120,8 @@ export default function CreatePOPage() {
                   <Label>
                     物流路径 <span className="text-destructive">*</span>
                   </Label>
-                  <Select 
-                    value={factoryDirectConfig.viaFinishedGoodsWarehouse ? "VIA_FG" : "DIRECT"} 
+                  <Select
+                    value={factoryDirectConfig.viaFinishedGoodsWarehouse ? "VIA_FG" : "DIRECT"}
                     onValueChange={(value) => setFactoryDirectConfig({
                       ...factoryDirectConfig,
                       viaFinishedGoodsWarehouse: value === "VIA_FG"
@@ -1150,45 +1137,13 @@ export default function CreatePOPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="factorySelect">
-                    工厂 <span className="text-destructive">*</span>
-                  </Label>
-                  <Select 
-                    value={factoryDirectConfig.factoryId} 
-                    onValueChange={(value) => {
-                      const factory = [
-                        { id: "FAC001", name: "深圳工厂" },
-                        { id: "FAC002", name: "东莞工厂" },
-                        { id: "FAC003", name: "惠州工厂" },
-                      ].find(f => f.id === value)
-                      if (factory) {
-                        setFactoryDirectConfig({
-                          ...factoryDirectConfig,
-                          factoryId: factory.id,
-                          factoryName: factory.name
-                        })
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择工厂" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FAC001">深圳工厂</SelectItem>
-                      <SelectItem value="FAC002">东莞工厂</SelectItem>
-                      <SelectItem value="FAC003">惠州工厂</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 {factoryDirectConfig.viaFinishedGoodsWarehouse && (
                   <div className="space-y-2">
                     <Label htmlFor="fgWarehouseSelect">
                       成品库 <span className="text-destructive">*</span>
                     </Label>
-                    <Select 
-                      value={factoryDirectConfig.finishedGoodsWarehouseId || ""} 
+                    <Select
+                      value={factoryDirectConfig.finishedGoodsWarehouseId || ""}
                       onValueChange={(value) => {
                         const warehouse = [
                           { id: "FG001", name: "深圳成品库" },
@@ -1224,7 +1179,7 @@ export default function CreatePOPage() {
                 <Input
                   id="shippingContactPerson"
                   value={shippingAddress.contactPerson}
-                  onChange={(e) => setShippingAddress({...shippingAddress, contactPerson: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactPerson: e.target.value })}
                   placeholder={t('enterContactPerson')}
                 />
               </div>
@@ -1234,17 +1189,17 @@ export default function CreatePOPage() {
                 <Input
                   id="shippingDepartment"
                   value={shippingAddress.department}
-                  onChange={(e) => setShippingAddress({...shippingAddress, department: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, department: e.target.value })}
                   placeholder={t('enterDepartment')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shippingContactPhone">{t('contactPhone')}</Label>
                 <Input
                   id="shippingContactPhone"
                   value={shippingAddress.contactPhone}
-                  onChange={(e) => setShippingAddress({...shippingAddress, contactPhone: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactPhone: e.target.value })}
                   placeholder={t('enterContactPhone')}
                 />
               </div>
@@ -1255,7 +1210,7 @@ export default function CreatePOPage() {
                   id="shippingContactEmail"
                   type="email"
                   value={shippingAddress.contactEmail}
-                  onChange={(e) => setShippingAddress({...shippingAddress, contactEmail: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactEmail: e.target.value })}
                   placeholder={t('enterContactEmail')}
                 />
               </div>
@@ -1267,9 +1222,9 @@ export default function CreatePOPage() {
                 <Label htmlFor="shippingCountry">
                   {t('country')} <span className="text-destructive">*</span>
                 </Label>
-                <Select 
-                  value={shippingAddress.country} 
-                  onValueChange={(value) => setShippingAddress({...shippingAddress, country: value})}
+                <Select
+                  value={shippingAddress.country}
+                  onValueChange={(value) => setShippingAddress({ ...shippingAddress, country: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectCountry')} />
@@ -1284,14 +1239,14 @@ export default function CreatePOPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shippingState">
                   {t('stateProvince')} <span className="text-destructive">*</span>
                 </Label>
-                <Select 
-                  value={shippingAddress.state} 
-                  onValueChange={(value) => setShippingAddress({...shippingAddress, state: value})}
+                <Select
+                  value={shippingAddress.state}
+                  onValueChange={(value) => setShippingAddress({ ...shippingAddress, state: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectState')} />
@@ -1306,7 +1261,7 @@ export default function CreatePOPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shippingCity">
                   {t('cityField')} <span className="text-destructive">*</span>
@@ -1314,17 +1269,17 @@ export default function CreatePOPage() {
                 <Input
                   id="shippingCity"
                   value={shippingAddress.city}
-                  onChange={(e) => setShippingAddress({...shippingAddress, city: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                   placeholder={t('enterCityName')}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="shippingZipCode">{t('zipCodeField')}</Label>
                 <Input
                   id="shippingZipCode"
                   value={shippingAddress.zipCode}
-                  onChange={(e) => setShippingAddress({...shippingAddress, zipCode: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
                   placeholder={t('postalCode')}
                 />
               </div>
@@ -1338,7 +1293,7 @@ export default function CreatePOPage() {
                 <Input
                   id="shippingAddress1"
                   value={shippingAddress.address1}
-                  onChange={(e) => setShippingAddress({...shippingAddress, address1: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, address1: e.target.value })}
                   placeholder={t('streetAddress')}
                 />
               </div>
@@ -1348,7 +1303,174 @@ export default function CreatePOPage() {
                 <Input
                   id="shippingAddress2"
                   value={shippingAddress.address2}
-                  onChange={(e) => setShippingAddress({...shippingAddress, address2: e.target.value})}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, address2: e.target.value })}
+                  placeholder={t('apartmentFloorInfo')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Address (收货地址) */}
+        <Card id="receiving-address">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              收货地址
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="warehouse">
+                  {t('warehouse')} <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={deliveryInfo.warehouse}
+                  onValueChange={(value) => setDeliveryInfo({ ...deliveryInfo, warehouse: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectTargetWarehouse')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WH001">Main Warehouse - Los Angeles</SelectItem>
+                    <SelectItem value="WH002">East Distribution Center - New York</SelectItem>
+                    <SelectItem value="WH003">West Fulfillment Center - Seattle</SelectItem>
+                    <SelectItem value="WH004">Central Warehouse - Chicago</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingContactPerson">{t('contactPerson')}</Label>
+                <Input
+                  id="receivingContactPerson"
+                  value={receivingAddress.contactPerson}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, contactPerson: e.target.value })}
+                  placeholder={t('enterContactPerson')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingDepartment">{t('department')}</Label>
+                <Input
+                  id="receivingDepartment"
+                  value={receivingAddress.department}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, department: e.target.value })}
+                  placeholder={t('enterDepartment')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingContactPhone">{t('contactPhone')}</Label>
+                <Input
+                  id="receivingContactPhone"
+                  value={receivingAddress.contactPhone}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, contactPhone: e.target.value })}
+                  placeholder={t('enterContactPhone')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingContactEmail">{t('contactEmail')}</Label>
+                <Input
+                  id="receivingContactEmail"
+                  type="email"
+                  value={receivingAddress.contactEmail}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, contactEmail: e.target.value })}
+                  placeholder={t('enterContactEmail')}
+                />
+              </div>
+            </div>
+
+            {/* Address fields in specific layout */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="receivingCountry">
+                  {t('country')} <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={receivingAddress.country}
+                  onValueChange={(value) => setReceivingAddress({ ...receivingAddress, country: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectCountry')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="United States">United States</SelectItem>
+                    <SelectItem value="China">China</SelectItem>
+                    <SelectItem value="Canada">Canada</SelectItem>
+                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                    <SelectItem value="Germany">Germany</SelectItem>
+                    <SelectItem value="Japan">Japan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingState">
+                  {t('stateProvince')} <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={receivingAddress.state}
+                  onValueChange={(value) => setReceivingAddress({ ...receivingAddress, state: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('selectState')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CA">California</SelectItem>
+                    <SelectItem value="NY">New York</SelectItem>
+                    <SelectItem value="TX">Texas</SelectItem>
+                    <SelectItem value="FL">Florida</SelectItem>
+                    <SelectItem value="IL">Illinois</SelectItem>
+                    <SelectItem value="WA">Washington</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingCity">
+                  {t('cityField')} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="receivingCity"
+                  value={receivingAddress.city}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, city: e.target.value })}
+                  placeholder={t('enterCityName')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingZipCode">{t('zipCodeField')}</Label>
+                <Input
+                  id="receivingZipCode"
+                  value={receivingAddress.zipCode}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, zipCode: e.target.value })}
+                  placeholder={t('postalCode')}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="receivingAddress1">
+                  {t('address1Field')} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="receivingAddress1"
+                  value={receivingAddress.address1}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, address1: e.target.value })}
+                  placeholder={t('streetAddress')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receivingAddress2">{t('address2Optional')}</Label>
+                <Input
+                  id="receivingAddress2"
+                  value={receivingAddress.address2}
+                  onChange={(e) => setReceivingAddress({ ...receivingAddress, address2: e.target.value })}
                   placeholder={t('apartmentFloorInfo')}
                 />
               </div>
@@ -1374,6 +1496,27 @@ export default function CreatePOPage() {
                     </Button>
                   </div>
                 )}
+                {/* Import Template Buttons */}
+                <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                  <Download className="mr-2 h-4 w-4" />
+                  下载模板
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => importFileInputRef.current?.click()}
+                  disabled={importLoading}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importLoading ? '解析中...' : '导入'}
+                </Button>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleImportFileChange}
+                />
                 <Button onClick={() => setShowProductDialog(true)}>
                   <ShoppingBag className="mr-2 h-4 w-4" />
                   {t('addProduct')}
@@ -1424,11 +1567,8 @@ export default function CreatePOPage() {
                       <TableHead className="w-[100px]">{t('taxRate')}</TableHead>
                       <TableHead className="w-[120px]">{t('taxAmount')}</TableHead>
                       <TableHead className="w-[120px]">{t('lineAmount')}</TableHead>
-                      <TableHead className="min-w-[150px]">{t('supplierPerLine')}</TableHead>
                       <TableHead className="w-[100px]">{t('snManagement')}</TableHead>
-                      <TableHead className="w-[100px]">{t('lotManagement')}</TableHead>
                       <TableHead className="w-[120px]">{t('snList')}</TableHead>
-                      <TableHead className="w-[120px]">{t('lotList')}</TableHead>
                       <TableHead className="min-w-[120px]">{t('notes')}</TableHead>
                       <TableHead className="w-[60px]">{t('actions')}</TableHead>
                     </TableRow>
@@ -1504,8 +1644,8 @@ export default function CreatePOPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Select 
-                            value={item.uom} 
+                          <Select
+                            value={item.uom}
                             onValueChange={(value) => updateLineItem(item.id, "uom", value)}
                           >
                             <SelectTrigger className="w-full h-8 text-sm">
@@ -1520,8 +1660,8 @@ export default function CreatePOPage() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Select 
-                            value={item.currency} 
+                          <Select
+                            value={item.currency}
                             onValueChange={(value) => updateLineItem(item.id, "currency", value)}
                           >
                             <SelectTrigger className="w-full h-8 text-sm">
@@ -1570,14 +1710,6 @@ export default function CreatePOPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Input
-                            value={item.supplierName || ''}
-                            onChange={(e) => updateLineItem(item.id, "supplierName", e.target.value)}
-                            className="w-full text-sm h-8"
-                            placeholder={t('enterSupplierName')}
-                          />
-                        </TableCell>
-                        <TableCell>
                           <div className="space-y-1">
                             {item.requiresSerialNumber ? (
                               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
@@ -1592,51 +1724,10 @@ export default function CreatePOPage() {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {item.requiresLotNumber ? (
-                              <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
-                                {t('requiresLot')}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-xs">
-                                {t('noLotRequired')}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
                             {item.specifiedSerialNumbers && item.specifiedSerialNumbers.length > 0 ? (
                               <div className="space-y-1">
                                 <div className="text-xs text-muted-foreground">
                                   {item.specifiedSerialNumbers.length} SN(s)
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 text-xs"
-                                  onClick={() => openSNLotDialog(item.id)}
-                                >
-                                  {t('view')}
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-xs text-muted-foreground"
-                                onClick={() => openSNLotDialog(item.id)}
-                              >
-                                {t('add')}
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {item.specifiedLotNumbers && item.specifiedLotNumbers.length > 0 ? (
-                              <div className="space-y-1">
-                                <div className="text-xs text-muted-foreground">
-                                  {item.specifiedLotNumbers.length} LOT(s)
                                 </div>
                                 <Button
                                   variant="outline"
@@ -1680,7 +1771,7 @@ export default function CreatePOPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                  
+
                   {/* Summary and Cost Rows */}
                   <tfoot className="bg-muted/50 border-t-2">
                     {/* 商品汇总行 */}
@@ -1725,9 +1816,8 @@ export default function CreatePOPage() {
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
-                      <td className="px-4 py-3"></td>
                     </tr>
-                    
+
                     {/* 运费行 */}
                     <tr className="border-t">
                       <td className="px-4 py-3"></td>
@@ -1746,7 +1836,7 @@ export default function CreatePOPage() {
                           min="0"
                           step="0.01"
                           value={costInfo.shippingCost}
-                          onChange={(e) => setCostInfo({...costInfo, shippingCost: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setCostInfo({ ...costInfo, shippingCost: parseFloat(e.target.value) || 0 })}
                           className="w-full text-sm h-8"
                           placeholder="0.00"
                         />
@@ -1758,7 +1848,7 @@ export default function CreatePOPage() {
                           max="100"
                           step="0.1"
                           value={costInfo.isShippingTaxable ? costInfo.shippingTaxRate : 0}
-                          onChange={(e) => setCostInfo({...costInfo, shippingTaxRate: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setCostInfo({ ...costInfo, shippingTaxRate: parseFloat(e.target.value) || 0 })}
                           className="w-full text-sm h-8"
                           placeholder="0"
                           disabled={!costInfo.isShippingTaxable}
@@ -1774,13 +1864,12 @@ export default function CreatePOPage() {
                           USD {(costInfo.shippingCost + (costInfo.isShippingTaxable ? costInfo.shippingTaxAmount : 0)).toFixed(2)}
                         </div>
                       </td>
-                      <td className="px-4 py-3"></td>
                       <td className="px-4 py-3">
                         <Label className="flex items-center gap-1 text-xs">
                           <input
                             type="checkbox"
                             checked={costInfo.isShippingTaxable}
-                            onChange={(e) => setCostInfo({...costInfo, isShippingTaxable: e.target.checked})}
+                            onChange={(e) => setCostInfo({ ...costInfo, isShippingTaxable: e.target.checked })}
                             className="rounded"
                           />
                           {t('isShippingTaxable')}
@@ -1788,9 +1877,8 @@ export default function CreatePOPage() {
                       </td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
-                      <td className="px-4 py-3"></td>
                     </tr>
-                    
+
                     {/* 手续费行 */}
                     <tr className="border-t">
                       <td className="px-4 py-3"></td>
@@ -1809,7 +1897,7 @@ export default function CreatePOPage() {
                           min="0"
                           step="0.01"
                           value={costInfo.handlingFee}
-                          onChange={(e) => setCostInfo({...costInfo, handlingFee: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setCostInfo({ ...costInfo, handlingFee: parseFloat(e.target.value) || 0 })}
                           className="w-full text-sm h-8"
                           placeholder="0.00"
                         />
@@ -1826,8 +1914,9 @@ export default function CreatePOPage() {
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
+                      <td className="px-4 py-3"></td>
                     </tr>
-                    
+
                     {/* 其他费用行 */}
                     <tr className="border-t">
                       <td className="px-4 py-3"></td>
@@ -1846,7 +1935,7 @@ export default function CreatePOPage() {
                           min="0"
                           step="0.01"
                           value={costInfo.otherCharge}
-                          onChange={(e) => setCostInfo({...costInfo, otherCharge: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => setCostInfo({ ...costInfo, otherCharge: parseFloat(e.target.value) || 0 })}
                           className="w-full text-sm h-8"
                           placeholder="0.00"
                         />
@@ -1863,8 +1952,9 @@ export default function CreatePOPage() {
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
+                      <td className="px-4 py-3"></td>
                     </tr>
-                    
+
                     {/* 总计行 */}
                     <tr className="border-t-2 border-green-300 bg-green-50">
                       <td className="px-4 py-3"></td>
@@ -1885,6 +1975,7 @@ export default function CreatePOPage() {
                           USD {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </div>
                       </td>
+                      <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
                       <td className="px-4 py-3"></td>
@@ -1923,7 +2014,7 @@ export default function CreatePOPage() {
                 </div>
               </label>
             </div>
-            
+
             {attachments.length > 0 && (
               <div className="space-y-2">
                 {attachments.map((file, index) => (
@@ -1961,20 +2052,16 @@ export default function CreatePOPage() {
 
         {/* Form Actions */}
         <div className="flex justify-end gap-2 pb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <Button variant="outline" size="sm" onClick={handleNavigationBack}>
             {t('cancel')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleSaveDraft}>
             <Save className="mr-2 h-4 w-4" />
             {t('saveDraft')}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleSaveAsCreated} disabled={!isFormValid()}>
-            <Save className="mr-2 h-4 w-4" />
-            {t('saveAsCreated')}
-          </Button>
-          <Button size="sm" onClick={handleSaveAndSend} disabled={!isFormValid()}>
+          <Button size="sm" onClick={handleSubmitPO} disabled={!isFormValid()}>
             <Send className="mr-2 h-4 w-4" />
-            {t('saveAndSend')}
+            {t('submitPO' as any)}
           </Button>
         </div>
 
@@ -2009,6 +2096,138 @@ export default function CreatePOPage() {
             onSave={handleSNLotSave}
           />
         )}
+
+        {/* Import Preview Dialog */}
+        <Dialog open={showImportDialog} onOpenChange={(open) => {
+          if (!open) { setShowImportDialog(false); setImportPreviewRows([]) }
+        }}>
+          <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Upload className="h-5 w-5 text-primary" />
+                导入预览
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                共解析 <span className="font-medium text-foreground">{importPreviewRows.length}</span> 行，
+                其中{' '}
+                <span className="font-medium text-emerald-600">{importPreviewRows.filter(r => r.row._errors.length === 0).length} 行有效</span>
+                {importPreviewRows.some(r => r.row._errors.length > 0) && (
+                  <>
+                    ，<span className="font-medium text-destructive">{importPreviewRows.filter(r => r.row._errors.length > 0).length} 行有误（将跳过）</span>
+                  </>
+                )}
+              </p>
+            </DialogHeader>
+
+            <div className="overflow-auto flex-1 px-6 py-4">
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-[60px] font-semibold">行号</TableHead>
+                      <TableHead className="w-[50px] font-semibold">状态</TableHead>
+                      <TableHead className="font-semibold">SKU Code</TableHead>
+                      <TableHead className="font-semibold">产品名称</TableHead>
+                      <TableHead className="font-semibold">规格</TableHead>
+                      <TableHead className="w-[80px] font-semibold">数量</TableHead>
+                      <TableHead className="w-[70px] font-semibold">单位</TableHead>
+                      <TableHead className="w-[80px] font-semibold">币种</TableHead>
+                      <TableHead className="w-[100px] font-semibold">单价</TableHead>
+                      <TableHead className="w-[90px] font-semibold">税率(%)</TableHead>
+                      <TableHead className="font-semibold">备注</TableHead>
+                      <TableHead className="font-semibold">错误信息</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importPreviewRows.map(({ row }, idx) => {
+                      const hasError = row._errors.length > 0
+                      return (
+                        <TableRow
+                          key={idx}
+                          className={hasError ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-muted/30'}
+                        >
+                          <TableCell className="text-muted-foreground text-xs">{row._lineNo}</TableCell>
+                          <TableCell>
+                            {hasError ? (
+                              <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 rounded-full bg-destructive/15 flex items-center justify-center">
+                                  <X className="h-3 w-3 text-destructive" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center">
+                                <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                </div>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className={`font-mono text-sm ${!row.skuCode ? 'text-destructive' : ''}`}>
+                            {row.skuCode || <span className="italic text-muted-foreground">（空）</span>}
+                          </TableCell>
+                          <TableCell className={`text-sm ${!row.productName ? 'text-destructive' : ''}`}>
+                            {row.productName || <span className="italic text-muted-foreground">（空）</span>}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{row.specifications || '—'}</TableCell>
+                          <TableCell className="text-sm text-right">{row.quantity}</TableCell>
+                          <TableCell className="text-sm">{row.uom}</TableCell>
+                          <TableCell className="text-sm">{row.currency}</TableCell>
+                          <TableCell className="text-sm text-right font-medium">{row.unitPrice?.toFixed(2)}</TableCell>
+                          <TableCell className="text-sm text-right">{row.taxRate}%</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{row.notes || '—'}</TableCell>
+                          <TableCell>
+                            {hasError && (
+                              <div className="space-y-1">
+                                {row._errors.map((err, i) => (
+                                  <div key={i} className="flex items-center gap-1 text-xs text-destructive">
+                                    <AlertCircle className="h-3 w-3 shrink-0" />
+                                    {err}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <DialogFooter className="px-6 py-4 border-t bg-muted/30 shrink-0 flex items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                {importPreviewRows.some(r => r.row._errors.length > 0) && (
+                  <span className="flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 text-amber-500" />
+                    错误行将自动跳过，仅导入有效数据
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowImportDialog(false); setImportPreviewRows([]) }}
+                >
+                  取消
+                </Button>
+                <Button
+                  onClick={handleConfirmImport}
+                  disabled={importPreviewRows.filter(r => r.row._errors.length === 0).length === 0}
+                  className="min-w-[120px]"
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  确认导入 ({importPreviewRows.filter(r => r.row._errors.length === 0).length} 行)
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <LeaveConfirmDialog
+          open={showLeaveConfirm}
+          onOpenChange={setShowLeaveConfirm}
+          onConfirm={confirmLeave}
+        />
       </div>
     </MainLayout>
   )

@@ -332,7 +332,7 @@ export function PORoutingRuleDialogV4({ open, onOpenChange, rule, onSave, locale
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs font-bold">
-                                                    IF
+                                                    {t("IF", "如果")}
                                                 </Badge>
                                                 <CardTitle className="text-base">{t("Trigger Conditions", "触发条件")}</CardTitle>
                                             </div>
@@ -361,7 +361,7 @@ export function PORoutingRuleDialogV4({ open, onOpenChange, rule, onSave, locale
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs font-bold">
-                                                    THEN
+                                                    {t("THEN", "则")}
                                                 </Badge>
                                                 <CardTitle className="text-base">{t("Execution Actions", "执行动作")}</CardTitle>
                                             </div>
@@ -391,7 +391,7 @@ export function PORoutingRuleDialogV4({ open, onOpenChange, rule, onSave, locale
                                             <p className="font-medium">{t("Rule Preview", "规则预览")}</p>
                                             <p className="text-muted-foreground mt-1">
                                                 <span className="font-mono bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded text-blue-700 dark:text-blue-300">
-                                                    IF
+                                                    {t("IF", "如果")}
                                                 </span>
                                                 {" "}
                                                 {conditions.length === 0
@@ -400,7 +400,7 @@ export function PORoutingRuleDialogV4({ open, onOpenChange, rule, onSave, locale
                                                 }
                                                 {" "}
                                                 <span className="font-mono bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded text-green-700 dark:text-green-300">
-                                                    THEN
+                                                    {t("THEN", "则")}
                                                 </span>
                                                 {" "}
                                                 {actions.length === 0

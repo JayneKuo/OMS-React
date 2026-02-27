@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner"
 import { ConditionBuilderV2 } from "./condition-builder-v2"
 import { PORoutingActionsConfigV2 } from "./po-routing-actions-config-v2"
-import type { RoutingRule, RoutingRuleCondition, ConditionLogic, ExecutionMode, RuleAction } from "@/lib/types/routing-rule"
+import type { RoutingRule, RoutingRuleCondition, ConditionLogic, ExecutionMode, RuleAction, RuleType } from "@/lib/types/routing-rule"
 
 // ============================================================================
 // TYPES
@@ -44,6 +44,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
     // Form state
     const [name, setName] = React.useState("")
     const [description, setDescription] = React.useState("")
+    const [type, setType] = React.useState<RuleType>("PO_ROUTING")
     const [enabled, setEnabled] = React.useState(true)
     const [executionMode, setExecutionMode] = React.useState<ExecutionMode>("FIRST_MATCH")
     const [conditions, setConditions] = React.useState<RoutingRuleCondition[]>([])
@@ -58,6 +59,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
             if (rule) {
                 setName(rule.name)
                 setDescription(rule.description || "")
+                setType(rule.type as RuleType || "PO_ROUTING")
                 setEnabled(rule.enabled)
                 setExecutionMode(rule.executionMode || "FIRST_MATCH")
                 setConditions(rule.conditions || [])
@@ -66,6 +68,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
             } else {
                 setName("")
                 setDescription("")
+                setType("PO_ROUTING")
                 setEnabled(true)
                 setExecutionMode("FIRST_MATCH")
                 setConditions([])
@@ -85,7 +88,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
             id: rule?.id || `rule-${Date.now()}`,
             name: name.trim(),
             description: description.trim(),
-            type: "CUSTOM",
+            type: type,
             enabled,
             priority: rule?.priority || 1,
             executionMode,
@@ -161,6 +164,21 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
                                             />
                                         </div>
 
+                                        {/* Rule Type */}
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium">{t("Rule Type", "规则类型")}</Label>
+                                            <Select value={type} onValueChange={(v) => setType(v as RuleType)}>
+                                                <SelectTrigger className="h-10">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="PO_ROUTING">{t("PO Inbound Routing", "采购入库路由")}</SelectItem>
+                                                    <SelectItem value="ORDER_RISK">{t("Order Risk Control", "订单风控规则")}</SelectItem>
+                                                    <SelectItem value="CUSTOM">{t("Custom Logic", "自定义逻辑")}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
                                         {/* Description */}
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium">{t("Description", "规则描述")}</Label>
@@ -225,6 +243,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
                                                 setConditionLogic(newLogic)
                                             }}
                                             locale={locale}
+                                            ruleType={type}
                                         />
                                     </CardContent>
                                 </Card>
@@ -249,6 +268,7 @@ export function PORoutingRuleDialogV3({ open, onOpenChange, rule, onSave, locale
                                             actions={actions}
                                             onChange={setActions}
                                             locale={locale}
+                                            ruleType={type}
                                         />
                                     </CardContent>
                                 </Card>

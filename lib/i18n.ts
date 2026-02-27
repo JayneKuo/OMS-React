@@ -159,6 +159,10 @@ export const translations = {
 
     // 按钮和操作
     saveDraft: '保存草稿',
+    submitPO: '提交PO',
+    draftSavedSuccess: '草稿保存成功',
+    poSubmittedSuccess: 'PO提交成功',
+    formValidationFailed: '表单验证失败',
     saveAndSubmit: '保存并提交',
     selectOrEnterSupplier: '选择或输入供应商',
 
@@ -670,6 +674,8 @@ export const translations = {
 
     // ==================== 状态 ====================
     DRAFT: '草稿',
+    PROCESSING: '处理中',
+    COMPLETED: '已完成',
     SUBMITTED: '新建',
     APPROVING: '已提交',
     APPROVED: '已审批',
@@ -1630,6 +1636,10 @@ export const translations = {
 
     // Buttons and Actions
     saveDraft: 'Save Draft',
+    submitPO: 'Submit PO',
+    draftSavedSuccess: 'Draft Saved',
+    poSubmittedSuccess: 'PO Submitted',
+    formValidationFailed: 'Validation Failed',
     saveAndSubmit: 'Save and Submit',
     selectOrEnterSupplier: 'Select or enter supplier',
 
@@ -2188,6 +2198,8 @@ export const translations = {
 
     // ==================== Status ====================
     DRAFT: 'Draft',
+    PROCESSING: 'Processing',
+    COMPLETED: 'Completed',
     SUBMITTED: 'New',
     APPROVING: 'Submitted',
     APPROVED: 'Approved',

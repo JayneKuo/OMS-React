@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import {
     Truck,
     Warehouse,
     Mail,
+    AlertCircle,
     Tag,
     AlertTriangle,
     Scissors,
@@ -28,9 +29,10 @@ import {
     Calendar,
     ChevronDown,
     ChevronUp,
-    GripVertical
+    GripVertical,
+    Ban
 } from "lucide-react"
-import type { RuleAction, WorkflowAction, WarehouseAction, NotificationAction, TagAction, PriorityAction, HoldAction, SplitAction } from "@/lib/types/routing-rule"
+import type { RuleAction, WorkflowAction, WarehouseAction, NotificationAction, TagAction, PriorityAction, HoldAction, SplitAction, CancelAction } from "@/lib/types/routing-rule"
 import { cn } from "@/lib/utils"
 
 // ============================================================================
@@ -160,6 +162,16 @@ const actionTypes: ActionTypeConfig[] = [
         icon: <Calendar className="h-4 w-4" />,
         category: "workflow"
     },
+    // New Actions
+    {
+        type: "CANCEL_ORDER",
+        label: "Cancel Order",
+        labelZh: "取消订单",
+        description: "Cancel order immediately",
+        descriptionZh: "立即取消订单",
+        icon: <Ban className="h-4 w-4" />,
+        category: "control"
+    },
 ]
 
 // ============================================================================
@@ -188,13 +200,32 @@ export function PORoutingActionsConfigV2({
 
     // Filter actions based on rule type
     const availableActions = React.useMemo(() => {
-        if (!ruleType || ruleType === "CUSTOM" || recommendedActions.length === 0) {
-            return actionTypes
+        let filtered = actionTypes
+
+        if (ruleType === "PO_ROUTING") {
+            // Show all except Order Risk specific actions if any
+            filtered = actionTypes.filter(a => a.type !== "HOLD_ORDER" && a.type !== "CANCEL_ORDER") // Example: might want to refine this
+            // Actually, PO Routing CAN use Hold Order.
+            // Let's stick to the domain logic:
+            // PO_ROUTING: Workflow, Warehouse, Notification, Tag, Priority, Hold, Split, Create ASN, Schedule.
+            // ORDER_RISK: Hold, Cancel, Notification, Tag, Priority. (No Warehouse, No Workflow)
+
+            filtered = actionTypes.filter(a =>
+                ["SET_WORKFLOW", "ASSIGN_WAREHOUSE", "SEND_NOTIFICATION", "TRIGGER_WEBHOOK", "ADD_TAG", "SET_PRIORITY", "HOLD_ORDER", "SPLIT_ORDER", "CREATE_ASN", "SCHEDULE_RECEIPT"].includes(a.type)
+            )
+        } else if (ruleType === "ORDER_RISK") {
+            filtered = actionTypes.filter(a =>
+                ["HOLD_ORDER", "CANCEL_ORDER", "SEND_NOTIFICATION", "TRIGGER_WEBHOOK", "ADD_TAG", "SET_PRIORITY"].includes(a.type)
+            )
         }
-        // Show recommended actions first, then others
-        const recommended = actionTypes.filter(a => recommendedActions.includes(a.type))
-        const others = actionTypes.filter(a => !recommendedActions.includes(a.type))
-        return [...recommended, ...others]
+
+        if (recommendedActions.length > 0) {
+            const recommended = filtered.filter(a => recommendedActions.includes(a.type))
+            const others = filtered.filter(a => !recommendedActions.includes(a.type))
+            return [...recommended, ...others]
+        }
+
+        return filtered
     }, [ruleType, recommendedActions])
 
     const addAction = (type: RuleAction["type"]) => {
@@ -417,6 +448,8 @@ function ActionConfigPanel({ action, onChange, locale }: ActionConfigPanelProps)
             return <HoldActionPanel action={action as HoldAction} onChange={onChange} locale={locale} />
         case "SPLIT_ORDER":
             return <SplitActionPanel action={action as SplitAction} onChange={onChange} locale={locale} />
+        case "CANCEL_ORDER":
+            return <CancelActionPanel action={action as CancelAction} onChange={onChange} locale={locale} />
         default:
             return (
                 <div className="p-4 text-sm text-muted-foreground">
@@ -740,28 +773,64 @@ function PriorityActionPanel({ action, onChange, locale }: { action: PriorityAct
     )
 }
 
+
 // Hold Action Panel
 function HoldActionPanel({ action, onChange, locale }: { action: HoldAction; onChange: (a: RuleAction) => void; locale: "en" | "zh" }) {
     const t = (en: string, zh: string) => locale === "zh" ? zh : en
 
+    // Helper to toggle array values
+    const toggleValue = (array: string[] | undefined, value: string) => {
+        const current = array || []
+        return current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value]
+    }
+
+    // Helper to set logic
+    const setLogic = (logic: "AND" | "OR") => {
+        onChange({
+            ...action,
+            releaseCriteria: {
+                ...action.releaseCriteria,
+                type: "RISK_ASSESSMENT",
+                criteriaLogic: logic,
+                allowedRiskLevels: action.releaseCriteria?.allowedRiskLevels,
+                allowedRecommendations: action.releaseCriteria?.allowedRecommendations
+            }
+        })
+    }
+
+    const currentLogic = action.releaseCriteria?.criteriaLogic || "AND"
+
     return (
         <div className="space-y-4 pt-4">
-            {/* Hold Type */}
+            {/* Hold Type Selector */}
             <div className="space-y-2">
                 <Label className="text-sm font-medium">{t("Hold Type", "暂停类型")}</Label>
                 <Select
                     value={action.holdType || "REVIEW"}
-                    onValueChange={(value: any) => onChange({ ...action, holdType: value })}
+                    onValueChange={(value: any) => {
+                        const newAction = { ...action, holdType: value }
+                        // Set default release criteria for RISK
+                        if (value === "RISK" && !newAction.releaseCriteria) {
+                            newAction.releaseCriteria = {
+                                type: "RISK_ASSESSMENT",
+                                allowedRiskLevels: ["LOW", "NONE"],
+                                allowedRecommendations: ["ACCEPT"],
+                                criteriaLogic: "AND"
+                            }
+                        }
+                        onChange(newAction)
+                    }}
                 >
                     <SelectTrigger>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="CREDIT">{t("Credit Hold", "信用暂停")}</SelectItem>
-                        <SelectItem value="COMPLIANCE">{t("Compliance Hold", "合规暂停")}</SelectItem>
                         <SelectItem value="REVIEW">{t("Manual Review", "人工审核")}</SelectItem>
-                        <SelectItem value="CAPACITY">{t("Capacity Hold", "产能暂停")}</SelectItem>
-                        <SelectItem value="RISK">{t("Risk Control", "风险控制")}</SelectItem>
+                        <SelectItem value="RISK">{t("Risk Control (Async)", "风控等待 (异步)")}</SelectItem>
+                        <SelectItem value="PRESALE">{t("Pre-sale", "预售")}</SelectItem>
+                        <SelectItem value="CREDIT">{t("Credit Hold", "信用暂停")}</SelectItem>
                         <SelectItem value="CUSTOM">{t("Custom", "自定义")}</SelectItem>
                     </SelectContent>
                 </Select>
@@ -779,196 +848,361 @@ function HoldActionPanel({ action, onChange, locale }: { action: HoldAction; onC
 
             <Separator />
 
-            {/* Duration Type */}
-            <div className="space-y-2">
-                <Label className="text-sm font-medium">{t("Hold Duration", "暂停时长")}</Label>
-                <Select
-                    value={action.durationType || "MANUAL"}
-                    onValueChange={(value: any) => onChange({ ...action, durationType: value })}
-                >
-                    <SelectTrigger>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="HOURS">{t("Hours", "小时")}</SelectItem>
-                        <SelectItem value="DAYS">{t("Days", "天")}</SelectItem>
-                        <SelectItem value="DATE_RANGE">{t("Date Range", "时间段")}</SelectItem>
-                        <SelectItem value="MANUAL">{t("Manual Release", "手动释放")}</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+            {/* Auto-Release Rules Section */}
+            <div className="space-y-4">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    {t("Auto-Release Rules", "自动释放规则")}
+                </Label>
 
-            {/* Duration Value (for HOURS/DAYS) */}
-            {(action.durationType === "HOURS" || action.durationType === "DAYS") && (
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                        {action.durationType === "HOURS" ? t("Number of Hours", "小时数") : t("Number of Days", "天数")}
-                    </Label>
-                    <Input
-                        type="number"
-                        value={action.durationValue || ""}
-                        onChange={(e) => onChange({ ...action, durationValue: Number(e.target.value) })}
-                        placeholder={t("Enter duration", "输入时长")}
-                    />
-                </div>
-            )}
+                <div className="grid gap-4 border rounded-lg p-4 bg-muted/20">
 
-            {/* Date Range (for DATE_RANGE) */}
-            {action.durationType === "DATE_RANGE" && (
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">{t("Start Date", "开始日期")}</Label>
-                        <Input
-                            type="date"
-                            value={action.durationStartDate || ""}
-                            onChange={(e) => onChange({ ...action, durationStartDate: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">{t("End Date", "结束日期")}</Label>
-                        <Input
-                            type="date"
-                            value={action.durationEndDate || ""}
-                            onChange={(e) => onChange({ ...action, durationEndDate: e.target.value })}
-                        />
-                    </div>
-                </div>
-            )}
-
-            <Separator />
-
-            {/* Auto Release */}
-            <ToggleOption
-                label={t("Auto Release", "自动释放")}
-                description={t("Automatically release hold when conditions are met", "满足条件时自动释放暂停")}
-                checked={action.autoRelease || false}
-                onCheckedChange={(checked) => onChange({ ...action, autoRelease: checked })}
-            />
-
-            {/* Release Conditions */}
-            {action.autoRelease && (
-                <div className="space-y-3 pl-4 border-l-2 border-primary/20">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">{t("Release Trigger", "释放触发条件")}</Label>
-                        <Select
-                            value={action.releaseConditions?.type || "TIME_BASED"}
-                            onValueChange={(value: any) => onChange({
-                                ...action,
-                                releaseConditions: { ...action.releaseConditions, type: value }
-                            })}
-                        >
-                            <SelectTrigger className="bg-white dark:bg-zinc-900">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="TIME_BASED">{t("Time Based (Auto expire)", "基于时间 (自动过期)")}</SelectItem>
-                                <SelectItem value="APPROVAL_BASED">{t("Approval Based (Manual approve)", "基于审批 (人工批准)")}</SelectItem>
-                                <SelectItem value="CONDITION_BASED">{t("Condition Based (System event)", "基于条件 (系统事件)")}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Dynamic config based on release type */}
-                    {action.releaseConditions?.type === "CONDITION_BASED" && (
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">
-                                {t("Specify the system condition to release this hold:", "指定触发释放的系统条件：")}
+                    {/* Rule 1: Risk Assessment (Only for RISK type) */}
+                    {action.holdType === "RISK" && (
+                        <div className="space-y-3 pb-4 border-b">
+                            <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                                {t("Rule 1: Risk Assessment", "规则 1：风险评估")}
                             </Label>
-                            <Input
-                                placeholder={t("e.g. Uploaded Valid ID, Payment Verified...", "例如：已上传有效证件，支付已验证...")}
-                                value={action.releaseConditions?.conditions?.[0] || ""}
-                                onChange={(e) => onChange({
-                                    ...action,
-                                    releaseConditions: {
-                                        ...action.releaseConditions,
-                                        type: "CONDITION_BASED",
-                                        conditions: [e.target.value]
-                                    }
-                                })}
-                            />
+
+                            <div className="bg-background border rounded-md p-3 space-y-4">
+
+                                {/* 1. Recommendations (Moved to Top) */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm flex justify-between">
+                                        {t("Allowed Recommendations", "允许的建议策略")}
+                                        <span className="text-xs text-muted-foreground font-normal">{t("From Shopify/Fraud Filter", "来自 Shopify/风控插件")}</span>
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(["ACCEPT", "INVESTIGATE", "CANCEL", "NONE"] as const).map(rec => {
+                                            const isSelected = action.releaseCriteria?.allowedRecommendations?.includes(rec)
+
+                                            const recLabels: Record<string, string> = {
+                                                "ACCEPT": t("ACCEPT", "接受"),
+                                                "INVESTIGATE": t("INVESTIGATE", "调查"),
+                                                "CANCEL": t("CANCEL", "取消"),
+                                                "NONE": t("NONE", "无")
+                                            }
+
+                                            return (
+                                                <Badge
+                                                    key={rec}
+                                                    variant={isSelected ? "secondary" : "outline"}
+                                                    className={cn(
+                                                        "cursor-pointer select-none transition-all",
+                                                        isSelected
+                                                            ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
+                                                            : "hover:bg-accent text-muted-foreground border-dashed"
+                                                    )}
+                                                    onClick={() => {
+                                                        const newRecs = toggleValue(action.releaseCriteria?.allowedRecommendations as string[], rec)
+                                                        onChange({
+                                                            ...action,
+                                                            releaseCriteria: {
+                                                                ...action.releaseCriteria,
+                                                                type: "RISK_ASSESSMENT",
+                                                                allowedRecommendations: newRecs as any,
+                                                                allowedRiskLevels: action.releaseCriteria?.allowedRiskLevels,
+                                                                criteriaLogic: action.releaseCriteria?.criteriaLogic
+                                                            }
+                                                        })
+                                                    }}
+                                                >
+                                                    {recLabels[rec]}
+                                                </Badge>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Logic Toggle */}
+                                <div className="flex items-center justify-center my-3 relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <Separator className="w-full" />
+                                    </div>
+                                    <div className="relative flex items-center bg-muted/80 backdrop-blur-sm rounded-full p-1 border shadow-sm">
+                                        <button
+                                            className={cn(
+                                                "px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1",
+                                                currentLogic === "AND"
+                                                    ? "bg-background text-primary shadow-sm"
+                                                    : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                            onClick={() => setLogic("AND")}
+                                        >
+                                            <span>{t("AND", "且")}</span>
+                                            <span className="text-[10px] font-normal opacity-70">
+                                                {t("(Both)", "(同时满足)")}
+                                            </span>
+                                        </button>
+                                        <button
+                                            className={cn(
+                                                "px-3 py-1 text-xs font-bold rounded-full transition-all flex items-center gap-1",
+                                                currentLogic === "OR"
+                                                    ? "bg-background text-primary shadow-sm"
+                                                    : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                            onClick={() => setLogic("OR")}
+                                        >
+                                            <span>{t("OR", "或")}</span>
+                                            <span className="text-[10px] font-normal opacity-70">
+                                                {t("(Either)", "(满足其一)")}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* 2. Risk Levels (Moved Below) */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm flex justify-between">
+                                        {t("Allowed Risk Levels", "允许的风险等级")}
+                                        <span className="text-xs text-muted-foreground font-normal">{t("Select multiple (Any)", "可多选 (满足其一即可)")}</span>
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(["HIGH", "MEDIUM", "LOW", "NONE", "PENDING"] as const).map(level => {
+                                            const isSelected = action.releaseCriteria?.allowedRiskLevels?.includes(level)
+
+                                            const levelLabels: Record<string, string> = {
+                                                "HIGH": t("HIGH", "高风险"),
+                                                "MEDIUM": t("MEDIUM", "中风险"),
+                                                "LOW": t("LOW", "低风险"),
+                                                "NONE": t("NONE", "无风险"),
+                                                "PENDING": t("PENDING", "待定")
+                                            }
+
+                                            return (
+                                                <Badge
+                                                    key={level}
+                                                    variant={isSelected ? "default" : "outline"}
+                                                    className={cn(
+                                                        "cursor-pointer select-none transition-all",
+                                                        isSelected
+                                                            ? "bg-primary hover:bg-primary/90"
+                                                            : "hover:bg-accent text-muted-foreground border-dashed"
+                                                    )}
+                                                    onClick={() => {
+                                                        const newLevels = toggleValue(action.releaseCriteria?.allowedRiskLevels, level)
+                                                        onChange({
+                                                            ...action,
+                                                            releaseCriteria: {
+                                                                ...action.releaseCriteria,
+                                                                type: "RISK_ASSESSMENT",
+                                                                allowedRiskLevels: newLevels,
+                                                                allowedRecommendations: action.releaseCriteria?.allowedRecommendations,
+                                                                criteriaLogic: action.releaseCriteria?.criteriaLogic
+                                                            }
+                                                        })
+                                                    }}
+                                                >
+                                                    {levelLabels[level]}
+                                                </Badge>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded border border-muted mt-2">
+                                    <div className={cn(
+                                        "font-bold px-1.5 py-0.5 rounded text-[10px]",
+                                        currentLogic === "AND" ? "bg-primary/10 text-primary" : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                                    )}>
+                                        {currentLogic}
+                                    </div>
+                                    <span>
+                                        {currentLogic === "AND"
+                                            ? t("Order released ONLY if BOTH criteria above are met.", "只有当订单【同时满足】上述建议策略和风险等级时，才会自动释放。")
+                                            : t("Order released if EITHER criteria above is met.", "只要订单【满足其一】（建议策略或风险等级），即可自动释放。")
+                                        }
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* Approval - Applicable to ALL hold types */}
-            <Separator />
-            <ToggleOption
-                label={t("Requires Approval", "需要审批")}
-                description={t("Hold must be released by approver", "暂停必须由审批人解除")}
-                checked={action.requiresApproval || false}
-                onCheckedChange={(checked) => onChange({ ...action, requiresApproval: checked })}
-            />
+                    {/* Rule 2: Time Limit */}
+                    <div className="space-y-3">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                            {action.holdType === "RISK" ? t("Rule 2: Time Limit", "规则 2：时间限制") : t("Release Condition", "释放条件")}
+                        </Label>
 
-            {/* Risk Details - ONLY for RISK hold type */}
-            {action.holdType === "RISK" && (
-                <div className="space-y-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mt-4">
-                    <Label className="text-sm font-semibold flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        {t("Risk Details", "风险详情")}
-                    </Label>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground">{t("Max Hold Duration", "最长暂停时间")}</Label>
+                                <Select
+                                    value={action.durationType || "MANUAL"}
+                                    onValueChange={(v: any) => {
+                                        const newAction = { ...action, durationType: v }
+                                        // Set default timeout strategy based on type if not set
+                                        if (v !== "MANUAL" && !newAction.timeoutAction) {
+                                            // Risk defaults to Keep Held (require manual review), others to Force Release
+                                            newAction.timeoutAction = action.holdType === "RISK" ? "KEEP_HELD" : "FORCE_RELEASE"
+                                        }
+                                        onChange(newAction)
+                                    }}
+                                >
+                                    <SelectTrigger className="bg-background">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MANUAL">{t("No Limit (Manual Release)", "无限制 (人工释放)")}</SelectItem>
+                                        <SelectItem value="HOURS">{t("Fixed Hours", "固定小时数")}</SelectItem>
+                                        <SelectItem value="DAYS">{t("Fixed Days", "固定天数")}</SelectItem>
+                                        <SelectItem value="DATE_RANGE">{t("Specific Date Range", "特定时间段")}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">{t("Risk Level", "风险等级")}</Label>
-                            <Select
-                                value={action.riskLevel || "MEDIUM"}
-                                onValueChange={(value: any) => onChange({ ...action, riskLevel: value })}
-                            >
-                                <SelectTrigger className="h-9 bg-white dark:bg-zinc-900">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="LOW">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                                            {t("Low", "低")}
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="MEDIUM">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                                            {t("Medium", "中")}
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="HIGH">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-orange-500" />
-                                            {t("High", "高")}
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="CRITICAL">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-red-500" />
-                                            {t("Critical", "紧急")}
-                                        </div>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* Value Input (Hours/Days) */}
+                            {(action.durationType === "HOURS" || action.durationType === "DAYS") && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">
+                                        {action.durationType === "HOURS" ? t("Hours", "小时数") : t("Days", "天数")}
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        className="bg-background"
+                                        value={action.durationValue || ""}
+                                        onChange={(e) => onChange({ ...action, durationValue: Number(e.target.value) })}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">{t("Risk Category", "风险类别")}</Label>
-                            <Select
-                                value={action.riskCategory || "OTHER"}
-                                onValueChange={(value: any) => onChange({ ...action, riskCategory: value })}
-                            >
-                                <SelectTrigger className="h-9 bg-white dark:bg-zinc-900">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="FRAUD">{t("Fraud", "欺诈")}</SelectItem>
-                                    <SelectItem value="CREDIT">{t("Credit", "信用")}</SelectItem>
-                                    <SelectItem value="COMPLIANCE">{t("Compliance", "合规")}</SelectItem>
-                                    <SelectItem value="QUALITY">{t("Quality", "质量")}</SelectItem>
-                                    <SelectItem value="PAYMENT">{t("Payment", "支付")}</SelectItem>
-                                    <SelectItem value="OTHER">{t("Other", "其他")}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Date Range Inputs */}
+                        {action.durationType === "DATE_RANGE" && (
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">{t("Start Time", "开始时间")}</Label>
+                                    <Input
+                                        type="datetime-local"
+                                        className="bg-background"
+                                        value={action.durationStartDate || ""}
+                                        onChange={(e) => onChange({ ...action, durationStartDate: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">{t("End Time", "结束时间")}</Label>
+                                    <Input
+                                        type="datetime-local"
+                                        className="bg-background"
+                                        value={action.durationEndDate || ""}
+                                        onChange={(e) => onChange({ ...action, durationEndDate: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Linkage / Timeout Action */}
+                        {action.durationType && action.durationType !== "MANUAL" && (
+                            <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                    <Label className="text-xs font-semibold">
+                                        {t("Timeout Logic", "超时逻辑")}
+                                    </Label>
+                                </div>
+
+                                <div className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                                    {action.holdType === "RISK" ? (
+                                        t(
+                                            "If risk level remains high after time expires:",
+                                            "如果时间截止后风险等级仍然过高："
+                                        )
+                                    ) : (
+                                        t(
+                                            "When the hold duration expires:",
+                                            "当暂停时间结束时："
+                                        )
+                                    )}
+                                </div>
+
+                                <Select
+                                    value={action.timeoutAction || (action.holdType === "RISK" ? "KEEP_HELD" : "FORCE_RELEASE")}
+                                    onValueChange={(v: any) => onChange({ ...action, timeoutAction: v })}
+                                >
+                                    <SelectTrigger className="h-8 bg-background border-slate-300 dark:border-slate-700">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="FORCE_RELEASE">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="h-3 w-3 text-green-600" />
+                                                <span>{t("Auto Release (Proceed)", "自动释放 (继续流程)")}</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="KEEP_HELD">
+                                            <div className="flex items-center gap-2">
+                                                <Ban className="h-3 w-3 text-orange-600" />
+                                                <span>{t("Keep Held (Notify Admin)", "保持暂停 (通知管理员)")}</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="CANCEL">
+                                            <div className="flex items-center gap-2">
+                                                <X className="h-3 w-3 text-red-600" />
+                                                <span>{t("Cancel Order", "取消订单")}</span>
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </div>
                 </div>
+            </div>
+
+            <Separator />
+        </div>
+    )
+}
+
+
+
+
+function TypeCard({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+    return (
+        <div
+            onClick={onClick}
+            className={cn(
+                "cursor-pointer flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all",
+                active
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-muted bg-card hover:bg-accent hover:border-muted-foreground/50"
             )}
+        >
+            <div className="mb-1">{icon}</div>
+            <span className="text-xs font-medium text-center">{label}</span>
+        </div>
+    )
+}
+
+// Cancel Action Panel
+function CancelActionPanel({ action, onChange, locale }: { action: CancelAction; onChange: (a: RuleAction) => void; locale: "en" | "zh" }) {
+    const t = (en: string, zh: string) => locale === "zh" ? zh : en
+
+    return (
+        <div className="space-y-4 pt-4">
+            <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5" />
+                <span>{t("Warning: This action will permanently cancel the order. This cannot be undone automatically.", "警告：此操作将永久取消订单。此操作无法自动撤销。")}</span>
+            </div>
+
+            <div className="space-y-2">
+                <Label className="text-sm font-medium">{t("Cancellation Reason", "取消原因")}</Label>
+                <Input
+                    value={action.reason || ""}
+                    onChange={(e) => onChange({ ...action, reason: e.target.value })}
+                    placeholder={t("Enter reason for cancellation", "输入取消原因")}
+                />
+            </div>
+
+            <div className="space-y-2">
+                <Label className="text-sm font-medium">{t("Internal Note", "内部备注")}</Label>
+                <Input
+                    value={action.note || ""}
+                    onChange={(e) => onChange({ ...action, note: e.target.value })}
+                    placeholder={t("Add internal note (optional)", "添加内部备注（可选）")}
+                />
+            </div>
         </div>
     )
 }
@@ -1072,6 +1306,11 @@ function createDefaultAction(type: RuleAction["type"]): RuleAction | null {
                 holdType: "REVIEW",
                 requiresApproval: true
             }
+        case "CANCEL_ORDER":
+            return {
+                type: "CANCEL_ORDER",
+                reason: "",
+            }
         case "SPLIT_ORDER":
             return {
                 type: "SPLIT_ORDER",
@@ -1091,7 +1330,7 @@ function createDefaultAction(type: RuleAction["type"]): RuleAction | null {
         case "TRIGGER_WEBHOOK":
             return {
                 type: "TRIGGER_WEBHOOK",
-                webhookUrl: "",
+                url: "",
                 method: "POST"
             }
         case "CREATE_ASN":
@@ -1107,6 +1346,8 @@ function createDefaultAction(type: RuleAction["type"]): RuleAction | null {
         default:
             return {
                 type: "CUSTOM",
+                actionId: "custom_" + Date.now(),
+                config: {},
                 actionName: "",
                 parameters: {}
             }
@@ -1118,19 +1359,65 @@ function getActionSummary(action: RuleAction, locale: "en" | "zh"): string {
 
     switch (action.type) {
         case "SET_WORKFLOW":
-            return t(`Workflow: ${action.workflow}`, `工作流: ${action.workflow}`)
+            const workflowLabels: Record<string, string> = {
+                "FACTORY_DIRECT": t("Factory Direct", "工厂直发"),
+                "STANDARD": t("Standard Process", "标准流程"),
+                "DROPSHIP": t("Drop Shipping", "代发货"),
+                "CROSS_DOCK": t("Cross-Docking", "越库"),
+                "CONSIGNMENT": t("Consignment", "寄售"),
+                "JIT": t("Just-in-Time", "即时采购")
+            }
+            const wf = workflowLabels[action.workflow] || action.workflow
+            return t(`Workflow: ${wf}`, `工作流: ${wf}`)
         case "ASSIGN_WAREHOUSE":
             return action.warehouseName ? t(`To: ${action.warehouseName}`, `分配至: ${action.warehouseName}`) : t("No warehouse selected", "未选择仓库")
         case "SEND_NOTIFICATION":
-            return t(`${action.channel} to ${action.recipients?.length || 0} recipients`, `${action.channel} 发送给 ${action.recipients?.length || 0} 人`)
+            const channelLabels: Record<string, string> = {
+                "EMAIL": t("Email", "邮件"),
+                "SMS": t("SMS", "短信"),
+                "WEBHOOK": t("Webhook", "Webhook"),
+                "SLACK": t("Slack", "Slack"),
+                "TEAMS": t("Microsoft Teams", "Microsoft Teams")
+            }
+            const channel = channelLabels[action.channel] || action.channel
+            return t(`${channel} to ${action.recipients?.length || 0} recipients`, `${channel} 发送给 ${action.recipients?.length || 0} 人`)
         case "ADD_TAG":
             return action.tags?.length ? t(`Tags: ${action.tags.join(", ")}`, `标签: ${action.tags.join(", ")}`) : t("No tags", "无标签")
         case "SET_PRIORITY":
-            return t(`Priority: ${action.priority}`, `优先级: ${action.priority}`)
+            const priorityLabels: Record<string, string> = {
+                "CRITICAL": t("Critical", "紧急"),
+                "HIGH": t("High", "高"),
+                "MEDIUM": t("Medium", "中"),
+                "LOW": t("Low", "低")
+            }
+            const priority = priorityLabels[action.priority] || action.priority
+            return t(`Priority: ${priority}`, `优先级: ${priority}`)
         case "HOLD_ORDER":
-            return t(`Hold: ${action.holdType}`, `暂停: ${action.holdType}`)
+            const holdTypeLabels = {
+                PRESALE: t("Pre-sale", "预售"),
+                RISK: t("Risk Control", "风控"),
+                CUSTOM: t("Custom", "自定义")
+            }
+            const typeLabel = holdTypeLabels[action.holdType as keyof typeof holdTypeLabels] || action.holdType
+            return t(`Hold: ${typeLabel}`, `暂停: ${typeLabel}`)
+        case "CANCEL_ORDER":
+            return t(`Cancel: ${action.reason || "No reason"}`, `取消: ${action.reason || "无原因"}`)
         case "SPLIT_ORDER":
-            return t(`Split by: ${action.splitBy}`, `按 ${action.splitBy} 拆分`)
+            const splitLabels: Record<string, string> = {
+                "SKU": t("SKU", "SKU"),
+                "WAREHOUSE": t("Warehouse", "仓库"),
+                "SUPPLIER": t("Supplier", "供应商"),
+                "SHIP_DATE": t("Ship Date", "发货日期"),
+                "CATEGORY": t("Category", "产品类别")
+            }
+            const splitBy = splitLabels[action.splitBy] || action.splitBy
+            return t(`Split by: ${splitBy}`, `按 ${splitBy} 拆分`)
+        case "TRIGGER_WEBHOOK":
+            return t(`Webhook: ${action.url || "No URL"}`, `Webhook: ${action.url || "未配置URL"}`)
+        case "CREATE_ASN":
+            return t("Create ASN", "自动创建ASN")
+        case "SCHEDULE_RECEIPT":
+            return t(`Schedule Receipt: ${action.daysBeforeArrival || 1} days before`, `预约收货: 提前 ${action.daysBeforeArrival || 1} 天`)
         default:
             return t("Click to configure", "点击配置")
     }

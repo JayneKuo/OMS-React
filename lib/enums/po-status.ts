@@ -5,6 +5,7 @@
 
 // PO 状态枚举
 export enum POStatus {
+  DRAFT = 'DRAFT',
   NEW = 'NEW',
   PROCESSING = 'PROCESSING', // 通用处理中状态，涵盖运输和收货过程
   IN_TRANSIT = 'IN_TRANSIT',
@@ -45,9 +46,14 @@ export interface StatusStyle {
 
 // PO状态样式映射
 export const PO_STATUS_STYLES: Record<POStatus, StatusStyle> = {
-  [POStatus.NEW]: {
+  [POStatus.DRAFT]: {
     variant: 'default',
     color: 'gray',
+    description: 'Draft, not yet submitted'
+  },
+  [POStatus.NEW]: {
+    variant: 'default',
+    color: 'blue',
     description: 'Newly created, not yet fulfilled'
   },
   [POStatus.PROCESSING]: {
@@ -163,6 +169,10 @@ export const RECEIVING_STATUS_STYLES: Record<ReceivingStatus, StatusStyle> = {
 // 状态文案映射（中英文）
 export const STATUS_LABELS = {
   // PO状态
+  [POStatus.DRAFT]: {
+    en: 'Draft',
+    cn: '草稿'
+  },
   [POStatus.NEW]: {
     en: 'New',
     cn: '新建'
@@ -203,7 +213,7 @@ export const STATUS_LABELS = {
     en: 'Exception',
     cn: '异常'
   },
-  
+
   // 运输状态
   [ShippingStatus.NOT_SHIPPED]: {
     en: 'Not Shipped',
@@ -225,7 +235,7 @@ export const STATUS_LABELS = {
     en: 'Shipping Exception',
     cn: '运输异常'
   },
-  
+
   // 收货状态
   [ReceivingStatus.NOT_RECEIVED]: {
     en: 'Not Received',
@@ -260,7 +270,7 @@ export function getStatusStyle(status: POStatus | ShippingStatus | ReceivingStat
   if (Object.values(ReceivingStatus).includes(status as ReceivingStatus)) {
     return RECEIVING_STATUS_STYLES[status as ReceivingStatus];
   }
-  
+
   // 默认样式
   return {
     variant: 'default',
@@ -271,7 +281,7 @@ export function getStatusStyle(status: POStatus | ShippingStatus | ReceivingStat
 
 // 工具函数：获取状态文案
 export function getStatusLabel(
-  status: POStatus | ShippingStatus | ReceivingStatus, 
+  status: POStatus | ShippingStatus | ReceivingStatus,
   language: 'en' | 'cn' = 'cn'
 ): string {
   const label = STATUS_LABELS[status as keyof typeof STATUS_LABELS];

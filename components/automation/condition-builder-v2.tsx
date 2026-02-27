@@ -17,6 +17,7 @@ import {
     Filter,
     ArrowRight
 } from "lucide-react"
+import { MultiSelect } from "@/components/ui/multi-select"
 import { fieldDefinitions, type FieldDefinition } from "./condition-fields"
 import type { RoutingRuleCondition, ConditionLogic, ConditionOperator, RuleType } from "@/lib/types/routing-rule"
 import { cn } from "@/lib/utils"
@@ -188,6 +189,27 @@ export function ConditionBuilderV2({
 
         // Select Type (Predefined Options)
         if (fieldDef.options && fieldDef.options.length > 0) {
+            // Multi-select for "in" / "notIn" operators
+            if (condition.operator === "in" || condition.operator === "notIn") {
+                const selectedValues = Array.isArray(condition.value)
+                    ? condition.value as string[]
+                    : String(condition.value || "").split(",").filter(Boolean)
+
+                return (
+                    <MultiSelect
+                        options={fieldDef.options.map(opt => ({
+                            label: locale === "zh" ? opt.labelZh : opt.label,
+                            value: opt.value
+                        }))}
+                        selected={selectedValues}
+                        onChange={(vals) => handleUpdateCondition(index, { value: vals })}
+                        placeholder={t("Select values...", "选择值...")}
+                        searchPlaceholder={t("Search...", "搜索...")}
+                    />
+                )
+            }
+
+            // Single Select for other operators
             return (
                 <Select
                     value={String(condition.value)}
@@ -388,7 +410,7 @@ export function ConditionBuilderV2({
                                                         ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
                                                         : "bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800"
                                                 )}>
-                                                    {index === 0 ? "IF" : (conditionLogic === "AND" ? "&" : "||")}
+                                                    {index === 0 ? t("IF", "如果") : (conditionLogic === "AND" ? "&" : "||")}
                                                 </div>
                                             </div>
 
@@ -414,7 +436,7 @@ export function ConditionBuilderV2({
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            {fieldDef ? renderOperatorOptions(condition.field) : <SelectItem value="equals">Equals</SelectItem>}
+                                                            {fieldDef ? renderOperatorOptions(condition.field) : <SelectItem value="equals">{t("Equals", "等于")}</SelectItem>}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>

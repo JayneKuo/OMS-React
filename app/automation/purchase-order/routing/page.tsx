@@ -127,6 +127,15 @@ export default function POOrderRoutingPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [selectedRule, setSelectedRule] = React.useState<RoutingRule | null>(null)
   const [isRuleDialogOpen, setIsRuleDialogOpen] = React.useState(false)
+  const [locale, setLocale] = React.useState<"en" | "zh">("en")
+
+  // Auto-detect system language
+  React.useEffect(() => {
+    const browserLang = navigator.language.toLowerCase()
+    if (browserLang.includes("zh")) {
+      setLocale("zh")
+    }
+  }, [])
 
   // Global default settings
   const [globalSettings, setGlobalSettings] = React.useState<GlobalSettings>({
@@ -221,6 +230,7 @@ export default function POOrderRoutingPage() {
     setIsRuleDialogOpen(true)
   }
 
+
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Automation">
       <div className="space-y-6">
@@ -233,6 +243,16 @@ export default function POOrderRoutingPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Select value={locale} onValueChange={(v: "en" | "zh") => setLocale(v)}>
+              <SelectTrigger className="w-[120px]">
+                <Globe className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="zh">中文</SelectItem>
+              </SelectContent>
+            </Select>
             <Badge variant="outline" className="h-8 px-3 text-sm">
               {routingRules.filter(r => r.enabled).length} Active Rules
             </Badge>
@@ -303,10 +323,10 @@ export default function POOrderRoutingPage() {
                         {/* Icon */}
                         <div className={cn(
                           "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                          rule.type === "PO_ROUTING" ? "bg-purple-100 text-purple-600" : 
-                          rule.type === "SPLIT_PO" ? "bg-blue-100 text-blue-600" :
-                          rule.type === "SPLIT_PR" ? "bg-green-100 text-green-600" :
-                          "bg-gray-100 text-gray-600"
+                          rule.type === "PO_ROUTING" ? "bg-purple-100 text-purple-600" :
+                            rule.type === "SPLIT_PO" ? "bg-blue-100 text-blue-600" :
+                              rule.type === "SPLIT_PR" ? "bg-green-100 text-green-600" :
+                                "bg-gray-100 text-gray-600"
                         )}>
                           {rule.type === "PO_ROUTING" ? <Truck className="h-5 w-5" /> : <Route className="h-5 w-5" />}
                         </div>
@@ -392,6 +412,7 @@ export default function POOrderRoutingPage() {
               onOpenChange={setIsRuleDialogOpen}
               rule={selectedRule}
               onSave={handleSaveRule}
+              locale={locale}
             />
           </TabsContent>
 
