@@ -31,9 +31,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { 
-  FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send, 
-  Download, Eye, Copy, AlertCircle, Calendar, Building, User, MapPin, Clock, 
+import {
+  FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send,
+  Download, Eye, Copy, AlertCircle, Calendar, Building, User, MapPin, Clock,
   TrendingUp, RefreshCw, ExternalLink, Phone, Mail, History, Info, XCircle,
   FilePlus, Loader2, Lock, MoreHorizontal, Pencil, Ban
 } from "lucide-react"
@@ -58,129 +58,187 @@ const mockPODetail = {
   shippingStatus: "SHIPMENT_CREATED",
   receivingStatus: "PARTIALLY_RECEIVED",
   dataSource: "PR_CONVERSION",
-  
+
   // Basic Info
   supplierName: "ABC Suppliers Inc.",
   supplierCode: "SUP001",
   contactPerson: "John Smith",
   contactPhone: "+1-555-0123",
   contactEmail: "john.smith@abcsuppliers.com",
-  
+
   // Addresses
   supplierAddress: "456 Supplier Ave, New York, NY 10001",
   warehouseName: "Main Warehouse",
   warehouseAddress: "1234 Warehouse St, Los Angeles, CA 90001",
   warehouseCode: "WH001",
-  
+
   // Financial
   totalOrderQty: 500,
   shippedQty: 260,
   receivedQty: 265,
-  totalAmount: 29500.00,
+  subtotal: 29500.00,
+  taxAmount: 3835.00,
+  shippingCost: 200.00,
+  shippingTaxAmount: 26.00,
+  handlingFee: 50.00,
+  otherCharge: 0.00,
+  totalAmount: 33611.00,
   currency: "USD",
   paymentTerms: "NET 30",
   deliveryTerms: "FOB Destination",
-  
+
   // Timeline
   created: "2024-01-15T10:30:00Z",
   updated: "2024-01-16T14:20:00Z",
   expectedArrivalDate: "2024-01-25",
   requestedDeliveryDate: "2024-01-22",
-  
+
   // Related PRs
   relatedPRs: ["PR202401100001", "PR202401100002"],
-  
+
   // Email tracking
   sentToSupplier: true,
   lastSentDate: "2024-01-15T11:00:00Z",
-  
+
   // Line Items - 体现所有编辑场景
   lineItems: [
     {
-      // 场景: 有运单有入库，也有直接入库
-      // 运单发货60，其中50已入库，10在途
-      // 另有直接入库20（无运单）
       id: "1",
       lineNo: 1,
       skuCode: "SKU001",
       productName: "iPhone 15 Pro",
       specifications: "256GB, Natural Titanium",
+      length: 14.66,
+      width: 7.06,
+      height: 0.83,
+      volume: 85.95,
       quantity: 100,
       uom: "PCS",
       unitPrice: 50.00,
-      lineAmount: 5000.00,
-      shippedQty: 60,      // 运单发货总数
-      receivedQty: 70,     // 入库总数（关联运单50 + 直接入库20）
-      fulfilledQty: 80,    // 后端计算: 在途10 + 已入库70 = 80
+      taxRate: 13,
+      taxAmount: 650.00,
+      lineAmount: 5650.00,
+      shippedQty: 60,
+      receivedQty: 70,
+      fulfilledQty: 80,
       returnedQty: 0,
+      requiresSerialNumber: true,
+      requiresLotNumber: false,
+      specifiedSerialNumbers: ["SN-IP15-001", "SN-IP15-002"],
+      specifiedLotNumbers: [],
+      supplierName: "ABC Suppliers Inc.",
+      notes: "首批加急发货",
     },
     {
-      // 场景: 无实绩 - 可删除
       id: "2",
       lineNo: 2,
       skuCode: "SKU002",
       productName: "MacBook Pro",
       specifications: "14-inch, M3 Pro",
+      length: 31.26,
+      width: 22.12,
+      height: 1.55,
+      volume: 1071.76,
       quantity: 50,
       uom: "PCS",
       unitPrice: 150.00,
-      lineAmount: 7500.00,
+      taxRate: 13,
+      taxAmount: 975.00,
+      lineAmount: 8475.00,
       shippedQty: 0,
       receivedQty: 0,
       fulfilledQty: 0,
       returnedQty: 0,
+      requiresSerialNumber: true,
+      requiresLotNumber: false,
+      specifiedSerialNumbers: [],
+      specifiedLotNumbers: [],
+      supplierName: "ABC Suppliers Inc.",
+      notes: "",
     },
     {
-      // 场景: 有发货在途，部分已入库
-      // 运单发货30，其中15已入库，15在途
       id: "3",
       lineNo: 3,
       skuCode: "SKU003",
       productName: "iPad Pro",
       specifications: "12.9-inch, M2",
+      length: 28.06,
+      width: 21.49,
+      height: 0.64,
+      volume: 385.93,
       quantity: 100,
       uom: "PCS",
       unitPrice: 80.00,
-      lineAmount: 8000.00,
-      shippedQty: 30,      // 发货30
-      receivedQty: 15,     // 入库15（都是关联运单的）
-      fulfilledQty: 30,    // 后端计算: 在途15 + 已入库15 = 30
+      taxRate: 13,
+      taxAmount: 1040.00,
+      lineAmount: 9040.00,
+      shippedQty: 30,
+      receivedQty: 15,
+      fulfilledQty: 30,
       returnedQty: 0,
+      requiresSerialNumber: true,
+      requiresLotNumber: true,
+      specifiedSerialNumbers: [],
+      specifiedLotNumbers: ["LOT20240110"],
+      supplierName: "ABC Suppliers Inc.",
+      notes: "包含教育版配件",
     },
     {
-      // 场景: 全部完成
       id: "4",
       lineNo: 4,
       skuCode: "SKU004",
       productName: "AirPods Pro",
       specifications: "2nd Gen",
+      length: 6.06,
+      width: 4.52,
+      height: 2.17,
+      volume: 59.44,
       quantity: 200,
       uom: "PCS",
       unitPrice: 25.00,
-      lineAmount: 5000.00,
+      taxRate: 13,
+      taxAmount: 650.00,
+      lineAmount: 5650.00,
       shippedQty: 200,
       receivedQty: 200,
       fulfilledQty: 200,
       returnedQty: 0,
+      requiresSerialNumber: false,
+      requiresLotNumber: true,
+      specifiedSerialNumbers: [],
+      specifiedLotNumbers: ["LOT240101-A", "LOT240101-B"],
+      supplierName: "Audio Tech Ltd.",
+      notes: "",
     },
     {
-      // 场景: 只有直接入库，没有运单
       id: "5",
       lineNo: 5,
       skuCode: "SKU005",
       productName: "Apple Watch Ultra",
       specifications: "49mm, Titanium",
+      length: 4.9,
+      width: 4.4,
+      height: 1.44,
+      volume: 31.05,
       quantity: 50,
       uom: "PCS",
       unitPrice: 80.00,
-      lineAmount: 4000.00,
-      shippedQty: 0,       // 没有运单
-      receivedQty: 25,     // 直接入库25
-      fulfilledQty: 25,    // 后端计算: 0 + 25 = 25
+      taxRate: 13,
+      taxAmount: 520.00,
+      lineAmount: 4520.00,
+      shippedQty: 0,
+      receivedQty: 25,
+      fulfilledQty: 25,
       returnedQty: 0,
+      requiresSerialNumber: true,
+      requiresLotNumber: false,
+      specifiedSerialNumbers: [],
+      specifiedLotNumbers: [],
+      supplierName: "Wearable Inc.",
+      notes: "钛金属版直接入库",
     },
   ],
-  
+
   // Shipment Records
   shipmentRecords: [
     {
@@ -270,7 +328,7 @@ const mockPODetail = {
       notes: "补发货物，运输中",
     },
   ],
-  
+
   // Receipt Records
   receiptRecords: [
     {
@@ -342,7 +400,7 @@ const mockPODetail = {
       pushedDate: null,
     },
   ],
-  
+
   // RTV Records (Return to Vendor)
   rtvRecords: [
     {
@@ -376,7 +434,7 @@ const mockPODetail = {
       refundStatus: "PENDING",
     },
   ],
-  
+
   // Email History
   emailHistory: [
     {
@@ -627,14 +685,14 @@ const getProgressSteps = (poStatus: string) => {
 
   // 确定当前状态和终点
   const endpoint = endpointMap[poStatus] || endpointMap.CLOSED
-  
+
   // 组合完整步骤
   const allSteps = [...baseSteps, endpoint]
-  
+
   // 根据当前状态设置每个步骤的状态
   return allSteps.map((step, index) => {
     let status = 'pending'
-    
+
     if (poStatus === 'NEW') {
       status = index === 0 ? 'completed' : index === 1 ? 'in-progress' : 'pending'
     } else if (poStatus === 'PROCESSING' || poStatus === 'IN_TRANSIT' || poStatus === 'RECEIVING') {
@@ -646,7 +704,7 @@ const getProgressSteps = (poStatus: string) => {
     } else if (poStatus === 'EXCEPTION') {
       status = index === 0 ? 'completed' : index === 1 ? 'completed' : index === 2 ? 'exception' : 'pending'
     }
-    
+
     return {
       ...step,
       status,
@@ -758,13 +816,13 @@ export default function PODetailPage() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={handleRefresh}
                       disabled={isLoading}
                     >
@@ -804,7 +862,7 @@ export default function PODetailPage() {
                       复制订单
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-red-600 focus:text-red-600"
                       onClick={() => setShowCancelDialog(true)}
                     >
@@ -834,7 +892,7 @@ export default function PODetailPage() {
                     if (step.status === 'exception') {
                       return <AlertCircle className="h-5 w-5" />
                     }
-                    
+
                     // 根据步骤类型选择图标
                     switch (step.key) {
                       case 'NEW':
@@ -855,24 +913,22 @@ export default function PODetailPage() {
                   return (
                     <React.Fragment key={step.step}>
                       <div className="flex flex-col items-center flex-1">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          step.status === 'completed' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
-                            : step.status === 'in-progress'
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${step.status === 'completed'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : step.status === 'in-progress'
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                             : step.status === 'cancelled'
-                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                            : step.status === 'exception'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                            : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
-                        }`}>
+                              ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                              : step.status === 'exception'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+                          }`}>
                           {getStepIcon()}
                         </div>
                         <div className="mt-2 text-center">
-                          <div className={`text-sm font-medium ${
-                            step.status === 'cancelled' ? 'text-gray-600 dark:text-gray-400' :
+                          <div className={`text-sm font-medium ${step.status === 'cancelled' ? 'text-gray-600 dark:text-gray-400' :
                             step.status === 'exception' ? 'text-red-600 dark:text-red-400' : ''
-                          }`}>{step.label}</div>
+                            }`}>{step.label}</div>
                           <div className="text-xs text-muted-foreground mt-1">{step.description}</div>
                           {step.timestamp && (
                             <div className="text-xs text-muted-foreground mt-1">
@@ -882,15 +938,14 @@ export default function PODetailPage() {
                         </div>
                       </div>
                       {index < progressSteps.length - 1 && (
-                        <div className={`h-0.5 flex-1 mx-2 ${
-                          step.status === 'completed' 
-                            ? 'bg-green-300 dark:bg-green-700'
-                            : step.status === 'cancelled'
+                        <div className={`h-0.5 flex-1 mx-2 ${step.status === 'completed'
+                          ? 'bg-green-300 dark:bg-green-700'
+                          : step.status === 'cancelled'
                             ? 'bg-gray-300 dark:bg-gray-700'
                             : step.status === 'exception'
-                            ? 'bg-red-300 dark:bg-red-700'
-                            : 'bg-gray-200 dark:bg-gray-700'
-                        }`} />
+                              ? 'bg-red-300 dark:bg-red-700'
+                              : 'bg-gray-200 dark:bg-gray-700'
+                          }`} />
                       )}
                     </React.Fragment>
                   )
@@ -930,45 +985,43 @@ export default function PODetailPage() {
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead className="text-sm font-medium p-3">Line</TableHead>
-                              <TableHead className="text-sm font-medium p-3">Product</TableHead>
-                              <TableHead className="text-sm font-medium p-3 text-right">Qty</TableHead>
-                              <TableHead className="text-sm font-medium p-3">UOM</TableHead>
-                              <TableHead className="text-sm font-medium p-3 text-right">Unit Price</TableHead>
-                              <TableHead className="text-sm font-medium p-3 text-right">Amount</TableHead>
-                              <TableHead className="text-sm font-medium p-3 text-center">Shipped</TableHead>
-                              <TableHead className="text-sm font-medium p-3 text-center">Received</TableHead>
+                            <TableRow className="bg-muted/50 whitespace-nowrap">
+                              <TableHead className="text-sm font-medium p-3">行号</TableHead>
+                              <TableHead className="text-sm font-medium p-3">商品</TableHead>
+                              <TableHead className="text-sm font-medium p-3 text-right">需求数</TableHead>
+                              <TableHead className="text-sm font-medium p-3 text-center">发货数</TableHead>
+                              <TableHead className="text-sm font-medium p-3 text-center">收货数</TableHead>
+                              <TableHead className="text-sm font-medium p-3">单位</TableHead>
+                              <TableHead className="text-sm font-medium p-3">单价</TableHead>
+                              <TableHead className="text-sm font-medium p-3">税率</TableHead>
+                              <TableHead className="text-sm font-medium p-3 text-right">税额</TableHead>
+                              <TableHead className="text-sm font-medium p-3 text-right">含税总价</TableHead>
+                              <TableHead className="text-sm font-medium p-3">SN/批次</TableHead>
+                              <TableHead className="text-sm font-medium p-3">备注</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {poData.lineItems.map((item) => (
                               <TableRow key={item.id} className="hover:bg-muted/50">
                                 <TableCell className="text-xs p-3">
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-xs bg-white dark:bg-black">
                                     {item.lineNo.toString().padStart(2, '0')}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-xs p-3">
+                                <TableCell className="text-xs p-3 min-w-[200px]">
                                   <div className="space-y-1">
-                                    <div className="font-medium">{item.productName}</div>
+                                    <div className="font-semibold text-sm">{item.productName}</div>
                                     <div className="text-muted-foreground">SKU: {item.skuCode}</div>
                                     {item.specifications && (
                                       <div className="text-muted-foreground">{item.specifications}</div>
+                                    )}
+                                    {item.supplierName && (
+                                      <div className="text-xs text-blue-600 dark:text-blue-400">供应商: {item.supplierName}</div>
                                     )}
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-xs p-3 text-right font-medium">
                                   {item.quantity.toLocaleString()}
-                                </TableCell>
-                                <TableCell className="text-xs p-3">
-                                  <Badge variant="outline" className="text-xs">{item.uom}</Badge>
-                                </TableCell>
-                                <TableCell className="text-xs p-3 text-right font-mono">
-                                  {mockPODetail.currency} {item.unitPrice.toFixed(2)}
-                                </TableCell>
-                                <TableCell className="text-xs p-3 text-right font-medium">
-                                  {mockPODetail.currency} {item.lineAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}
                                 </TableCell>
                                 <TableCell className="text-xs p-3 text-center">
                                   <span className={item.shippedQty > 0 ? "text-purple-600 dark:text-purple-400 font-medium" : "text-muted-foreground"}>
@@ -980,28 +1033,88 @@ export default function PODetailPage() {
                                     {item.receivedQty}
                                   </span>
                                 </TableCell>
+                                <TableCell className="text-xs p-3">
+                                  <Badge variant="secondary" className="text-[10px]">{item.uom}</Badge>
+                                </TableCell>
+                                <TableCell className="text-xs p-3 font-mono">
+                                  {mockPODetail.currency} {item.unitPrice.toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-xs p-3 text-muted-foreground">
+                                  {item.taxRate}%
+                                </TableCell>
+                                <TableCell className="text-xs p-3 text-right font-mono text-muted-foreground">
+                                  +{item.taxAmount?.toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-sm p-3 text-right font-semibold">
+                                  {mockPODetail.currency} {item.lineAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </TableCell>
+                                <TableCell className="text-xs p-3 space-y-1 min-w-[120px]">
+                                  {(item.requiresSerialNumber || item.requiresLotNumber) ? (
+                                    <>
+                                      {item.requiresSerialNumber && <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 mr-1 mb-1">SN管控</Badge>}
+                                      {item.requiresLotNumber && <Badge variant="outline" className="border-orange-200 text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400 mb-1">批次管控</Badge>}
+                                      {(item.specifiedSerialNumbers && item.specifiedSerialNumbers.length > 0) && (
+                                        <div className="text-[10px] text-muted-foreground mt-1">
+                                          已分配: {item.specifiedSerialNumbers.length} 个
+                                        </div>
+                                      )}
+                                      {(item.specifiedLotNumbers && item.specifiedLotNumbers.length > 0) && (
+                                        <div className="text-[10px] text-muted-foreground mt-1">
+                                          批次: {item.specifiedLotNumbers.join(', ')}
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-xs p-3 text-muted-foreground max-w-[150px] truncate" title={item.notes}>
+                                  {item.notes || '-'}
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
                       </div>
-                      <div className="border-t bg-muted/50 p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Total Qty:</span>
-                            <span className="font-medium">{poData.totalOrderQty}</span>
+                      <div className="border-t bg-muted/10 p-6">
+                        <div className="flex flex-col lg:flex-row justify-between gap-6">
+                          <div className="flex gap-8 text-sm">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-muted-foreground">总需求数</span>
+                              <span className="font-semibold text-lg">{poData.totalOrderQty}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-muted-foreground">发货数</span>
+                              <span className="font-semibold text-lg text-purple-600 dark:text-purple-400">{poData.shippedQty}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-muted-foreground">收货数</span>
+                              <span className="font-semibold text-lg text-green-600 dark:text-green-400">{poData.receivedQty}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Shipped:</span>
-                            <span className="font-medium text-purple-600 dark:text-purple-400">{poData.shippedQty}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Received:</span>
-                            <span className="font-medium text-green-600 dark:text-green-400">{poData.receivedQty}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Total Amount:</span>
-                            <span className="font-bold">{poData.currency} {poData.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                          <div className="w-full max-w-sm space-y-2 text-sm">
+                            <div className="flex justify-between items-center text-muted-foreground">
+                              <span>商品小计</span>
+                              <span className="font-mono">{poData.currency} {poData.subtotal?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-muted-foreground">
+                              <span>总税额</span>
+                              <span className="font-mono">{poData.currency} {poData.taxAmount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-muted-foreground">
+                              <span>运费 (含附加税)</span>
+                              <span className="font-mono">{poData.currency} {((poData.shippingCost || 0) + (poData.shippingTaxAmount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            {((poData.handlingFee || 0) + (poData.otherCharge || 0)) > 0 && (
+                              <div className="flex justify-between items-center text-muted-foreground">
+                                <span>其它附加费</span>
+                                <span className="font-mono">{poData.currency} {((poData.handlingFee || 0) + (poData.otherCharge || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                              </div>
+                            )}
+                            <div className="pt-3 mt-3 border-t flex justify-between items-end">
+                              <span className="font-medium text-base">含税总计</span>
+                              <span className="font-bold text-2xl text-primary font-mono">{poData.currency} {poData.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1032,27 +1145,26 @@ export default function PODetailPage() {
                               <div
                                 key={receipt.id}
                                 onClick={() => setSelectedReceipt(receipt.id)}
-                                className={`p-3 cursor-pointer transition-colors ${
-                                  selectedReceipt === receipt.id
-                                    ? 'bg-primary/10 border-l-4 border-l-primary'
-                                    : 'hover:bg-muted/50 border-l-4 border-l-transparent'
-                                }`}
+                                className={`p-3 cursor-pointer transition-colors ${selectedReceipt === receipt.id
+                                  ? 'bg-primary/10 border-l-4 border-l-primary'
+                                  : 'hover:bg-muted/50 border-l-4 border-l-transparent'
+                                  }`}
                               >
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="font-mono text-sm font-medium">{receipt.receiptNo}</div>
                                   <div className="flex flex-col items-end gap-1">
                                     <Badge className={
-                                      receipt.receiptStatus === 'CLOSED' 
+                                      receipt.receiptStatus === 'CLOSED'
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                         : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                                        : receipt.receiptStatus === 'NEW'
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                                          : receipt.receiptStatus === 'NEW'
+                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                     }>
-                                      {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' : 
-                                       receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' : 
-                                       receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
+                                      {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' :
+                                        receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' :
+                                          receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
                                     </Badge>
                                     {!receipt.pushedToWarehouse && (
                                       <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
@@ -1084,11 +1196,11 @@ export default function PODetailPage() {
                                     <div className="flex items-center gap-3 mb-2">
                                       <h3 className="text-xl font-semibold font-mono">{receipt.receiptNo}</h3>
                                       <Badge className={
-                                        receipt.receiptStatus === 'CLOSED' 
+                                        receipt.receiptStatus === 'CLOSED'
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                           : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                                       }>
                                         {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' : receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' : 'In Progress'}
                                       </Badge>
@@ -1099,8 +1211,8 @@ export default function PODetailPage() {
                                   </div>
                                   <div className="flex gap-2">
                                     {!receipt.pushedToWarehouse ? (
-                                      <Button 
-                                        variant="default" 
+                                      <Button
+                                        variant="default"
                                         size="sm"
                                         onClick={() => {
                                           console.log("Push to warehouse:", receipt.receiptNo)
@@ -1133,14 +1245,13 @@ export default function PODetailPage() {
                                       </div>
                                     </div>
                                     <div className="flex-1 h-0.5 bg-green-300 dark:bg-green-700 mx-2" />
-                                    
+
                                     {/* Pending Receipt */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                        ? 'bg-green-100 dark:bg-green-900/20'
+                                        : 'bg-gray-100 dark:bg-gray-800'
+                                        }`}>
                                         {receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
@@ -1148,25 +1259,22 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
-                                        }`}>Pending Receipt</div>
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
+                                          }`}>Pending Receipt</div>
                                         <div className="text-xs text-muted-foreground">Waiting</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${
-                                      receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                        ? 'bg-green-300 dark:bg-green-700'
-                                        : 'bg-gray-200 dark:bg-gray-700'
-                                    }`} />
-                                    
+                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                      ? 'bg-green-300 dark:bg-green-700'
+                                      : 'bg-gray-200 dark:bg-gray-700'
+                                      }`} />
+
                                     {/* Receiving */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                        ? 'bg-green-100 dark:bg-green-900/20'
+                                        : 'bg-gray-100 dark:bg-gray-800'
+                                        }`}>
                                         {receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
@@ -1174,29 +1282,26 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
-                                        }`}>Receiving</div>
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
+                                          }`}>Receiving</div>
                                         <div className="text-xs text-muted-foreground">In Process</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${
-                                      receipt.receiptStatus === 'CLOSED'
-                                        ? 'bg-green-300 dark:bg-green-700'
-                                        : receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED'
+                                      ? 'bg-green-300 dark:bg-green-700'
+                                      : receipt.receiptStatus === 'PARTIAL_DAMAGE'
                                         ? 'bg-orange-300 dark:bg-orange-700'
                                         : 'bg-gray-200 dark:bg-gray-700'
-                                    }`} />
-                                    
+                                      }`} />
+
                                     {/* Partially Received */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                          ? 'bg-orange-100 dark:bg-orange-900/20'
-                                          : receipt.receiptStatus === 'CLOSED'
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                        ? 'bg-orange-100 dark:bg-orange-900/20'
+                                        : receipt.receiptStatus === 'CLOSED'
                                           ? 'bg-green-100 dark:bg-green-900/20'
                                           : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                        }`}>
                                         {receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
                                           <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                                         ) : receipt.receiptStatus === 'CLOSED' ? (
@@ -1206,32 +1311,29 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'text-orange-600 dark:text-orange-400' :
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'text-orange-600 dark:text-orange-400' :
                                           receipt.receiptStatus === 'CLOSED' ? '' : 'text-muted-foreground'
-                                        }`}>Partially Received</div>
+                                          }`}>Partially Received</div>
                                         <div className="text-xs text-muted-foreground">Partial</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${
-                                      receipt.receiptStatus === 'CLOSED'
-                                        ? 'bg-green-300 dark:bg-green-700'
-                                        : receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED'
+                                      ? 'bg-green-300 dark:bg-green-700'
+                                      : receipt.receiptStatus === 'PARTIAL_DAMAGE'
                                         ? 'bg-orange-300 dark:bg-orange-700'
                                         : 'bg-gray-200 dark:bg-gray-700'
-                                    }`} />
-                                    
+                                      }`} />
+
                                     {/* Close/Cancelled/Exception */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        receipt.receiptStatus === 'CLOSED'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : receipt.receiptStatus === 'CANCELLED'
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED'
+                                        ? 'bg-green-100 dark:bg-green-900/20'
+                                        : receipt.receiptStatus === 'CANCELLED'
                                           ? 'bg-gray-100 dark:bg-gray-800'
                                           : receipt.receiptStatus === 'EXCEPTION'
-                                          ? 'bg-red-100 dark:bg-red-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                            ? 'bg-red-100 dark:bg-red-900/20'
+                                            : 'bg-gray-100 dark:bg-gray-800'
+                                        }`}>
                                         {receipt.receiptStatus === 'CLOSED' ? (
                                           <Lock className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : receipt.receiptStatus === 'CANCELLED' ? (
@@ -1243,15 +1345,14 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          receipt.receiptStatus === 'CLOSED' ? 'text-green-600 dark:text-green-400' :
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' ? 'text-green-600 dark:text-green-400' :
                                           receipt.receiptStatus === 'CANCELLED' ? 'text-gray-600 dark:text-gray-400' :
-                                          receipt.receiptStatus === 'EXCEPTION' ? 'text-red-600 dark:text-red-400' :
-                                          'text-muted-foreground'
-                                        }`}>
+                                            receipt.receiptStatus === 'EXCEPTION' ? 'text-red-600 dark:text-red-400' :
+                                              'text-muted-foreground'
+                                          }`}>
                                           {receipt.receiptStatus === 'CLOSED' ? 'Closed' :
-                                           receipt.receiptStatus === 'CANCELLED' ? 'Cancelled' :
-                                           receipt.receiptStatus === 'EXCEPTION' ? 'Exception' : 'Closed'}
+                                            receipt.receiptStatus === 'CANCELLED' ? 'Cancelled' :
+                                              receipt.receiptStatus === 'EXCEPTION' ? 'Exception' : 'Closed'}
                                         </div>
                                         <div className="text-xs text-muted-foreground">Final</div>
                                       </div>
@@ -1269,10 +1370,10 @@ export default function PODetailPage() {
                                         <TableHead className="text-xs p-3 text-center">Qty</TableHead>
                                         <TableHead className="text-xs p-3 text-center">Unit Price</TableHead>
                                         <TableHead className="text-xs p-3">UOM</TableHead>
+                                        <TableHead className="text-xs p-3 text-right">Pallet Count</TableHead>
                                         <TableHead className="text-xs p-3">SN Product</TableHead>
-                                        <TableHead className="text-xs p-3 text-right">Price</TableHead>
-                                        <TableHead className="text-xs p-3 text-right">Discount</TableHead>
-                                        <TableHead className="text-xs p-3 text-right">Total</TableHead>
+                                        <TableHead className="text-xs p-3 text-right">Lot No.</TableHead>
+                                        <TableHead className="text-xs p-3 text-right">SN No.</TableHead>
                                         <TableHead className="text-xs p-3">Notes</TableHead>
                                       </TableRow>
                                     </TableHeader>
@@ -1286,10 +1387,10 @@ export default function PODetailPage() {
                                         <TableCell className="text-xs p-3">
                                           <Badge variant="outline" className="text-xs">EA</Badge>
                                         </TableCell>
+                                        <TableCell className="text-xs p-3 text-right font-medium text-muted-foreground">1</TableCell>
                                         <TableCell className="text-xs p-3 text-muted-foreground">-</TableCell>
-                                        <TableCell className="text-xs p-3 text-right font-mono">$0.00</TableCell>
-                                        <TableCell className="text-xs p-3 text-right font-mono">$0.00</TableCell>
-                                        <TableCell className="text-xs p-3 text-right font-mono font-medium">$0.00</TableCell>
+                                        <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
+                                        <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
                                         <TableCell className="text-xs p-3 text-muted-foreground">-</TableCell>
                                       </TableRow>
                                     </TableBody>
@@ -1423,8 +1524,8 @@ export default function PODetailPage() {
                                     confirm.status === 'NEW'
                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
                                       : confirm.status === 'CLOSED'
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
                                   }>
                                     {confirm.status === 'NEW' ? 'New' : confirm.status === 'CLOSED' ? 'Closed' : 'Cancelled'}
                                   </Badge>
@@ -1528,36 +1629,34 @@ export default function PODetailPage() {
                                 <div
                                   key={shipment.id}
                                   onClick={() => setSelectedShipment(shipment.id)}
-                                  className={`p-3 cursor-pointer transition-colors ${
-                                    selectedShipment === shipment.id
-                                      ? 'bg-primary/10 border-l-4 border-l-primary'
-                                      : 'hover:bg-muted/50 border-l-4 border-l-transparent'
-                                  }`}
+                                  className={`p-3 cursor-pointer transition-colors ${selectedShipment === shipment.id
+                                    ? 'bg-primary/10 border-l-4 border-l-primary'
+                                    : 'hover:bg-muted/50 border-l-4 border-l-transparent'
+                                    }`}
                                 >
                                   <div className="flex items-start justify-between mb-2">
                                     <div className="font-mono text-sm font-medium">{shipment.shipmentNo}</div>
                                     <Badge className={
-                                      shipment.shippingStatus === 'DELIVERED' 
+                                      shipment.shippingStatus === 'DELIVERED'
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                         : shipment.shippingStatus === 'IN_TRANSIT'
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                          : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
                                     }>
                                       {shipment.shippingStatus === 'DELIVERED' ? 'Delivered' : shipment.shippingStatus === 'IN_TRANSIT' ? 'In Transit' : 'Shipped'}
                                     </Badge>
                                   </div>
-                                  
+
                                   {/* 运输方式标签 */}
                                   <div className="mb-2">
-                                    <Badge 
-                                      variant="outline" 
-                                      className={`text-xs ${
-                                        shipment.shippingMethod === 'Air Freight' 
-                                          ? 'border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400'
-                                          : shipment.shippingMethod === 'Sea Freight'
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${shipment.shippingMethod === 'Air Freight'
+                                        ? 'border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400'
+                                        : shipment.shippingMethod === 'Sea Freight'
                                           ? 'border-indigo-300 text-indigo-700 dark:border-indigo-700 dark:text-indigo-400'
                                           : 'border-green-300 text-green-700 dark:border-green-700 dark:text-green-400'
-                                      }`}
+                                        }`}
                                     >
                                       {shipment.shippingMethod}
                                     </Badge>
@@ -1591,11 +1690,11 @@ export default function PODetailPage() {
                                     <div className="flex items-center gap-3 mb-2">
                                       <h3 className="text-xl font-semibold font-mono">{shipment.shipmentNo}</h3>
                                       <Badge className={
-                                        shipment.shippingStatus === 'DELIVERED' 
+                                        shipment.shippingStatus === 'DELIVERED'
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                           : shipment.shippingStatus === 'IN_TRANSIT'
-                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                                          : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                            : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
                                       }>
                                         {shipment.shippingStatus === 'DELIVERED' ? 'Delivered' : shipment.shippingStatus === 'IN_TRANSIT' ? 'In Transit' : 'Shipped'}
                                       </Badge>
@@ -1630,7 +1729,7 @@ export default function PODetailPage() {
                                       </div>
                                     </div>
                                     <div className="flex-1 h-0.5 bg-green-300 dark:bg-green-700 mx-2" />
-                                    
+
                                     {/* Shipped */}
                                     <div className="flex flex-col items-center flex-1">
                                       <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
@@ -1641,19 +1740,17 @@ export default function PODetailPage() {
                                         <div className="text-xs text-muted-foreground">{shipment.shippingDate}</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${
-                                      shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
-                                        ? 'bg-green-300 dark:bg-green-700'
-                                        : 'bg-gray-200 dark:bg-gray-700'
-                                    }`} />
-                                    
+                                    <div className={`flex-1 h-0.5 mx-2 ${shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
+                                      ? 'bg-green-300 dark:bg-green-700'
+                                      : 'bg-gray-200 dark:bg-gray-700'
+                                      }`} />
+
                                     {/* In Transit */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
+                                        ? 'bg-green-100 dark:bg-green-900/20'
+                                        : 'bg-gray-100 dark:bg-gray-800'
+                                        }`}>
                                         {shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
@@ -1661,27 +1758,24 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
-                                            ? ''
-                                            : 'text-muted-foreground'
-                                        }`}>In Transit</div>
+                                        <div className={`text-sm font-medium ${shipment.shippingStatus === 'IN_TRANSIT' || shipment.shippingStatus === 'DELIVERED'
+                                          ? ''
+                                          : 'text-muted-foreground'
+                                          }`}>In Transit</div>
                                         <div className="text-xs text-muted-foreground">-</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${
-                                      shipment.shippingStatus === 'DELIVERED'
-                                        ? 'bg-green-300 dark:bg-green-700'
-                                        : 'bg-gray-200 dark:bg-gray-700'
-                                    }`} />
-                                    
+                                    <div className={`flex-1 h-0.5 mx-2 ${shipment.shippingStatus === 'DELIVERED'
+                                      ? 'bg-green-300 dark:bg-green-700'
+                                      : 'bg-gray-200 dark:bg-gray-700'
+                                      }`} />
+
                                     {/* Delivered */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                        shipment.shippingStatus === 'DELIVERED'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                      }`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${shipment.shippingStatus === 'DELIVERED'
+                                        ? 'bg-green-100 dark:bg-green-900/20'
+                                        : 'bg-gray-100 dark:bg-gray-800'
+                                        }`}>
                                         {shipment.shippingStatus === 'DELIVERED' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
@@ -1689,9 +1783,8 @@ export default function PODetailPage() {
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${
-                                          shipment.shippingStatus === 'DELIVERED' ? '' : 'text-muted-foreground'
-                                        }`}>Delivered</div>
+                                        <div className={`text-sm font-medium ${shipment.shippingStatus === 'DELIVERED' ? '' : 'text-muted-foreground'
+                                          }`}>Delivered</div>
                                         <div className="text-xs text-muted-foreground">
                                           {shipment.actualArrival || shipment.estimatedArrival}
                                         </div>
@@ -1735,7 +1828,7 @@ export default function PODetailPage() {
                                             {mockPODetail.currency} {item.unitPrice.toFixed(2)}
                                           </TableCell>
                                           <TableCell className="text-xs p-3 text-right font-medium font-mono">
-                                            {mockPODetail.currency} {(item.unitPrice * Math.floor(shipment.shippedQty / 2)).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                            {mockPODetail.currency} {(item.unitPrice * Math.floor(shipment.shippedQty / 2)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                           </TableCell>
                                         </TableRow>
                                       ))}
@@ -2381,8 +2474,8 @@ export default function PODetailPage() {
 
               {/* 新增商品按钮 */}
               <div className="mb-4 flex justify-end">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowProductSelectionDialog(true)}
                 >
@@ -2448,8 +2541,8 @@ export default function PODetailPage() {
                                       return newErrors
                                     })
                                   }
-                                  setEditedLineItems(prev => prev.map(i => 
-                                    i.id === item.id 
+                                  setEditedLineItems(prev => prev.map(i =>
+                                    i.id === item.id
                                       ? { ...i, quantity: newQty, lineAmount: newQty * i.unitPrice }
                                       : i
                                   ))
@@ -2499,8 +2592,8 @@ export default function PODetailPage() {
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    {item.quantity === fulfilledQty 
-                                      ? "This line is already closed" 
+                                    {item.quantity === fulfilledQty
+                                      ? "This line is already closed"
                                       : `Close remaining ${remainingQty} units, release ATP`
                                     }
                                   </TooltipContent>
@@ -2556,7 +2649,7 @@ export default function PODetailPage() {
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   setPOData(prev => ({
                     ...prev,
@@ -2592,10 +2685,10 @@ export default function PODetailPage() {
                     {' '}and close remaining{' '}
                     <span className="font-bold text-foreground">
                       {selectedLineForClose ? selectedLineForClose.quantity - ((selectedLineForClose as any).fulfilledQty || 0) : 0}
-                    </span> 
+                    </span>
                     {' '}units?
                   </p>
-                  
+
                   {selectedLineForClose && (
                     <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -2622,7 +2715,7 @@ export default function PODetailPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                     <Info className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-orange-800 dark:text-orange-200">
@@ -2638,8 +2731,8 @@ export default function PODetailPage() {
                 onClick={() => {
                   if (selectedLineForClose) {
                     const fulfilledQty = (selectedLineForClose as any).fulfilledQty || 0
-                    setEditedLineItems(prev => prev.map(i => 
-                      i.id === selectedLineForClose.id 
+                    setEditedLineItems(prev => prev.map(i =>
+                      i.id === selectedLineForClose.id
                         ? { ...i, quantity: fulfilledQty, lineAmount: fulfilledQty * i.unitPrice }
                         : i
                     ))
@@ -2698,7 +2791,7 @@ export default function PODetailPage() {
                   ) : (
                     <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
                   )}
-                  
+
                   <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Order No:</span>
@@ -2734,8 +2827,8 @@ export default function PODetailPage() {
                     setPOData(prev => ({ ...prev, status: "CANCELLED" }))
                   }
                 }}
-                className={poData.shippedQty > 0 || poData.receivedQty > 0 
-                  ? "bg-orange-600 hover:bg-orange-700" 
+                className={poData.shippedQty > 0 || poData.receivedQty > 0
+                  ? "bg-orange-600 hover:bg-orange-700"
                   : "bg-red-600 hover:bg-red-700"
                 }
               >
