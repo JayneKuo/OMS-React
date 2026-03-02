@@ -4,6 +4,7 @@
 
 export type RuleType =
   | "HOLD_ORDER"          // 暂停订单
+  | "SO_HOLD"             // 销售订单拦截规则 (Hold Order Rules)
   | "SPLIT_ORDER"         // 订单拆分
   | "MERGE_ORDER"         // 订单合并
   | "LOGISTICS_MERGE"     // 设定物流合并
@@ -41,6 +42,7 @@ export type ConditionOperator =
 export type ConditionField =
   // 基础信息
   | "orderSource"           // 订单来源
+  | "orderChannel"          // 订单渠道
   | "orderType"             // 订单类型
   | "orderPlatform"         // 订单平台
   | "orderStation"          // 订单站点
@@ -62,6 +64,7 @@ export type ConditionField =
   | "detailedAddress"       // 详细地址字符
   | "addressLength"         // 地址字段长度
   | "doorNumber"            // 门牌号
+  | "recipientFullAddress"  // 完整地址
 
   // 订单信息
   | "orderMSKU"             // 订单MSKU
@@ -81,6 +84,7 @@ export type ConditionField =
   | "secondLongestSide"     // 次长边
   | "lengthPlusGirth"       // 长+(宽+高)×2
   | "productTag"            // 产品标签
+  | "orderTag"              // 订单标签
   | "productStatus"         // 产品状态
   | "shippingDeadline"      // 发货截止时间
   | "orderTaxNumber"        // 订单税号

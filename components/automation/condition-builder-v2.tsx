@@ -276,53 +276,21 @@ export function ConditionBuilderV2({
                     </div>
                 </div>
 
-                {/* Categories List */}
+                {/* Field List - Flat */}
                 <ScrollArea className="flex-1">
-                    <div className="p-3 space-y-1">
-                        {Object.entries(groupedFields).map(([category, fields]) => (
-                            <Collapsible
-                                key={category}
-                                open={openCategories.includes(category)}
-                                onOpenChange={() => toggleCategory(category)}
-                                className="space-y-1"
+                    <div className="p-3 space-y-0.5">
+                        {filteredFields.map(field => (
+                            <Button
+                                key={field.id}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs h-8 text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:border-l-2 hover:border-primary rounded-none rounded-r-md pl-3 transition-all"
+                                onClick={() => handleAddCondition(field.id)}
                             >
-                                <CollapsibleTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full justify-between font-normal hover:bg-muted/50"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            {openCategories.includes(category) ? (
-                                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                            ) : (
-                                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                            {category}
-                                        </span>
-                                        <Badge variant="secondary" className="h-5 px-1.5 min-w-[20px] justify-center text-[10px]">
-                                            {fields.length}
-                                        </Badge>
-                                    </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                    <div className="space-y-0.5 pl-6 pr-2 py-1">
-                                        {fields.map(field => (
-                                            <Button
-                                                key={field.id}
-                                                variant="ghost"
-                                                size="sm"
-                                                className="w-full justify-start text-xs h-8 text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:border-l-2 hover:border-primary rounded-none rounded-r-md pl-3 transition-all"
-                                                onClick={() => handleAddCondition(field.id)}
-                                            >
-                                                {locale === "zh" ? field.labelZh : field.label}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </CollapsibleContent>
-                            </Collapsible>
+                                {locale === "zh" ? field.labelZh : field.label}
+                            </Button>
                         ))}
-                        {Object.keys(groupedFields).length === 0 && (
+                        {filteredFields.length === 0 && (
                             <div className="p-4 text-center text-xs text-muted-foreground">
                                 {t("No fields found matching your search.", "未找到匹配的字段。")}
                             </div>
@@ -363,12 +331,26 @@ export function ConditionBuilderV2({
                                 {t("Match ANY (OR)", "任一条件 (OR)")}
                             </button>
                         </div>
+                        <span className="text-xs text-muted-foreground">
+                            {conditionLogic === "AND"
+                                ? t("Order must meet ALL conditions below", "订单须同时满足下方所有条件才会被拦截")
+                                : t("Order must meet ANY one condition below", "订单满足下方任意一个条件即会被拦截")
+                            }
+                        </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                        {conditions.length === 0
-                            ? t("Matches all orders by default", "默认匹配所有订单")
-                            : t(`${conditions.length} condition(s) added`, `已添加 ${conditions.length} 个条件`)
-                        }
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                        {conditions.length > 0 && (
+                            <>
+                                <span>{t(`${conditions.length} condition(s) added`, `已添加 ${conditions.length} 个条件`)}</span>
+                                <button
+                                    onClick={() => onChange([], conditionLogic)}
+                                    className="flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors ml-1"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                    <span>{t("Clear all", "清空全部")}</span>
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 

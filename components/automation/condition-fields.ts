@@ -28,11 +28,30 @@ const salesOrderFields: FieldDefinition[] = [
         label: "Order Source",
         labelZh: "订单来源",
         type: "text",
-        category: "Sales Order Basic",
-        categoryZh: "基础信息",
+        category: "Order Info",
+        categoryZh: "订单信息",
         operators: ["equals", "notEquals", "contains", "notContains"],
         placeholder: "Enter order source",
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+    },
+    {
+        id: "orderChannel",
+        label: "Order Channel",
+        labelZh: "订单渠道",
+        type: "select",
+        category: "Order Info",
+        categoryZh: "订单信息",
+        options: [
+            { value: "SHOPIFY", label: "Shopify", labelZh: "Shopify" },
+            { value: "AMAZON", label: "Amazon", labelZh: "Amazon" },
+            { value: "TIKTOK", label: "TikTok Shop", labelZh: "TikTok Shop" },
+            { value: "MANUAL", label: "Manual", labelZh: "手动建单" },
+            { value: "API", label: "API", labelZh: "API 导入" },
+            { value: "EDI", label: "EDI", labelZh: "EDI" },
+            { value: "OFFLINE", label: "Offline", labelZh: "线下渠道" },
+        ],
+        operators: ["equals", "notEquals", "contains", "notContains"],
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "orderType",
@@ -120,7 +139,7 @@ const salesOrderFields: FieldDefinition[] = [
     {
         id: "shippingWarehouse",
         label: "Shipping Warehouse",
-        labelZh: "发货仓库",
+        labelZh: "仓库",
         type: "select",
         category: "Shipping & Logistics",
         categoryZh: "仓储物流",
@@ -131,7 +150,7 @@ const salesOrderFields: FieldDefinition[] = [
             { value: "BR-SP", label: "Brazil", labelZh: "巴西" },
         ],
         operators: ["equals", "notEquals", "contains", "notContains"],
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "carrier",
@@ -165,7 +184,7 @@ const salesOrderFields: FieldDefinition[] = [
         labelZh: "收货国家/地区",
         type: "select",
         category: "Shipping & Logistics",
-        categoryZh: "仓储物流",
+        categoryZh: "收货地址",
         options: [
             { value: "US", label: "United States", labelZh: "美国" },
             { value: "CN", label: "China", labelZh: "中国" },
@@ -173,7 +192,7 @@ const salesOrderFields: FieldDefinition[] = [
             { value: "MX", label: "Mexico", labelZh: "墨西哥" },
         ],
         operators: ["equals", "notEquals", "contains", "notContains"],
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "recipientState",
@@ -181,10 +200,10 @@ const salesOrderFields: FieldDefinition[] = [
         labelZh: "收货省/州",
         type: "text",
         category: "Shipping & Logistics",
-        categoryZh: "仓储物流",
+        categoryZh: "收货地址",
         operators: ["equals", "notEquals", "contains", "notContains"],
         placeholder: "Enter state/province",
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "recipientCity",
@@ -192,10 +211,10 @@ const salesOrderFields: FieldDefinition[] = [
         labelZh: "收货城市",
         type: "text",
         category: "Shipping & Logistics",
-        categoryZh: "仓储物流",
+        categoryZh: "收货地址",
         operators: ["equals", "notEquals", "contains", "notContains"],
         placeholder: "Enter city",
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "recipientPostalCode",
@@ -203,10 +222,10 @@ const salesOrderFields: FieldDefinition[] = [
         labelZh: "收货邮编",
         type: "text",
         category: "Shipping & Logistics",
-        categoryZh: "仓储物流",
+        categoryZh: "收货地址",
         operators: ["equals", "notEquals", "contains", "notContains"],
         placeholder: "Enter postal code",
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "addressType",
@@ -214,13 +233,24 @@ const salesOrderFields: FieldDefinition[] = [
         labelZh: "地址类型",
         type: "select",
         category: "Shipping & Logistics",
-        categoryZh: "仓储物流",
+        categoryZh: "收货地址",
         options: [
             { value: "RESIDENTIAL", label: "Residential", labelZh: "住宅" },
             { value: "COMMERCIAL", label: "Commercial", labelZh: "商业" },
         ],
         operators: ["equals", "notEquals"],
         applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+    },
+    {
+        id: "recipientFullAddress",
+        label: "Full Address",
+        labelZh: "完整地址",
+        type: "text",
+        category: "Shipping & Logistics",
+        categoryZh: "收货地址",
+        operators: ["contains", "notContains", "equals", "notEquals", "isEmpty", "isNotEmpty"],
+        placeholder: "Enter full address text to match",
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "isEncryptedAddress",
@@ -454,6 +484,17 @@ const salesOrderFields: FieldDefinition[] = [
         applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
+        id: "orderTag",
+        label: "Order Tag",
+        labelZh: "订单标签",
+        type: "text",
+        category: "Order Info",
+        categoryZh: "订单信息",
+        operators: ["contains", "notContains", "equals", "notEquals"],
+        placeholder: "Enter order tag",
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+    },
+    {
         id: "productStatus",
         label: "Product Status",
         labelZh: "产品状态",
@@ -526,7 +567,7 @@ const salesOrderFields: FieldDefinition[] = [
     {
         id: "riskRecommendation",
         label: "Risk Recommendation",
-        labelZh: "建议策略",
+        labelZh: "风险评估建议",
         type: "select",
         category: "Risk Control",
         categoryZh: "风险控制",
@@ -537,7 +578,7 @@ const salesOrderFields: FieldDefinition[] = [
             { value: "NONE", label: "None", labelZh: "无" },
         ],
         operators: ["equals", "notEquals", "in", "notIn"],
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "riskLevel",
@@ -553,7 +594,7 @@ const salesOrderFields: FieldDefinition[] = [
             { value: "CRITICAL", label: "Critical", labelZh: "紧急" },
         ],
         operators: ["equals", "notEquals", "contains", "notContains"],
-        applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
     {
         id: "riskCategory",
@@ -825,13 +866,13 @@ const purchaseOrderFields: FieldDefinition[] = [
     {
         id: "sku",
         label: "SKU",
-        labelZh: "SKU",
+        labelZh: "商品SKU",
         type: "text",
         category: "Product",
-        categoryZh: "产品",
+        categoryZh: "商品",
         operators: ["equals", "notEquals", "contains", "in"],
         placeholder: "Enter SKU",
-        applicableRuleTypes: ["SPLIT_PR", "SPLIT_PO", "PO_ROUTING"]
+        applicableRuleTypes: ["SO_HOLD", "SPLIT_PR", "SPLIT_PO", "PO_ROUTING"]
     },
     {
         id: "category",
