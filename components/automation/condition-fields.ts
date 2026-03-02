@@ -710,6 +710,21 @@ const salesOrderFields: FieldDefinition[] = [
         operators: ["equals"],
         applicableRuleTypes: ["HOLD_ORDER", "SPLIT_ORDER", "MERGE_ORDER", "LOGISTICS_MERGE"]
     },
+    // 库存状态
+    {
+        id: "stockAvailability",
+        label: "Stock Availability",
+        labelZh: "库存可用性",
+        type: "select",
+        category: "Inventory",
+        categoryZh: "库存状态",
+        options: [
+            { value: "OUT_OF_STOCK", label: "Out of Stock", labelZh: "完全缺货" },
+            { value: "PARTIAL_SHORTAGE", label: "Partial Shortage", labelZh: "部分缺货" },
+        ],
+        operators: ["equals"],
+        applicableRuleTypes: ["SO_HOLD", "HOLD_ORDER"]
+    },
 ]
 
 // ============================================================================

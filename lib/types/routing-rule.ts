@@ -106,6 +106,8 @@ export type ConditionField =
   | "chargebackHistory"     // 拒付历史
   | "riskRecommendation"    // 建议策略
 
+  // 库存状态 (Inventory)
+  | "stockAvailability"     // 库存可用性
 
   // Legacy fields (保留兼容)
   | "purchaseType"

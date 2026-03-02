@@ -141,8 +141,8 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
     const [conditions, setConditions] = React.useState<RoutingRuleCondition[]>([])
     const [conditionLogic, setConditionLogic] = React.useState<ConditionLogic>("AND")
     // Hold action – always HOLD_ORDER, not configurable
-    // holdType: "NORMAL" = 普通暂停, "RISK" = 风险暂停
-    const [holdType, setHoldType] = React.useState<"NORMAL" | "RISK">("NORMAL")
+    // holdType: "NORMAL" = 普通暂停, "RISK" = 风险暂停, "INVENTORY" = 库存等待
+    const [holdType, setHoldType] = React.useState<"NORMAL" | "RISK" | "INVENTORY">("NORMAL")
     // Normal hold: duration until auto-release
     const [holdDurationMode, setHoldDurationMode] = React.useState<"DURATION" | "UNTIL">("DURATION")
     const [holdDurationUnit, setHoldDurationUnit] = React.useState<"HOURS" | "DAYS">("HOURS")
@@ -157,6 +157,11 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
     const [failsafeAction, setFailsafeAction] = React.useState<"RELEASE" | "KEEP">("RELEASE")
     const [failsafeDurationUnit, setFailsafeDurationUnit] = React.useState<"HOURS" | "DAYS">("HOURS")
     const [failsafeDurationValue, setFailsafeDurationValue] = React.useState<number>(48)
+    // Inventory hold: failsafe
+    const [invFailsafeAction, setInvFailsafeAction] = React.useState<"CANCEL" | "MANUAL_RESTOCK">("CANCEL")
+    const [invFailsafeDurationUnit, setInvFailsafeDurationUnit] = React.useState<"HOURS" | "DAYS">("DAYS")
+    const [invFailsafeDurationValue, setInvFailsafeDurationValue] = React.useState<number>(7)
+    const [invCheckIntervalHours, setInvCheckIntervalHours] = React.useState<number>(4)
 
     const t = (en: string, zh: string) => locale === "zh" ? zh : en
 
@@ -188,6 +193,10 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
                 setFailsafeAction(holdAction?.failsafe?.action || "RELEASE")
                 setFailsafeDurationUnit(holdAction?.failsafe?.unit || "HOURS")
                 setFailsafeDurationValue(holdAction?.failsafe?.value || 48)
+                setInvFailsafeAction(holdAction?.inventoryFailsafe?.action || "CANCEL")
+                setInvFailsafeDurationUnit(holdAction?.inventoryFailsafe?.unit || "DAYS")
+                setInvFailsafeDurationValue(holdAction?.inventoryFailsafe?.value || 7)
+                setInvCheckIntervalHours(holdAction?.inventoryCheckIntervalHours || 4)
             } else {
                 setName("")
                 setDescription("")
@@ -208,6 +217,10 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
                 setFailsafeAction("RELEASE")
                 setFailsafeDurationUnit("HOURS")
                 setFailsafeDurationValue(48)
+                setInvFailsafeAction("CANCEL")
+                setInvFailsafeDurationUnit("DAYS")
+                setInvFailsafeDurationValue(7)
+                setInvCheckIntervalHours(4)
             }
         }
     }, [open, rule])
@@ -244,6 +257,12 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
                     action: failsafeAction,
                     unit: failsafeAction === "RELEASE" ? failsafeDurationUnit : undefined,
                     value: failsafeAction === "RELEASE" ? failsafeDurationValue : undefined
+                } : undefined,
+                inventoryCheckIntervalHours: holdType === "INVENTORY" ? invCheckIntervalHours : undefined,
+                inventoryFailsafe: holdType === "INVENTORY" ? {
+                    action: invFailsafeAction,
+                    unit: invFailsafeDurationUnit,
+                    value: invFailsafeDurationValue
                 } : undefined
             } as any],
             createdAt: rule?.createdAt || new Date().toISOString(),
@@ -411,13 +430,14 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
                                             {/* Hold Type */}
                                             <div className="w-48 space-y-2">
                                                 <Label className="text-sm font-medium">{t("Hold Type", "暂停类型")}</Label>
-                                                <Select value={holdType} onValueChange={(v) => setHoldType(v as "NORMAL" | "RISK")}>
+                                                <Select value={holdType} onValueChange={(v) => setHoldType(v as "NORMAL" | "RISK" | "INVENTORY")}>
                                                     <SelectTrigger className="h-10">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="NORMAL">{t("Normal Hold", "普通暂停")}</SelectItem>
                                                         <SelectItem value="RISK">{t("Risk Hold", "风险暂停")}</SelectItem>
+                                                        <SelectItem value="INVENTORY">{t("Inventory Hold", "库存等待")}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -614,6 +634,69 @@ export function SOHoldRuleDialog({ open, onOpenChange, rule, onSave, locale = "z
                                                                 <SelectContent>
                                                                     <SelectItem value="RELEASE">{t("then auto-release", "后自动释放")}</SelectItem>
                                                                     <SelectItem value="KEEP">{t("then keep on hold", "后保持暂停")}</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            )}
+
+                                            {/* ── Inventory Hold config ── */}
+                                            {holdType === "INVENTORY" && (
+                                                <div className="space-y-4 pt-3 border-t">
+
+                                                    {/* Section 1: 暂停原因 */}
+                                                    <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2.5 space-y-0.5">
+                                                        <p className="text-xs font-medium text-amber-800 dark:text-amber-300">{t("Hold Reason", "暂停原因")}</p>
+                                                        <p className="text-xs text-amber-700 dark:text-amber-400">{t("Inventory Hold — order contains out-of-stock items, waiting for replenishment.", "库存等待 — 订单包含缺货商品，等待到货。")}</p>
+                                                    </div>
+
+                                                    {/* Section 2: 即时释放条件 */}
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm font-medium">{t("Release Criteria", "即时释放条件")}</Label>
+                                                        <p className="text-xs text-muted-foreground">{t("Order will be auto-released when stock availability equals Sufficient.", "当库存状态等于「充足」时，订单自动恢复流转。")}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-muted-foreground">{t("Check interval:", "检查间隔：")}</span>
+                                                            <Input
+                                                                type="number"
+                                                                min={1}
+                                                                value={invCheckIntervalHours}
+                                                                onChange={e => setInvCheckIntervalHours(Math.max(1, parseInt(e.target.value) || 1))}
+                                                                className="h-9 w-20"
+                                                            />
+                                                            <span className="text-xs text-muted-foreground">{t("hours (or real-time WMS push)", "小时检查一次（或实时接收 WMS 推送）")}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Section 3: 超时兜底 */}
+                                                    <div className="space-y-2 pt-3 border-t">
+                                                        <Label className="text-sm font-medium">{t("Failsafe / Deadline", "超时兜底")}</Label>
+                                                        <p className="text-xs text-muted-foreground">{t("If stock is never replenished, decide what happens after a set duration.", "如果库存始终未补充，设定时长后的处理方式。")}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                type="number"
+                                                                min={1}
+                                                                value={invFailsafeDurationValue}
+                                                                onChange={e => setInvFailsafeDurationValue(Math.max(1, parseInt(e.target.value) || 1))}
+                                                                className="h-9 w-20"
+                                                            />
+                                                            <Select value={invFailsafeDurationUnit} onValueChange={(v) => setInvFailsafeDurationUnit(v as "HOURS" | "DAYS")}>
+                                                                <SelectTrigger className="h-9 w-24">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="HOURS">{t("Hours", "小时")}</SelectItem>
+                                                                    <SelectItem value="DAYS">{t("Days", "天")}</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Select value={invFailsafeAction} onValueChange={(v) => setInvFailsafeAction(v as "CANCEL" | "MANUAL_RESTOCK")}>
+                                                                <SelectTrigger className="h-9 w-52">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="CANCEL">{t("then auto-cancel order", "后自动取消订单")}</SelectItem>
+                                                                    <SelectItem value="MANUAL_RESTOCK">{t("then notify buyer to restock", "后转人工补货")}</SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         </div>
