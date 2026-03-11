@@ -9,10 +9,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   ChevronDown, ChevronRight, Search, AlertTriangle, Clock, XCircle,
   RefreshCw, CheckCircle2, AlertCircle, Timer, Package, ArrowRight,
-  Truck, ExternalLink, MapPin, Warehouse, BarChart3, TrendingUp
+  Truck, ExternalLink, MapPin, Warehouse, BarChart3, TrendingUp, X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
+import { FilterBar, FilterConfig, ActiveFilter } from "@/components/data-table/filter-bar"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -917,6 +918,7 @@ export function OrderListTable({ orders, title, description }: OrderListTablePro
   const [channelFilter, setChannelFilter] = React.useState<ChannelType | "all">("all")
   const [alertFilter, setAlertFilter] = React.useState<AlertFilter>(null)
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set())
+  const [activeFilters, setActiveFilters] = React.useState<ActiveFilter[]>([])
 
   function toggleExpand(id: string) {
     setExpanded(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
@@ -932,7 +934,59 @@ export function OrderListTable({ orders, title, description }: OrderListTablePro
   const channelsWithData = (["amazon", "walmart", "shopify", "tiktok", "shein"] as ChannelType[])
     .filter(ch => orders.some(o => o.channel === ch))
 
-  // 过滤逻辑: tab → channel → alertFilter → search
+  // Unique customers for filter options
+  const uniqueCustomers = React.useMemo(() =>
+    [...new Set(orders.map(o => o.customer))].sort(),
+    [orders]
+  )
+
+  // Filter configs — 订单号, 渠道单号, 关联单号, Customer, Channel, Date
+  const filterConfigs: FilterConfig[] = React.useMemo(() => [
+    {
+      id: "orderNo",
+      label: "Order #",
+      type: "batch" as const,
+      placeholder: "Enter order numbers, separated by comma, space or newline..."
+    },
+    {
+      id: "externalOrderNo",
+      label: "Channel Order #",
+      type: "batch" as const,
+      placeholder: "Enter channel order numbers, separated by comma, space or newline..."
+    },
+    {
+      id: "refOrderNo",
+      label: "Ref Order #",
+      type: "batch" as const,
+      placeholder: "Enter reference order numbers, separated by comma, space or newline..."
+    },
+    {
+      id: "customer",
+      label: "Customer",
+      type: "multiple" as const,
+      options: uniqueCustomers.map(c => ({ id: c, label: c, value: c })),
+    },
+    {
+      id: "channel",
+      label: "Channel",
+      type: "multiple" as const,
+      options: channelsWithData.map(ch => ({ id: ch, label: CHANNEL_LABEL[ch], value: ch })),
+    },
+    {
+      id: "date",
+      label: "Created Date",
+      type: "multiple" as const,
+      options: [
+        { id: "today", label: "Today", value: "today" },
+        { id: "yesterday", label: "Yesterday", value: "yesterday" },
+        { id: "last7days", label: "Last 7 Days", value: "last7days" },
+        { id: "last30days", label: "Last 30 Days", value: "last30days" },
+        { id: "last90days", label: "Last 90 Days", value: "last90days" },
+      ],
+    },
+  ], [uniqueCustomers, channelsWithData])
+
+  // 过滤逻辑: tab → channel → alertFilter → search → activeFilters
   const tabConfig = STATUS_TAB_CONFIG.find(t => t.value === activeTab)!
   const tabFiltered = orders.filter(tabConfig.filter)
   const channelFiltered = channelFilter === "all" ? tabFiltered : tabFiltered.filter(o => o.channel === channelFilter)
@@ -963,12 +1017,72 @@ export function OrderListTable({ orders, title, description }: OrderListTablePro
     }
   })
 
-  const filtered = alertFiltered.filter(o => {
+  // Apply search
+  const searchFiltered = alertFiltered.filter(o => {
     const q = search.toLowerCase()
     return !q || o.orderNo.toLowerCase().includes(q) ||
       (o.poNo?.toLowerCase().includes(q)) ||
       (o.externalOrderNo?.toLowerCase().includes(q)) || o.customer.toLowerCase().includes(q)
   })
+
+  // Apply active filters from FilterBar
+  const filtered = React.useMemo(() => {
+    if (activeFilters.length === 0) return searchFiltered
+
+    let result = searchFiltered
+
+    // Group filters by filterId
+    const filterGroups: Record<string, ActiveFilter[]> = {}
+    activeFilters.forEach(f => {
+      if (!filterGroups[f.filterId]) filterGroups[f.filterId] = []
+      filterGroups[f.filterId].push(f)
+    })
+
+    // Apply each filter group (AND between groups, OR within group)
+    Object.entries(filterGroups).forEach(([filterId, filters]) => {
+      if (filterId === "orderNo") {
+        const searchValues = filters.flatMap(f => f.optionValue.split(",").map(v => v.trim().toLowerCase()).filter(Boolean))
+        if (searchValues.length > 0) {
+          result = result.filter(o => searchValues.some(v => o.orderNo.toLowerCase().includes(v)))
+        }
+      } else if (filterId === "externalOrderNo") {
+        const searchValues = filters.flatMap(f => f.optionValue.split(",").map(v => v.trim().toLowerCase()).filter(Boolean))
+        if (searchValues.length > 0) {
+          result = result.filter(o => searchValues.some(v => (o.externalOrderNo || "").toLowerCase().includes(v)))
+        }
+      } else if (filterId === "refOrderNo") {
+        const searchValues = filters.flatMap(f => f.optionValue.split(",").map(v => v.trim().toLowerCase()).filter(Boolean))
+        if (searchValues.length > 0) {
+          result = result.filter(o => searchValues.some(v => (o.refOrderNo || "").toLowerCase().includes(v)))
+        }
+      } else if (filterId === "customer") {
+        const values = filters.map(f => f.optionValue)
+        result = result.filter(o => values.includes(o.customer))
+      } else if (filterId === "channel") {
+        const values = filters.map(f => f.optionValue)
+        result = result.filter(o => values.includes(o.channel))
+      } else if (filterId === "date") {
+        const values = filters.map(f => f.optionValue)
+        const now = new Date()
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        result = result.filter(o => {
+          const orderDate = new Date(o.createdAt)
+          return values.some(v => {
+            switch (v) {
+              case "today": return orderDate >= today
+              case "yesterday": { const y = new Date(today); y.setDate(y.getDate() - 1); return orderDate >= y && orderDate < today }
+              case "last7days": { const d = new Date(today); d.setDate(d.getDate() - 7); return orderDate >= d }
+              case "last30days": { const d = new Date(today); d.setDate(d.getDate() - 30); return orderDate >= d }
+              case "last90days": { const d = new Date(today); d.setDate(d.getDate() - 90); return orderDate >= d }
+              default: return true
+            }
+          })
+        })
+      }
+    })
+
+    return result
+  }, [searchFiltered, activeFilters])
 
   // ── 提醒系统 — 覆盖履约全生命周期风险点，按"商户该做什么"分组 ──────────
   // 🔴 立即处理: 订单完全卡住或正在亏钱
@@ -1146,22 +1260,43 @@ export function OrderListTable({ orders, title, description }: OrderListTablePro
         <AlertBar items={actionItems} />
       )}
 
-      {/* 搜索 + Channel 筛选 + 过滤摘要 — 合并为一行 */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search order #, PO #, channel order #, customer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
+      {/* Filter Bar — 搜索 + 筛选条件 (订单号/渠道单号/关联单号/Customer/Channel/Date) */}
+      <FilterBar
+        searchPlaceholder="Search order #, PO #, channel order #, customer..."
+        onSearchChange={setSearch}
+        filters={filterConfigs}
+        onFiltersChange={setActiveFilters}
+      />
+
+      {/* Active filters display */}
+      {activeFilters.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {activeFilters.map((filter, index) => (
+            <Badge key={index} className="gap-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
+              {filter.optionLabel}
+              <button
+                onClick={() => setActiveFilters(activeFilters.filter((_, i) => i !== index))}
+                className="ml-1 hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setActiveFilters([])}
+            className="h-6 text-xs text-primary hover:text-primary hover:bg-primary/10"
+          >
+            Clear all
+          </Button>
         </div>
-        <Select value={channelFilter} onValueChange={v => { setChannelFilter(v as ChannelType | "all"); setAlertFilter(null) }}>
-          <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Channel" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Channels</SelectItem>
-            {channelsWithData.map(ch => (
-              <SelectItem key={ch} value={ch}>{CHANNEL_LABEL[ch]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {alertFilter && (
+      )}
+
+      {/* Alert filter indicator */}
+      {alertFilter && (
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setAlertFilter(null)}
             className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium rounded-md border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
@@ -1170,12 +1305,14 @@ export function OrderListTable({ orders, title, description }: OrderListTablePro
             Filtered by alert
             <XCircle className="h-3 w-3 opacity-60" />
           </button>
-        )}
-        <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
-          <span><span className="font-semibold text-foreground">{filtered.length}</span> orders</span>
-          <span><span className="font-semibold text-foreground">{pendingCount}</span> pending</span>
-          <span>USD <span className="font-semibold text-foreground">{totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span></span>
         </div>
+      )}
+
+      {/* Summary stats */}
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <span><span className="font-semibold text-foreground">{filtered.length}</span> orders</span>
+        <span><span className="font-semibold text-foreground">{pendingCount}</span> pending</span>
+        <span>USD <span className="font-semibold text-foreground">{totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span></span>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
