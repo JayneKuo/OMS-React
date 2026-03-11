@@ -1,3 +1,6 @@
+"use client"
+
+import * as React from "react"
 import { Sidebar } from "./sidebar"
 import { HeaderSimple } from "./header-simple"
 
@@ -7,6 +10,11 @@ interface MainLayoutProps {
     title: string
     href: string
     icon?: React.ReactNode
+    children?: Array<{
+      title: string
+      href: string
+      icon?: React.ReactNode
+    }>
   }>
   moduleName?: string
 }

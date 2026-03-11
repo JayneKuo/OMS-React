@@ -51,9 +51,6 @@ export default function TestSkuMappingPage() {
           console.log("Saved mappings:", data)
         }}
       />
-  )
-}
-
     </div>
   )
 }

@@ -4,41 +4,22 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { useI18n } from "@/components/i18n-provider"
 import { Users, FileText, Package, TrendingUp } from "lucide-react"
 
-const sidebarItems = [
-  {
-    title: "Dashboard",
-    href: "/client-portal",
-    icon: <TrendingUp className="h-4 w-4" />,
-  },
-  {
-    title: "Orders",
-    href: "/client-portal/orders",
-    icon: <FileText className="h-4 w-4" />,
-    children: [
-      {
-        title: "Wholesale Orders",
-        href: "/client-portal/orders/wholesale",
-      },
-      {
-        title: "Retail Orders",
-        href: "/client-portal/orders/retail",
-      },
-    ],
-  },
-  {
-    title: "Products",
-    href: "/client-portal/products",
-    icon: <Package className="h-4 w-4" />,
-  },
-  {
-    title: "Profile",
-    href: "/client-portal/profile",
-    icon: <Users className="h-4 w-4" />,
-  },
-]
-
 export default function ClientPortalPage() {
   const { t } = useI18n()
+
+  const sidebarItems = [
+    { title: "Overview", href: "/client-portal", icon: <TrendingUp className="h-4 w-4" /> },
+    {
+      title: "Orders", href: "/client-portal/orders", icon: <FileText className="h-4 w-4" />,
+      children: [
+        { title: "Sales Orders", href: "/client-portal/orders/sales" },
+        { title: "Wholesale", href: "/client-portal/orders/wholesale" },
+        { title: "Retail", href: "/client-portal/orders/retail" },
+      ],
+    },
+    { title: "Products", href: "/client-portal/products", icon: <Package className="h-4 w-4" /> },
+    { title: "Profile", href: "/client-portal/profile", icon: <Users className="h-4 w-4" /> },
+  ]
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Client Portal">
