@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send,
-  Download, Eye, Copy, AlertCircle, Calendar, Building, User, MapPin, Clock,
+  Download, Eye, Copy, Check, AlertCircle, Calendar, Building, User, MapPin, Clock,
   TrendingUp, RefreshCw, ExternalLink, Phone, Mail, History, Info, XCircle,
   FilePlus, Loader2, Lock, MoreHorizontal, Pencil, Ban
 } from "lucide-react"
@@ -244,9 +244,14 @@ const mockPODetail = {
     {
       id: "1",
       shipmentNo: "SHP202401150001",
-      shippedQty: 75,
+      relatedOrderNo: "SO202401100012",
+      outboundNo: "OB202401150001",
+      shippedQty: 280,
       carrier: "FedEx",
       trackingNo: "1234567890",
+      bolNo: "BOL-2024-FX-001",
+      masterBolNo: "MBOL-2024-FX-001",
+      loadNo: "LD-2024-0118-A",
       shippingStatus: "SHIPPED",
       shippingMethod: "Air Freight",
       deliveryService: "Express",
@@ -255,9 +260,9 @@ const mockPODetail = {
       departureAirport: "JFK",
       arrivalAirport: "LAX",
       packageNo: "PKG-001-2024",
-      packageCount: 3,
+      packageCount: 6,
       palletNo: "PLT-A-001",
-      palletCount: 1,
+      palletCount: 3,
       estimatedArrival: "2024-01-25",
       shippingDate: "2024-01-18",
       fromAddress: "456 Supplier Ave, New York, NY 10001",
@@ -273,9 +278,14 @@ const mockPODetail = {
     {
       id: "2",
       shipmentNo: "SHP202401120001",
-      shippedQty: 25,
+      relatedOrderNo: "SO202401080005",
+      outboundNo: "OB202401120002",
+      shippedQty: 83,
       carrier: "DHL",
       trackingNo: "9876543210",
+      bolNo: "",
+      masterBolNo: "MBOL-2024-DHL-002",
+      loadNo: "LD-2024-0115-B",
       shippingStatus: "DELIVERED",
       shippingMethod: "Ground",
       deliveryService: "Standard",
@@ -283,9 +293,9 @@ const mockPODetail = {
       driverName: "John Driver",
       driverPhone: "+1-555-9988",
       packageNo: "PKG-002-2024",
-      packageCount: 1,
-      palletNo: "PLT-B-001",
-      palletCount: 1,
+      packageCount: 3,
+      palletNo: "",
+      palletCount: 0,
       estimatedArrival: "2024-01-22",
       actualArrival: "2024-01-22",
       shippingDate: "2024-01-15",
@@ -302,17 +312,22 @@ const mockPODetail = {
     {
       id: "3",
       shipmentNo: "SHP202401100001",
-      shippedQty: 30,
+      relatedOrderNo: "SO202401050018",
+      outboundNo: "OB202401100003",
+      shippedQty: 385,
       carrier: "Maersk Line",
       trackingNo: "5555666677",
+      bolNo: "BOL-2024-MSK-003",
+      masterBolNo: "MBOL-2024-MSK-001",
+      loadNo: "LD-2024-0120-C",
       shippingStatus: "IN_TRANSIT",
       shippingMethod: "Sea Freight",
       deliveryService: "FCL",
       vesselName: "MSC OSCAR",
       voyageNo: "VOY-2024-001",
-      containerNo: "MSCU1234567",
+      containerNo: "MSCU1234567 / MSCU7654321",
       containerType: "40HC",
-      containerCount: 1,
+      containerCount: 2,
       portOfLoading: "Shanghai Port",
       portOfDischarge: "Los Angeles Port",
       estimatedArrival: "2024-01-28",
@@ -581,6 +596,320 @@ const eventHistory = [
   },
 ]
 
+// Shipment Units Mock Data - Package-level detail for unified table
+// Types for hierarchical shipment unit data
+type ShipmentSku = { sku: string; productName: string; qty: number; uom: string }
+type ShipmentCarton = {
+  packageId: string
+  trackingNo: string
+  dimension: string
+  weight: string
+  isSIOC?: boolean
+  skus: ShipmentSku[]
+}
+type ShipmentPallet = { palletId: string; cartons: ShipmentCarton[] }
+type ShipmentContainer = { containerId: string; pallets: ShipmentPallet[] }
+
+type ShipmentUnitData = {
+  // Hierarchical: containers → pallets → cartons
+  containers?: ShipmentContainer[]
+  // Flat pallets (no container, e.g. air freight)
+  pallets?: ShipmentPallet[]
+  // Flat cartons (no container/pallet, e.g. express direct)
+  cartons?: ShipmentCarton[]
+}
+
+// Helper: flatten hierarchical data into renderable rows
+function flattenShipmentUnits(data: ShipmentUnitData) {
+  const rows: Array<{
+    containerId?: string; containerRowSpan?: number; isFirstInContainer?: boolean
+    palletId?: string; palletRowSpan?: number; isFirstInPallet?: boolean
+    carton: ShipmentCarton; cartonRowSpan: number; isFirstInCarton: boolean
+    sku: ShipmentSku
+    // For visual separation
+    isLastSkuInCarton: boolean
+    isLastCartonInPallet: boolean
+    isLastPalletInContainer: boolean
+    skuIndexInCarton: number
+  }> = []
+
+  const hasContainers = !!data.containers?.length
+  const hasPallets = hasContainers || !!data.pallets?.length
+
+  // Normalize into a unified structure
+  const allContainers: Array<{ containerId?: string; pallets: Array<{ palletId?: string; cartons: ShipmentCarton[] }> }> = []
+
+  if (data.containers?.length) {
+    data.containers.forEach(c => {
+      allContainers.push({ containerId: c.containerId, pallets: c.pallets.map(p => ({ palletId: p.palletId, cartons: p.cartons })) })
+    })
+  } else if (data.pallets?.length) {
+    allContainers.push({ containerId: undefined, pallets: data.pallets.map(p => ({ palletId: p.palletId, cartons: p.cartons })) })
+  } else if (data.cartons?.length) {
+    allContainers.push({ containerId: undefined, pallets: [{ palletId: undefined, cartons: data.cartons }] })
+  }
+
+  allContainers.forEach((container, cIdx) => {
+    const containerSkuCount = container.pallets.reduce((s, p) => s + p.cartons.reduce((s2, ct) => s2 + ct.skus.length, 0), 0)
+
+    container.pallets.forEach((pallet, pIdx) => {
+      const palletSkuCount = pallet.cartons.reduce((s, ct) => s + ct.skus.length, 0)
+
+      pallet.cartons.forEach((carton, ctIdx) => {
+        carton.skus.forEach((sku, skIdx) => {
+          rows.push({
+            containerId: container.containerId,
+            containerRowSpan: containerSkuCount,
+            isFirstInContainer: pIdx === 0 && ctIdx === 0 && skIdx === 0,
+            palletId: pallet.palletId,
+            palletRowSpan: palletSkuCount,
+            isFirstInPallet: ctIdx === 0 && skIdx === 0,
+            carton,
+            cartonRowSpan: carton.skus.length,
+            isFirstInCarton: skIdx === 0,
+            sku,
+            isLastSkuInCarton: skIdx === carton.skus.length - 1,
+            isLastCartonInPallet: ctIdx === pallet.cartons.length - 1,
+            isLastPalletInContainer: pIdx === container.pallets.length - 1,
+            skuIndexInCarton: skIdx,
+          })
+        })
+      })
+    })
+  })
+
+  return { rows, hasContainers, hasPallets }
+}
+
+const shipmentUnitsData: Record<string, ShipmentUnitData> = {
+  // Shipment 1: Air Freight — 3 Pallets, multiple Cartons each (no container)
+  "1": {
+    pallets: [
+      {
+        palletId: "PLT-A-001",
+        cartons: [
+          {
+            packageId: "PKG-001-A",
+            trackingNo: "1Z999AA10123456784",
+            dimension: "40×30×25 cm",
+            weight: "8.5 kg",
+            skus: [
+              { sku: "SKU001", productName: "iPhone 15 Pro", qty: 30, uom: "PCS" },
+              { sku: "SKU003", productName: "iPad Pro", qty: 15, uom: "PCS" },
+            ],
+          },
+          {
+            packageId: "PKG-001-B",
+            trackingNo: "1Z999AA10123456785",
+            dimension: "50×40×30 cm",
+            weight: "12.3 kg",
+            skus: [
+              { sku: "SKU001", productName: "iPhone 15 Pro", qty: 30, uom: "PCS" },
+            ],
+          },
+        ],
+      },
+      {
+        palletId: "PLT-A-002",
+        cartons: [
+          {
+            packageId: "PKG-001-C",
+            trackingNo: "1Z999AA10123456786",
+            dimension: "35×25×20 cm",
+            weight: "5.2 kg",
+            isSIOC: true,
+            skus: [
+              { sku: "SKU003", productName: "iPad Pro", qty: 15, uom: "PCS" },
+            ],
+          },
+          {
+            packageId: "PKG-001-D",
+            trackingNo: "1Z999AA10123456787",
+            dimension: "45×35×30 cm",
+            weight: "11.0 kg",
+            skus: [
+              { sku: "SKU004", productName: "AirPods Pro", qty: 60, uom: "PCS" },
+              { sku: "SKU005", productName: "Apple Watch Ultra", qty: 10, uom: "PCS" },
+            ],
+          },
+          {
+            packageId: "PKG-001-E",
+            trackingNo: "1Z999AA10123456788",
+            dimension: "38×28×22 cm",
+            weight: "6.8 kg",
+            skus: [
+              { sku: "SKU002", productName: "MacBook Pro", qty: 5, uom: "PCS" },
+            ],
+          },
+        ],
+      },
+      {
+        palletId: "PLT-A-003",
+        cartons: [
+          {
+            packageId: "PKG-001-F",
+            trackingNo: "1Z999AA10123456789",
+            dimension: "55×45×35 cm",
+            weight: "14.6 kg",
+            skus: [
+              { sku: "SKU001", productName: "iPhone 15 Pro", qty: 20, uom: "PCS" },
+              { sku: "SKU004", productName: "AirPods Pro", qty: 40, uom: "PCS" },
+              { sku: "SKU003", productName: "iPad Pro", qty: 10, uom: "PCS" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  // Shipment 2: Ground Express — multiple direct cartons, no container/pallet
+  "2": {
+    cartons: [
+      {
+        packageId: "PKG-002-A",
+        trackingNo: "9876543210001",
+        dimension: "45×35×28 cm",
+        weight: "10.1 kg",
+        skus: [
+          { sku: "SKU004", productName: "AirPods Pro", qty: 25, uom: "PCS" },
+        ],
+      },
+      {
+        packageId: "PKG-002-B",
+        trackingNo: "9876543210002",
+        dimension: "40×30×25 cm",
+        weight: "7.5 kg",
+        skus: [
+          { sku: "SKU001", productName: "iPhone 15 Pro", qty: 10, uom: "PCS" },
+          { sku: "SKU005", productName: "Apple Watch Ultra", qty: 15, uom: "PCS" },
+        ],
+      },
+      {
+        packageId: "PKG-002-C",
+        trackingNo: "9876543210003",
+        dimension: "35×25×20 cm",
+        weight: "4.2 kg",
+        isSIOC: true,
+        skus: [
+          { sku: "SKU003", productName: "iPad Pro", qty: 8, uom: "PCS" },
+        ],
+      },
+    ],
+  },
+  // Shipment 3: Sea Freight — 2 Containers, multiple Pallets, multiple Cartons
+  "3": {
+    containers: [
+      {
+        containerId: "MSCU1234567",
+        pallets: [
+          {
+            palletId: "PLT-SEA-001",
+            cartons: [
+              {
+                packageId: "CTN-001",
+                trackingNo: "5555666677001",
+                dimension: "60×50×40 cm",
+                weight: "22.0 kg",
+                skus: [
+                  { sku: "SKU003", productName: "iPad Pro", qty: 20, uom: "PCS" },
+                  { sku: "SKU004", productName: "AirPods Pro", qty: 50, uom: "PCS" },
+                ],
+              },
+              {
+                packageId: "CTN-002",
+                trackingNo: "5555666677002",
+                dimension: "55×45×35 cm",
+                weight: "18.5 kg",
+                isSIOC: true,
+                skus: [
+                  { sku: "SKU004", productName: "AirPods Pro", qty: 80, uom: "PCS" },
+                ],
+              },
+            ],
+          },
+          {
+            palletId: "PLT-SEA-002",
+            cartons: [
+              {
+                packageId: "CTN-003",
+                trackingNo: "5555666677003",
+                dimension: "50×40×30 cm",
+                weight: "15.8 kg",
+                skus: [
+                  { sku: "SKU001", productName: "iPhone 15 Pro", qty: 10, uom: "PCS" },
+                  { sku: "SKU005", productName: "Apple Watch Ultra", qty: 20, uom: "PCS" },
+                ],
+              },
+              {
+                packageId: "CTN-004",
+                trackingNo: "5555666677004",
+                dimension: "45×35×25 cm",
+                weight: "9.2 kg",
+                skus: [
+                  { sku: "SKU001", productName: "iPhone 15 Pro", qty: 15, uom: "PCS" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        containerId: "MSCU7654321",
+        pallets: [
+          {
+            palletId: "PLT-SEA-003",
+            cartons: [
+              {
+                packageId: "CTN-005",
+                trackingNo: "5555666677005",
+                dimension: "65×55×45 cm",
+                weight: "28.0 kg",
+                skus: [
+                  { sku: "SKU002", productName: "MacBook Pro", qty: 10, uom: "PCS" },
+                  { sku: "SKU003", productName: "iPad Pro", qty: 30, uom: "PCS" },
+                ],
+              },
+            ],
+          },
+          {
+            palletId: "PLT-SEA-004",
+            cartons: [
+              {
+                packageId: "CTN-006",
+                trackingNo: "5555666677006",
+                dimension: "50×40×35 cm",
+                weight: "16.5 kg",
+                skus: [
+                  { sku: "SKU005", productName: "Apple Watch Ultra", qty: 40, uom: "PCS" },
+                ],
+              },
+              {
+                packageId: "CTN-007",
+                trackingNo: "5555666677007",
+                dimension: "40×30×25 cm",
+                weight: "7.8 kg",
+                isSIOC: true,
+                skus: [
+                  { sku: "SKU004", productName: "AirPods Pro", qty: 100, uom: "PCS" },
+                ],
+              },
+              {
+                packageId: "CTN-008",
+                trackingNo: "5555666677008",
+                dimension: "55×45×30 cm",
+                weight: "14.3 kg",
+                skus: [
+                  { sku: "SKU002", productName: "MacBook Pro", qty: 5, uom: "PCS" },
+                  { sku: "SKU001", productName: "iPhone 15 Pro", qty: 25, uom: "PCS" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+}
+
 // Receipt Confirmation Mock Data
 const receiptConfirmations = [
   {
@@ -730,6 +1059,14 @@ export default function PODetailPage() {
   const [selectedReceipt, setSelectedReceipt] = React.useState<string | null>(mockPODetail.receiptRecords[0]?.id || null)
   const [selectedShipment, setSelectedShipment] = React.useState<string | null>(mockPODetail.shipmentRecords[0]?.id || null)
   const [poData, setPOData] = React.useState(mockPODetail)
+  const [copiedField, setCopiedField] = React.useState<string | null>(null)
+
+  // Copy helper
+  const copyToClipboard = React.useCallback((text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedField(fieldKey)
+    setTimeout(() => setCopiedField(null), 1500)
+  }, [])
 
   // 根据PO状态生成进度步骤
   const progressSteps = React.useMemo(() => {
@@ -1793,255 +2130,458 @@ export default function PODetailPage() {
                                   </div>
                                 </div>
 
-                                {/* Items Table */}
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-3">Shipped Items</h4>
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow className="bg-muted/50">
-                                        <TableHead className="text-xs p-3">Product</TableHead>
-                                        <TableHead className="text-xs p-3 text-center">Shipped Qty</TableHead>
-                                        <TableHead className="text-xs p-3">UOM</TableHead>
-                                        <TableHead className="text-xs p-3 text-right">Unit Price</TableHead>
-                                        <TableHead className="text-xs p-3 text-right">Total</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {mockPODetail.lineItems.slice(0, 2).map((item) => (
-                                        <TableRow key={item.id} className="hover:bg-muted/50">
-                                          <TableCell className="text-xs p-3">
-                                            <div className="space-y-1">
-                                              <div className="font-medium">{item.productName}</div>
-                                              <div className="text-muted-foreground">SKU: {item.skuCode}</div>
-                                              {item.specifications && (
-                                                <div className="text-muted-foreground">{item.specifications}</div>
-                                              )}
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="text-xs p-3 text-center font-medium text-purple-600 dark:text-purple-400">
-                                            {Math.floor(shipment.shippedQty / 2)}
-                                          </TableCell>
-                                          <TableCell className="text-xs p-3">
-                                            <Badge variant="outline" className="text-xs">{item.uom}</Badge>
-                                          </TableCell>
-                                          <TableCell className="text-xs p-3 text-right font-mono">
-                                            {mockPODetail.currency} {item.unitPrice.toFixed(2)}
-                                          </TableCell>
-                                          <TableCell className="text-xs p-3 text-right font-medium font-mono">
-                                            {mockPODetail.currency} {(item.unitPrice * Math.floor(shipment.shippedQty / 2)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </div>
+                                {/* Row-Spanning Unified Table */}
+                                {(() => {
+                                  const unitData = shipmentUnitsData[shipment.id]
+                                  if (!unitData) return null
 
-                                {/* Shipment Details Grid - Single Column for Better Layout */}
-                                <div className="space-y-6">
-                                  {/* Shipment Information */}
+                                  const { rows, hasContainers, hasPallets } = flattenShipmentUnits(unitData)
+                                  if (rows.length === 0) return null
+
+                                  // Calculate totals
+                                  const allCartonIds = new Set(rows.map(r => r.carton.packageId))
+                                  const totalCartons = allCartonIds.size
+                                  const totalItems = rows.reduce((sum, r) => sum + r.sku.qty, 0)
+                                  const totalWeight = Array.from(allCartonIds).reduce((sum, pkgId) => {
+                                    const row = rows.find(r => r.carton.packageId === pkgId)
+                                    return sum + (row ? parseFloat(row.carton.weight) : 0)
+                                  }, 0)
+                                  const totalPallets = hasPallets ? new Set(rows.filter(r => r.palletId).map(r => r.palletId)).size : 0
+                                  const totalContainers = hasContainers ? new Set(rows.filter(r => r.containerId).map(r => r.containerId)).size : 0
+
+                                  return (
+                                    <div>
+                                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-primary" />
+                                        Package & SKU Details
+                                      </h4>
+                                      <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                                        <table className="w-full text-xs">
+                                          <thead>
+                                            <tr className="bg-muted/50 text-left">
+                                              {hasContainers && (
+                                                <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Container</th>
+                                              )}
+                                              {hasPallets && (
+                                                <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Pallet</th>
+                                              )}
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Package ID</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Tracking No</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Dimension</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Weight</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">SKU</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap">Product Name</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground border-r whitespace-nowrap text-center">Qty</th>
+                                              <th className="p-2.5 font-medium text-muted-foreground whitespace-nowrap">UOM</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {rows.map((row, rowIdx) => {
+                                              const isLastRow = rowIdx === rows.length - 1
+                                              // Heavy border between containers
+                                              const showHeavyBorder = !isLastRow && row.isLastSkuInCarton && row.isLastCartonInPallet && row.isLastPalletInContainer
+                                              // Medium border between pallets within same container
+                                              const showMediumBorder = !isLastRow && !showHeavyBorder && row.isLastSkuInCarton && row.isLastCartonInPallet
+                                              // Light border between cartons within same pallet
+                                              const showLightBorder = !isLastRow && !showHeavyBorder && !showMediumBorder && row.isLastSkuInCarton
+
+                                              return (
+                                                <tr
+                                                  key={`row-${rowIdx}`}
+                                                  className={`
+                                                    ${row.skuIndexInCarton % 2 === 1 ? 'bg-muted/20' : ''}
+                                                    ${showHeavyBorder ? 'border-b-[3px] border-border' : ''}
+                                                    ${showMediumBorder ? 'border-b-2 border-border/70' : ''}
+                                                    ${showLightBorder ? 'border-b border-border/50' : ''}
+                                                    ${!showHeavyBorder && !showMediumBorder && !showLightBorder && !isLastRow ? 'border-b border-border/20' : ''}
+                                                  `}
+                                                >
+                                                  {/* Container column */}
+                                                  {hasContainers && row.isFirstInContainer && (
+                                                    <td
+                                                      className="p-2.5 border-r align-top font-mono text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10"
+                                                      rowSpan={row.containerRowSpan}
+                                                    >
+                                                      <div className="flex items-center gap-1">
+                                                        <Package className="h-3 w-3 flex-shrink-0" />
+                                                        {row.containerId}
+                                                      </div>
+                                                    </td>
+                                                  )}
+                                                  {/* Pallet column */}
+                                                  {hasPallets && row.isFirstInPallet && (
+                                                    <td
+                                                      className="p-2.5 border-r align-top font-mono text-amber-700 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/5"
+                                                      rowSpan={row.palletRowSpan}
+                                                    >
+                                                      {row.palletId || '-'}
+                                                    </td>
+                                                  )}
+                                                  {/* Package ID */}
+                                                  {row.isFirstInCarton && (
+                                                    <td className="p-2.5 border-r align-top font-mono font-medium" rowSpan={row.cartonRowSpan}>
+                                                      <div className="flex items-center gap-1">
+                                                        {row.carton.packageId}
+                                                        {row.carton.isSIOC && (
+                                                          <span className="inline-flex items-center text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 px-1 rounded" title="Ships In Own Container">🏷️ SIOC</span>
+                                                        )}
+                                                      </div>
+                                                    </td>
+                                                  )}
+                                                  {/* Tracking No */}
+                                                  {row.isFirstInCarton && (
+                                                    <td className="p-2.5 border-r align-top font-mono text-blue-600 dark:text-blue-400" rowSpan={row.cartonRowSpan}>
+                                                      {row.carton.trackingNo}
+                                                    </td>
+                                                  )}
+                                                  {/* Dimension */}
+                                                  {row.isFirstInCarton && (
+                                                    <td className="p-2.5 border-r align-top text-muted-foreground" rowSpan={row.cartonRowSpan}>
+                                                      {row.carton.dimension}
+                                                    </td>
+                                                  )}
+                                                  {/* Weight */}
+                                                  {row.isFirstInCarton && (
+                                                    <td className="p-2.5 border-r align-top font-medium" rowSpan={row.cartonRowSpan}>
+                                                      {row.carton.weight}
+                                                    </td>
+                                                  )}
+                                                  {/* SKU detail columns */}
+                                                  <td className="p-2.5 border-r font-mono">{row.sku.sku}</td>
+                                                  <td className="p-2.5 border-r">{row.sku.productName}</td>
+                                                  <td className="p-2.5 border-r text-center font-medium text-purple-600 dark:text-purple-400">{row.sku.qty}</td>
+                                                  <td className="p-2.5">
+                                                    <Badge variant="secondary" className="text-[10px]">{row.sku.uom}</Badge>
+                                                  </td>
+                                                </tr>
+                                              )
+                                            })}
+                                          </tbody>
+                                          {/* Footer - Aggregation */}
+                                          <tfoot>
+                                            <tr className="bg-muted/50 font-medium border-t-2 border-border">
+                                              <td
+                                                className="p-2.5 text-right text-muted-foreground"
+                                                colSpan={(hasContainers ? 1 : 0) + (hasPallets ? 1 : 0) + 4}
+                                              >
+                                                Totals:
+                                              </td>
+                                              <td className="p-2.5 border-r" colSpan={2}>
+                                                {hasContainers && (
+                                                  <span className="mr-2">
+                                                    <span className="text-muted-foreground">Containers:</span>{' '}
+                                                    <span className="font-semibold">{totalContainers}</span>
+                                                  </span>
+                                                )}
+                                                {hasPallets && totalPallets > 0 && (
+                                                  <span className="mr-2">
+                                                    <span className="text-muted-foreground">Pallets:</span>{' '}
+                                                    <span className="font-semibold">{totalPallets}</span>
+                                                  </span>
+                                                )}
+                                                <span>
+                                                  <span className="text-muted-foreground">Cartons:</span>{' '}
+                                                  <span className="font-semibold">{totalCartons}</span>
+                                                </span>
+                                              </td>
+                                              <td className="p-2.5 border-r text-center">
+                                                <span className="font-semibold text-purple-600 dark:text-purple-400">{totalItems}</span>
+                                              </td>
+                                              <td className="p-2.5">
+                                                <span className="text-muted-foreground text-[10px]">Chg.Wt:</span>{' '}
+                                                <span className="font-semibold">{totalWeight.toFixed(1)} kg</span>
+                                              </td>
+                                            </tr>
+                                          </tfoot>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  )
+                                })()}
+
+                                {/* Shipment Details Grid */}
+                                <div className="grid grid-cols-2 gap-6">
                                   <div className="space-y-3">
-                                    <h4 className="text-sm font-semibold">Shipment Information</h4>
-                                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                      <div className="flex justify-between">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-sm font-semibold">Reference Numbers</h4>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => {
+                                              const lines: string[] = []
+                                              lines.push(`Shipment No: ${shipment.shipmentNo}`)
+                                              if (shipment.relatedOrderNo) lines.push(`Order No: ${shipment.relatedOrderNo}`)
+                                              if (shipment.outboundNo) lines.push(`Outbound No: ${shipment.outboundNo}`)
+                                              lines.push(`Master Tracking: ${shipment.trackingNo}`)
+                                              if (shipment.bolNo) lines.push(`BOL No: ${shipment.bolNo}`)
+                                              if (shipment.masterBolNo) lines.push(`Master BOL: ${shipment.masterBolNo}`)
+                                              if (shipment.loadNo) lines.push(`Load No: ${shipment.loadNo}`)
+                                              if (shipment.flightNo) lines.push(`Flight No: ${shipment.flightNo}`)
+                                              if (shipment.vesselName) lines.push(`Vessel: ${shipment.vesselName}`)
+                                              if (shipment.voyageNo) lines.push(`Voyage No: ${shipment.voyageNo}`)
+                                              if (shipment.vehicleNo) lines.push(`Vehicle No: ${shipment.vehicleNo}`)
+                                              // collect tracking nos
+                                              const unitData = shipmentUnitsData[shipment.id]
+                                              if (unitData) {
+                                                const tns: string[] = []
+                                                const collect = (cartons: ShipmentCarton[]) => { cartons.forEach(c => { if (c.trackingNo && !tns.includes(c.trackingNo)) tns.push(c.trackingNo) }) }
+                                                if (unitData.containers) unitData.containers.forEach(c => c.pallets.forEach(p => collect(p.cartons)))
+                                                else if (unitData.pallets) unitData.pallets.forEach(p => collect(p.cartons))
+                                                else if (unitData.cartons) collect(unitData.cartons)
+                                                if (tns.length > 0) lines.push(`Tracking Nos: ${tns.join(', ')}`)
+                                              }
+                                              copyToClipboard(lines.join('\n'), 'all-refs')
+                                            }}
+                                          >
+                                            {copiedField === 'all-refs' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="text-xs">
+                                          {copiedField === 'all-refs' ? 'Copied!' : 'Copy All'}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between items-center group">
                                         <span className="text-muted-foreground">Shipment No:</span>
-                                        <span className="font-mono font-medium">{shipment.shipmentNo}</span>
+                                        <span className="font-mono font-medium flex items-center gap-1">
+                                          {shipment.shipmentNo}
+                                          <button onClick={() => copyToClipboard(shipment.shipmentNo, 'shipmentNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                            {copiedField === 'shipmentNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                          </button>
+                                        </span>
                                       </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Tracking No:</span>
-                                        <span className="font-mono font-medium text-blue-600 dark:text-blue-400">{shipment.trackingNo}</span>
+                                      {shipment.relatedOrderNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Order No:</span>
+                                          <span className="font-mono font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                            {shipment.relatedOrderNo}
+                                            <button onClick={() => copyToClipboard(shipment.relatedOrderNo, 'relatedOrderNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'relatedOrderNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.outboundNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Outbound No:</span>
+                                          <span className="font-mono font-medium flex items-center gap-1">
+                                            {shipment.outboundNo}
+                                            <button onClick={() => copyToClipboard(shipment.outboundNo, 'outboundNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'outboundNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between items-center group">
+                                        <span className="text-muted-foreground">Master Tracking:</span>
+                                        <span className="font-mono font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                          {shipment.trackingNo}
+                                          <button onClick={() => copyToClipboard(shipment.trackingNo, 'trackingNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                            {copiedField === 'trackingNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                          </button>
+                                        </span>
                                       </div>
+                                      {shipment.bolNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">BOL No:</span>
+                                          <span className="font-mono font-medium flex items-center gap-1">
+                                            {shipment.bolNo}
+                                            <button onClick={() => copyToClipboard(shipment.bolNo, 'bolNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'bolNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.masterBolNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Master BOL:</span>
+                                          <span className="font-mono font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                            {shipment.masterBolNo}
+                                            <button onClick={() => copyToClipboard(shipment.masterBolNo, 'masterBolNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'masterBolNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.loadNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Load No:</span>
+                                          <span className="font-mono font-medium flex items-center gap-1">
+                                            {shipment.loadNo}
+                                            <button onClick={() => copyToClipboard(shipment.loadNo, 'loadNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'loadNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.flightNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Flight No:</span>
+                                          <span className="font-mono font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                            {shipment.flightNo}
+                                            <button onClick={() => copyToClipboard(shipment.flightNo, 'flightNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'flightNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.vesselName && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Vessel:</span>
+                                          <span className="font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                            {shipment.vesselName}
+                                            <button onClick={() => copyToClipboard(shipment.vesselName, 'vesselName')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'vesselName' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.voyageNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Voyage No:</span>
+                                          <span className="font-mono font-medium flex items-center gap-1">
+                                            {shipment.voyageNo}
+                                            <button onClick={() => copyToClipboard(shipment.voyageNo, 'voyageNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'voyageNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                      {shipment.vehicleNo && (
+                                        <div className="flex justify-between items-center group">
+                                          <span className="text-muted-foreground">Vehicle No:</span>
+                                          <span className="font-mono font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+                                            {shipment.vehicleNo}
+                                            <button onClick={() => copyToClipboard(shipment.vehicleNo, 'vehicleNo')} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                                              {copiedField === 'vehicleNo' ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                                            </button>
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {/* Tracking No List — from package-level data */}
+                                    {(() => {
+                                      const unitData = shipmentUnitsData[shipment.id]
+                                      if (!unitData) return null
+                                      const trackingNos: string[] = []
+                                      const collectTrackingNos = (cartons: ShipmentCarton[]) => {
+                                        cartons.forEach(c => { if (c.trackingNo && !trackingNos.includes(c.trackingNo)) trackingNos.push(c.trackingNo) })
+                                      }
+                                      if (unitData.containers) unitData.containers.forEach(c => c.pallets.forEach(p => collectTrackingNos(p.cartons)))
+                                      else if (unitData.pallets) unitData.pallets.forEach(p => collectTrackingNos(p.cartons))
+                                      else if (unitData.cartons) collectTrackingNos(unitData.cartons)
+                                      if (trackingNos.length === 0) return null
+                                      return (
+                                        <div className="pt-2 border-t border-border/50">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">Tracking No ({trackingNos.length})</span>
+                                            <button
+                                              onClick={() => copyToClipboard(trackingNos.join('\n'), 'all-tracking')}
+                                              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                                            >
+                                              {copiedField === 'all-tracking' ? <><Check className="h-3 w-3 text-green-600" /> Copied</> : <><Copy className="h-3 w-3" /> Copy All</>}
+                                            </button>
+                                          </div>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {trackingNos.map((tn, i) => (
+                                              <Badge
+                                                key={i}
+                                                variant="outline"
+                                                className="text-[10px] font-mono cursor-pointer hover:bg-muted transition-colors"
+                                                onClick={() => copyToClipboard(tn, `tn-${i}`)}
+                                              >
+                                                {tn}
+                                                {copiedField === `tn-${i}` ? <Check className="h-2.5 w-2.5 ml-1 text-green-600" /> : <Copy className="h-2.5 w-2.5 ml-1 opacity-50" />}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )
+                                    })()}
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold">Carrier & Route</h4>
+                                    <div className="space-y-2 text-sm">
                                       <div className="flex justify-between">
                                         <span className="text-muted-foreground">Carrier:</span>
                                         <span className="font-medium">{shipment.carrier}</span>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Shipping Method:</span>
-                                        <Badge variant="outline" className="text-xs">
-                                          {shipment.shippingMethod}
-                                        </Badge>
+                                        <span className="text-muted-foreground">Service:</span>
+                                        <span>
+                                          <Badge variant="outline" className="text-xs">{shipment.shippingMethod}</Badge>
+                                          <span className="ml-1 text-muted-foreground text-xs">{shipment.deliveryService}</span>
+                                        </span>
+                                      </div>
+                                      {shipment.airlineCode && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Airline:</span>
+                                          <Badge variant="outline" className="text-xs font-mono">{shipment.airlineCode}</Badge>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">From:</span>
+                                        <span className="font-medium text-right">{shipment.fromCity}, {shipment.fromCountry}</span>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Delivery Service:</span>
-                                        <span>{shipment.deliveryService}</span>
+                                        <span className="text-muted-foreground">To:</span>
+                                        <span className="font-medium text-right">{shipment.toCity}, {shipment.toCountry}</span>
                                       </div>
+                                      {shipment.departureAirport && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Departure Airport:</span>
+                                          <span className="font-medium">{shipment.departureAirport}</span>
+                                        </div>
+                                      )}
+                                      {shipment.arrivalAirport && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Arrival Airport:</span>
+                                          <span className="font-medium">{shipment.arrivalAirport}</span>
+                                        </div>
+                                      )}
+                                      {shipment.portOfLoading && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Port of Loading:</span>
+                                          <span className="font-medium">{shipment.portOfLoading}</span>
+                                        </div>
+                                      )}
+                                      {shipment.portOfDischarge && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Port of Discharge:</span>
+                                          <span className="font-medium">{shipment.portOfDischarge}</span>
+                                        </div>
+                                      )}
+                                      {shipment.driverName && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Driver:</span>
+                                          <span className="font-medium">{shipment.driverName}</span>
+                                        </div>
+                                      )}
+                                      {shipment.driverPhone && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Driver Phone:</span>
+                                          <span className="font-mono">{shipment.driverPhone}</span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Shipped Qty:</span>
-                                        <span className="font-medium text-purple-600 dark:text-purple-400">{shipment.shippedQty}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Shipping Date:</span>
-                                        <span>{shipment.shippingDate}</span>
+                                        <span className="text-muted-foreground">Ship Date:</span>
+                                        <span className="font-medium">{shipment.shippingDate}</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-muted-foreground">Est. Arrival:</span>
-                                        <span>{shipment.estimatedArrival}</span>
+                                        <span className="font-medium">{shipment.estimatedArrival}</span>
                                       </div>
                                       {shipment.actualArrival && (
-                                        <>
-                                          <div className="flex justify-between col-span-2">
-                                            <span className="text-muted-foreground">Actual Arrival:</span>
-                                            <span className="font-medium text-green-600 dark:text-green-400">{shipment.actualArrival}</span>
-                                          </div>
-                                        </>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Actual Arrival:</span>
+                                          <span className="font-medium text-green-600 dark:text-green-400">{shipment.actualArrival}</span>
+                                        </div>
                                       )}
-                                    </div>
-                                  </div>
-
-                                  <Separator />
-
-                                  {/* Transport-Specific Details */}
-                                  {shipment.shippingMethod === 'Air Freight' && (
-                                    <div className="space-y-3">
-                                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                                        <Package className="h-4 w-4 text-blue-600" />
-                                        Air Freight Details
-                                      </h4>
-                                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Flight No:</span>
-                                            <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{shipment.flightNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Airline Code:</span>
-                                            <Badge variant="outline" className="text-xs font-mono">{shipment.airlineCode}</Badge>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Departure:</span>
-                                            <span className="font-medium">{shipment.departureAirport}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Arrival:</span>
-                                            <span className="font-medium">{shipment.arrivalAirport}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Package No:</span>
-                                            <span className="font-mono text-xs">{shipment.packageNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Packages:</span>
-                                            <span className="font-medium">{shipment.packageCount} boxes</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {shipment.shippingMethod === 'Sea Freight' && (
-                                    <div className="space-y-3">
-                                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                                        <Truck className="h-4 w-4 text-indigo-600" />
-                                        Sea Freight Details
-                                      </h4>
-                                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Vessel Name:</span>
-                                            <span className="font-bold text-indigo-600 dark:text-indigo-400">{shipment.vesselName}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Voyage No:</span>
-                                            <span className="font-mono font-medium">{shipment.voyageNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Container No:</span>
-                                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{shipment.containerNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Container Type:</span>
-                                            <Badge variant="outline" className="text-xs">{shipment.containerType}</Badge>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Containers:</span>
-                                            <span className="font-medium">{shipment.containerCount} x {shipment.containerType}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Port of Loading:</span>
-                                            <span className="font-medium">{shipment.portOfLoading}</span>
-                                          </div>
-                                          <div className="flex justify-between col-span-2">
-                                            <span className="text-muted-foreground">Port of Discharge:</span>
-                                            <span className="font-medium">{shipment.portOfDischarge}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {shipment.shippingMethod === 'Ground' && (
-                                    <div className="space-y-3">
-                                      <h4 className="text-sm font-semibold flex items-center gap-2">
-                                        <Truck className="h-4 w-4 text-green-600" />
-                                        Ground Transport Details
-                                      </h4>
-                                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Vehicle No:</span>
-                                            <span className="font-mono font-bold text-green-600 dark:text-green-400">{shipment.vehicleNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Driver Name:</span>
-                                            <span className="font-medium">{shipment.driverName}</span>
-                                          </div>
-                                          <div className="flex justify-between col-span-2">
-                                            <span className="text-muted-foreground">Driver Phone:</span>
-                                            <span className="font-mono">{shipment.driverPhone}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Package No:</span>
-                                            <span className="font-mono text-xs">{shipment.packageNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Packages:</span>
-                                            <span className="font-medium">{shipment.packageCount} boxes</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Pallet No:</span>
-                                            <span className="font-mono text-xs">{shipment.palletNo}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Pallets:</span>
-                                            <span className="font-medium">{shipment.palletCount} {shipment.palletCount === 1 ? 'pallet' : 'pallets'}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <Separator />
-
-                                  {/* Address Information */}
-                                  <div className="space-y-3">
-                                    <h4 className="text-sm font-semibold flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 text-purple-600" />
-                                      Route Information
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                                        <div className="text-xs font-medium mb-2 flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                                          <MapPin className="h-3 w-3" />
-                                          Origin
-                                        </div>
-                                        <div className="space-y-1 text-xs">
-                                          <div className="font-medium">{shipment.fromCity}, {shipment.fromCountry}</div>
-                                          <div className="text-muted-foreground">{shipment.fromAddress}</div>
-                                        </div>
-                                      </div>
-                                      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                                        <div className="text-xs font-medium mb-2 flex items-center gap-1 text-green-600 dark:text-green-400">
-                                          <MapPin className="h-3 w-3" />
-                                          Destination
-                                        </div>
-                                        <div className="space-y-1 text-xs">
-                                          <div className="font-medium">{shipment.toCity}, {shipment.toCountry}</div>
-                                          <div className="text-muted-foreground">{shipment.toAddress}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex justify-between text-sm pt-2">
-                                      <span className="text-muted-foreground">Created By:</span>
-                                      <span className="font-medium">{shipment.createdBy}</span>
                                     </div>
                                   </div>
                                 </div>

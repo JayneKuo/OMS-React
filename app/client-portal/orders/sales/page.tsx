@@ -4,6 +4,7 @@ import * as React from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { OrderListTable, Order } from "@/components/client-portal/order-list-table"
 import { FileText, Package, Users, TrendingUp } from "lucide-react"
+import { useI18n } from "@/components/i18n-provider"
 
 const ORDERS: Order[] = [
   // ── Amazon B2B ──────────────────────────────────────────────────────────────
@@ -498,6 +499,7 @@ const ORDERS: Order[] = [
 ]
 
 export default function SalesOrdersPage() {
+  const { t } = useI18n()
   const sidebarItems = [
     { title: "Overview", href: "/client-portal", icon: <TrendingUp className="h-4 w-4" /> },
     {
@@ -516,8 +518,8 @@ export default function SalesOrdersPage() {
     <MainLayout sidebarItems={sidebarItems} moduleName="Merchant Portal">
       <OrderListTable
         orders={ORDERS}
-        title="Sales Orders"
-        description="All channels — Amazon, Walmart, Shopify, TikTok, Shein"
+        title={t("cpSalesOrders")}
+        description={t("cpAllChannels")}
       />
     </MainLayout>
   )
