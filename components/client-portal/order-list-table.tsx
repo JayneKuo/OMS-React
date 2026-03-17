@@ -414,6 +414,7 @@ function ExpandedRow({ order }: { order: Order }) {
 // ── Sparkline — 纯 SVG 微型趋势图 ──────────────────────────────────────────────
 
 function Sparkline({ data, color = "hsl(var(--primary))", height = 40, className }: { data: number[]; color?: string; height?: number; className?: string }) {
+  const gradId = React.useId()
   if (data.length < 2) return null
   const max = Math.max(...data, 1)
   const min = Math.min(...data, 0)
@@ -433,7 +434,6 @@ function Sparkline({ data, color = "hsl(var(--primary))", height = 40, className
     return `${acc} C ${cpx},${prev.y} ${cpx},${p.y} ${p.x},${p.y}`
   }, "")
   const fillD = `${pathD} L ${pts[pts.length - 1].x},${height} L ${pts[0].x},${height} Z`
-  const gradId = React.useId()
   const last = pts[pts.length - 1]
 
   return (
@@ -454,12 +454,12 @@ function Sparkline({ data, color = "hsl(var(--primary))", height = 40, className
 
 /** Mini bar chart for 7-day volume */
 function MiniBarChart({ data, color = "hsl(var(--primary))", height = 40, className }: { data: number[]; color?: string; height?: number; className?: string }) {
+  const gradId = React.useId()
   if (data.length === 0) return null
   const max = Math.max(...data, 1)
   const w = 140
   const barW = w / data.length * 0.6
   const gap = w / data.length * 0.4
-  const gradId = React.useId()
 
   return (
     <svg viewBox={`0 0 ${w} ${height}`} className={cn("w-full", className)} preserveAspectRatio="none">
