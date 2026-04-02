@@ -10,6 +10,7 @@ const sidebarItems = [
   { title: "Shipped", href: "/orders/shipped" },
   { title: "Delivered", href: "/orders/delivered" },
   { title: "Cancelled", href: "/orders/cancelled" },
+  { title: "AI 异常处理", href: "/orders/exception-ai" },
 ]
 
 export default function OrdersPage() {

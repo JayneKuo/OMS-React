@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../UI 规范"
+		},
+		{
+			"path": "../../../../../OMS-ontology-work"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true,
+		"typescript.autoClosingTags": false
+	}
+}

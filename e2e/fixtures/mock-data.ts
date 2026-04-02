@@ -1,0 +1,281 @@
+import type { OrchestratorResult } from '../../lib/orchestrator/types'
+
+/** 单条模式 - 成功的完整流水线结果 */
+export const singleSuccessResult: OrchestratorResult = {
+  run_id: 'run-e2e-001',
+  mode: 'single',
+  started_at: '2025-12-01T10:00:00Z',
+  completed_at: '2025-12-01T10:00:03Z',
+  duration_ms: 3000,
+  results: [
+    {
+      order_no: 'SO00522427',
+      stage_reached: 'learning',
+      diagnosis: {
+        diagnosis_id: 'diag-001',
+        diagnosed_at: '2025-12-01T10:00:01Z',
+        duration_ms: 1000,
+        input: { order_no: 'SO00522427', requested_by: 'user' },
+        order_context: null,
+        root_causes: [
+          {
+            cause_id: 'rc-001',
+            cause_code: 'ITEM_NOT_FOUND',
+            cause_description: 'SKU 1823810 在商品主数据中不存在',
+            confidence: 0.92,
+            evidence: [
+              { source: 'database', description: '商品表中未找到 SKU 1823810' },
+            ],
+          },
+        ],
+        overall_confidence: 0.92,
+        domain: 'item_mapping',
+        severity: 'high',
+        recommended_actions: [
+          {
+            action_code: 'SYNC_ITEM_MASTER',
+            priority: 1,
+            description: '同步商品主数据',
+            auto_executable: true,
+          },
+        ],
+        handoff_ready: true,
+        is_exploratory: false,
+        reasoning_trace: [],
+      },
+      repair: {
+        repair_id: 'rep-001',
+        diagnosis_id: 'diag-001',
+        repaired_at: '2025-12-01T10:00:02Z',
+        duration_ms: 800,
+        order_no: 'SO00522427',
+        merchant_no: 'M001',
+        overall_status: 'success',
+        action_results: [
+          {
+            action_code: 'SYNC_ITEM_MASTER',
+            priority: 1,
+            status: 'success',
+            started_at: '2025-12-01T10:00:01.5Z',
+            completed_at: '2025-12-01T10:00:02Z',
+            duration_ms: 500,
+            executor: 'sync-item-executor',
+            retry_count: 0,
+            max_retries: 3,
+          },
+        ],
+        escalations: [],
+        needs_confirmation: false,
+        feedback: {
+          diagnosis_id: 'diag-001',
+          repair_id: 'rep-001',
+          diagnosis_was_correct: true,
+          actions_effective: [
+            { action_code: 'SYNC_ITEM_MASTER', was_effective: true, order_status_before: 10, order_status_after: 1 },
+          ],
+          new_pattern_detected: false,
+          is_exploratory: false,
+        },
+      },
+      learning: {
+        events: [
+          {
+            event_id: 'evt-001',
+            created_at: '2025-12-01T10:00:03Z',
+            source_type: 'repair_feedback',
+            repair_id: 'rep-001',
+            diagnosis_id: 'diag-001',
+            event_type: 'confidence_increase',
+            target_atom_id: 'atom-001',
+            changes: [{ field: 'confidence', old_value: 0.85, new_value: 0.92 }],
+            reason: '修复成功，置信度提升',
+            evidence_summary: 'SYNC_ITEM_MASTER 执行成功',
+          },
+        ],
+        atoms_updated: 1,
+        atoms_created: 0,
+        atoms_deprecated: 0,
+        patterns_buffered: 0,
+      },
+    },
+  ],
+  summary: { total: 1, diagnosed: 1, repaired: 1, learned: 1, failed: 0 },
+}
+
+/** 仅诊断模式 - 无修复结果 */
+export const diagnosisOnlyResult: OrchestratorResult = {
+  run_id: 'run-e2e-002',
+  mode: 'single',
+  started_at: '2025-12-01T11:00:00Z',
+  completed_at: '2025-12-01T11:00:01Z',
+  duration_ms: 1000,
+  results: [
+    {
+      order_no: 'SO00999999',
+      stage_reached: 'diagnosis',
+      diagnosis: {
+        diagnosis_id: 'diag-002',
+        diagnosed_at: '2025-12-01T11:00:01Z',
+        duration_ms: 800,
+        input: { order_no: 'SO00999999', requested_by: 'user' },
+        order_context: null,
+        root_causes: [
+          {
+            cause_id: 'rc-002',
+            cause_code: 'CHANNEL_TOKEN_EXPIRED',
+            cause_description: '渠道授权令牌已过期',
+            confidence: 0.88,
+            evidence: [{ source: 'database', description: 'token 过期时间早于当前时间' }],
+          },
+        ],
+        overall_confidence: 0.88,
+        domain: 'channel_integration',
+        severity: 'medium',
+        recommended_actions: [
+          { action_code: 'REFRESH_CHANNEL_TOKEN', priority: 1, description: '刷新渠道令牌', auto_executable: true },
+        ],
+        handoff_ready: true,
+        is_exploratory: false,
+        reasoning_trace: [],
+      },
+      repair: null,
+      learning: null,
+    },
+  ],
+  summary: { total: 1, diagnosed: 1, repaired: 0, learned: 0, failed: 0 },
+}
+
+/** 需要确认的修复结果 */
+export const needsConfirmationResult: OrchestratorResult = {
+  run_id: 'run-e2e-003',
+  mode: 'single',
+  started_at: '2025-12-01T12:00:00Z',
+  completed_at: '2025-12-01T12:00:02Z',
+  duration_ms: 2000,
+  results: [
+    {
+      order_no: 'SO00888888',
+      stage_reached: 'repair',
+      diagnosis: {
+        diagnosis_id: 'diag-003',
+        diagnosed_at: '2025-12-01T12:00:01Z',
+        duration_ms: 600,
+        input: { order_no: 'SO00888888', requested_by: 'user' },
+        order_context: null,
+        root_causes: [
+          {
+            cause_id: 'rc-003',
+            cause_code: 'ORDER_STUCK',
+            cause_description: '订单卡在处理中状态',
+            confidence: 0.95,
+            evidence: [{ source: 'database', description: '订单状态超过24小时未变更' }],
+          },
+        ],
+        overall_confidence: 0.95,
+        domain: 'order_lifecycle',
+        severity: 'critical',
+        recommended_actions: [
+          { action_code: 'CANCEL_AND_RECREATE', priority: 1, description: '取消并重建订单', auto_executable: false },
+        ],
+        handoff_ready: true,
+        is_exploratory: false,
+        reasoning_trace: [],
+      },
+      repair: {
+        repair_id: 'rep-003',
+        diagnosis_id: 'diag-003',
+        repaired_at: '2025-12-01T12:00:02Z',
+        duration_ms: 400,
+        order_no: 'SO00888888',
+        merchant_no: 'M003',
+        overall_status: 'partial',
+        action_results: [
+          {
+            action_code: 'CANCEL_AND_RECREATE',
+            priority: 1,
+            status: 'pending_confirmation',
+            started_at: '2025-12-01T12:00:01.5Z',
+            completed_at: '2025-12-01T12:00:02Z',
+            duration_ms: 0,
+            executor: 'cancel-recreate-executor',
+            retry_count: 0,
+            max_retries: 1,
+          },
+        ],
+        escalations: [],
+        needs_confirmation: true,
+        feedback: {
+          diagnosis_id: 'diag-003',
+          repair_id: 'rep-003',
+          diagnosis_was_correct: null,
+          actions_effective: [],
+          new_pattern_detected: false,
+          is_exploratory: false,
+        },
+      },
+      learning: null,
+    },
+  ],
+  summary: { total: 1, diagnosed: 1, repaired: 0, learned: 0, failed: 0 },
+}
+
+/** 批量模式结果 */
+export const batchResult: OrchestratorResult = {
+  run_id: 'run-e2e-004',
+  mode: 'batch',
+  started_at: '2025-12-01T13:00:00Z',
+  completed_at: '2025-12-01T13:00:05Z',
+  duration_ms: 5000,
+  results: [
+    {
+      order_no: 'SO00100001',
+      stage_reached: 'learning',
+      diagnosis: {
+        diagnosis_id: 'diag-b1',
+        diagnosed_at: '2025-12-01T13:00:01Z',
+        duration_ms: 500,
+        input: { merchant_no: 'M100', requested_by: 'user' },
+        order_context: null,
+        root_causes: [{ cause_id: 'rc-b1', cause_code: 'ITEM_NOT_FOUND', cause_description: 'SKU 缺失', confidence: 0.9, evidence: [] }],
+        overall_confidence: 0.9,
+        domain: 'item_mapping',
+        severity: 'high',
+        recommended_actions: [{ action_code: 'SYNC_ITEM_MASTER', priority: 1, description: '同步商品', auto_executable: true }],
+        handoff_ready: true,
+        is_exploratory: false,
+        reasoning_trace: [],
+      },
+      repair: {
+        repair_id: 'rep-b1', diagnosis_id: 'diag-b1', repaired_at: '2025-12-01T13:00:02Z', duration_ms: 300,
+        order_no: 'SO00100001', merchant_no: 'M100', overall_status: 'success',
+        action_results: [{ action_code: 'SYNC_ITEM_MASTER', priority: 1, status: 'success', started_at: '', completed_at: '', duration_ms: 200, executor: 'sync', retry_count: 0, max_retries: 3 }],
+        escalations: [], needs_confirmation: false,
+        feedback: { diagnosis_id: 'diag-b1', repair_id: 'rep-b1', diagnosis_was_correct: true, actions_effective: [], new_pattern_detected: false, is_exploratory: false },
+      },
+      learning: { events: [], atoms_updated: 1, atoms_created: 0, atoms_deprecated: 0, patterns_buffered: 0 },
+    },
+    {
+      order_no: 'SO00100002',
+      stage_reached: 'diagnosis',
+      diagnosis: {
+        diagnosis_id: 'diag-b2',
+        diagnosed_at: '2025-12-01T13:00:03Z',
+        duration_ms: 500,
+        input: { merchant_no: 'M100', requested_by: 'user' },
+        order_context: null,
+        root_causes: [{ cause_id: 'rc-b2', cause_code: 'UNKNOWN', cause_description: '未知异常', confidence: 0.5, evidence: [] }],
+        overall_confidence: 0.5,
+        domain: 'unknown',
+        severity: 'low',
+        recommended_actions: [],
+        handoff_ready: false,
+        is_exploratory: true,
+        reasoning_trace: [],
+      },
+      repair: null,
+      learning: null,
+      error: '修复阶段失败',
+    },
+  ],
+  summary: { total: 2, diagnosed: 2, repaired: 1, learned: 1, failed: 1 },
+}

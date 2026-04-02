@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "description": "OMS 异常知识 Agent 评估用例",
+  "test_cases": [
+    {
+      "id": "eval-001",
+      "name": "SKU not found 查询匹配",
+      "type": "query_knowledge",
+      "input": {
+        "symptom_text": "接口报错 SKU not found",
+        "domain_hint": null,
+        "top_k": 3
+      },
+      "expected": {
+        "min_results": 1,
+        "top_atom_domain": "ORDER_WMS_SYNC",
+        "top_atom_signals_contain": ["SKU not found in WMS"],
+        "top_match_score_min": 0.7,
+        "recommended_actions_contain": ["MAP_ITEM_ID"]
+      }
+    },
+    {
+      "id": "eval-002",
+      "name": "Dispatch failure 查询匹配",
+      "type": "query_knowledge",
+      "input": {
+        "symptom_text": "Dispatch failure no matching warehouse",
+        "domain_hint": "ORDER_DISPATCH",
+        "top_k": 3
+      },
+      "expected": {
+        "min_results": 1,
+        "top_atom_domain": "ORDER_DISPATCH",
+        "top_atom_signals_contain": ["Dispatch failure"],
+        "top_match_score_min": 0.8,
+        "recommended_actions_contain": ["RETRY_WITH_BACKOFF"]
+      }
+    },
+    {
+      "id": "eval-003",
+      "name": "Webhook 失败查询",
+      "type": "query_knowledge",
+      "input": {
+        "symptom_text": "Webhook delivery failed HTTP POST timeout",
+        "domain_hint": "CHANNEL_INTEGRATION",
+        "top_k": 3
+      },
+      "expected": {
+        "min_results": 1,
+        "top_atom_domain": "CHANNEL_INTEGRATION",
+        "top_atom_signals_contain": ["Webhook delivery failed"],
+        "recommended_actions_contain": ["RETRY_WITH_BACKOFF", "CHECK_THIRD_PARTY_STATUS"]
+      }
+    },
+    {
+      "id": "eval-004",
+      "name": "无效 domain 写入拒绝",
+      "type": "upsert_atom",
+      "input": {
+        "atom": {
+          "domain": "INVALID_DOMAIN",
+          "symptom_signals": ["Some error"]
+        },
+        "source": { "type": "manual", "author": "test" }
+      },
+      "expected": {
+        "should_reject": true,
+        "error_code": "INVALID_DOMAIN"
+      }
+    },
+    {
+      "id": "eval-005",
+      "name": "空 symptom_signals 写入拒绝",
+      "type": "upsert_atom",
+      "input": {
+        "atom": {
+          "domain": "ORDER_CREATE",
+          "symptom_signals": []
+        },
+        "source": { "type": "manual", "author": "test" }
+      },
+      "expected": {
+        "should_reject": true,
+        "error_code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "id": "eval-006",
+      "name": "种子知识加载完整性",
+      "type": "seed_validation",
+      "expected": {
+        "total_atoms": 11,
+        "domains_covered": [
+          "ORDER_CREATE", "ORDER_DISPATCH", "ORDER_WMS_SYNC",
+          "ORDER_FULFILLMENT", "ORDER_PO", "ORDER_WORK_ORDER",
+          "ORDER_DELIVERY", "CHANNEL_INTEGRATION", "NOTIFICATION",
+          "RATE_SHOPPING", "ORDER_HOLD"
+        ],
+        "all_source_type": "knowledge_graph",
+        "all_confidence": 0.8
+      }
+    },
+    {
+      "id": "eval-007",
+      "name": "按域列举 ORDER_DISPATCH",
+      "type": "list_by_domain",
+      "input": {
+        "domain": "ORDER_DISPATCH",
+        "include_low_confidence": false
+      },
+      "expected": {
+        "min_results": 2,
+        "all_domain_equals": "ORDER_DISPATCH",
+        "no_deprecated": true,
+        "all_confidence_gte": 0.3
+      }
+    },
+    {
+      "id": "eval-008",
+      "name": "精确获取 atom",
+      "type": "get_atom",
+      "input": {
+        "atom_id": "KA-ORDER_DISPATCH-001"
+      },
+      "expected": {
+        "not_null": true,
+        "domain": "ORDER_DISPATCH",
+        "hit_count_unchanged": true
+      }
+    }
+  ]
+}

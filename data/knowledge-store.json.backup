@@ -1,0 +1,1007 @@
+{
+  "version": 1,
+  "updated_at": "2026-03-26T02:04:24.752Z",
+  "atoms": [
+    {
+      "atom_id": "KA-ORDER_CREATE-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_CREATE",
+      "symptom_signals": [
+        "Order creation failed notification",
+        "Required fields missing",
+        "Product not found in Item Master",
+        "Address validation failure"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "渠道推送的订单数据缺少必填字段",
+          "description_en": "merchant context, required fields",
+          "probability": 0.5
+        },
+        {
+          "description": "SKU 在 Item Master 中不存在",
+          "description_en": "product existence validation failed",
+          "probability": 0.5
+        },
+        {
+          "description": "地址格式校验失败",
+          "description_en": "address format validation",
+          "probability": 0.5
+        },
+        {
+          "description": "库存可用性检查失败",
+          "description_en": "inventory availability check",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "REVIEW_BUSINESS_RULE",
+        "MAP_ITEM_ID",
+        "MANUAL_DATA_FIX"
+      ],
+      "context": {
+        "related_modules": [
+          "Sales Order Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "API callback from channel integration, manual Excel upload, or re-import action"
+        ],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 23,
+      "last_hit_at": "2026-03-26T02:04:24.583Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_DISPATCH-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_DISPATCH",
+      "symptom_signals": [
+        "Dispatch failure",
+        "No matching warehouse",
+        "Routing rule evaluation failed",
+        "Inventory shortage during dispatch"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "路由规则未匹配到任何仓库",
+          "description_en": "zipcode range / country match / custom rules 全部未命中",
+          "probability": 0.5
+        },
+        {
+          "description": "目标仓库库存不足",
+          "description_en": "inventory availability check failed",
+          "probability": 0.5
+        },
+        {
+          "description": "分派规则配置错误",
+          "description_en": "Order Dispatch Routing Rule misconfigured",
+          "probability": 0.5
+        },
+        {
+          "description": "备用分派策略也失败",
+          "description_en": "backup dispatch strategy exhausted",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "RESYNC_ORDER",
+        "RECALCULATE_INVENTORY",
+        "REVIEW_BUSINESS_RULE"
+      ],
+      "context": {
+        "related_modules": [
+          "Order Dispatch Module",
+          "OAS Dispatch Engine Module"
+        ],
+        "related_processes": [],
+        "related_rules": [
+          "Order Dispatch Routing Rule",
+          "Evaluate Dispatch Rules"
+        ],
+        "state_transitions": [],
+        "entry_conditions": [
+          "dispatch failure, WMS rejection, inventory shortage, address validation failure, or system error"
+        ],
+        "recovery_paths": [
+          "Exception → Pending, Exception → Allocated, Exception → Cancelled"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_DISPATCH-002",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_DISPATCH",
+      "symptom_signals": [
+        "Insufficient inventory",
+        "Inventory allocation failed",
+        "Cannot lock inventory position"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "可用库存不足",
+          "description_en": "open_order position insufficient",
+          "probability": 0.5
+        },
+        {
+          "description": "库存已被其他订单锁定",
+          "description_en": "concurrent allocation conflict",
+          "probability": 0.5
+        },
+        {
+          "description": "OMS 与 WMS 库存数据不一致",
+          "description_en": "inventory sync lag",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RECALCULATE_INVENTORY",
+        "RESYNC_INVENTORY",
+        "RETRY_WITH_BACKOFF"
+      ],
+      "context": {
+        "related_modules": [
+          "Inventory Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_WMS_SYNC-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_WMS_SYNC",
+      "symptom_signals": [
+        "WMS rejection",
+        "Shipping request rejected",
+        "WMS sync failed",
+        "SKU not found in WMS"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "WMS 拒绝接收 Shipping Request",
+          "description_en": "数据格式不符、SKU 未在 WMS 注册",
+          "probability": 0.5
+        },
+        {
+          "description": "Item ID 在 OMS 和 WMS 之间未建立映射",
+          "description_en": "Item ID Not Mapped",
+          "probability": 0.5
+        },
+        {
+          "description": "WMS 系统异常或不可用",
+          "description_en": "WMS 系统异常或不可用",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "MAP_ITEM_ID",
+        "SYNC_ITEM_MASTER",
+        "RESYNC_ORDER",
+        "RETRY_WITH_BACKOFF"
+      ],
+      "context": {
+        "related_modules": [
+          "Sales Order Module",
+          "Order Dispatch Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "WMS accepts the shipping request → report exceptions"
+        ],
+        "recovery_paths": [
+          "Exception → Pending（重新分派）, Exception → Allocated（重新推送）"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 4,
+      "last_hit_at": "2026-03-26T01:44:01.889Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_FULFILLMENT-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_FULFILLMENT",
+      "symptom_signals": [
+        "Partial shipment",
+        "Short shipped",
+        "Not all items shipped"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "仓库实际库存少于系统记录",
+          "description_en": "inventory discrepancy",
+          "probability": 0.5
+        },
+        {
+          "description": "部分商品损坏无法发货",
+          "description_en": "部分商品损坏无法发货",
+          "probability": 0.5
+        },
+        {
+          "description": "拣货过程中发现缺货",
+          "description_en": "拣货过程中发现缺货",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RECALCULATE_INVENTORY",
+        "NOTIFY_MERCHANT",
+        "RESYNC_INVENTORY"
+      ],
+      "context": {
+        "related_modules": [
+          "Sales Order Module",
+          "Shipment Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_FULFILLMENT-002",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_FULFILLMENT",
+      "symptom_signals": [
+        "Label generation failure",
+        "Packing error",
+        "Carrier rejection",
+        "Shipment exception"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "承运商面单生成失败",
+          "description_en": "carrier API error, invalid address",
+          "probability": 0.5
+        },
+        {
+          "description": "包装过程出错",
+          "description_en": "weight/dimension mismatch",
+          "probability": 0.5
+        },
+        {
+          "description": "承运商拒绝接收",
+          "description_en": "restricted item, service unavailable for destination",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "REVIEW_BUSINESS_RULE",
+        "CONTACT_CHANNEL_SUPPORT"
+      ],
+      "context": {
+        "related_modules": [
+          "Shipment Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "label generation failure, packing error, carrier rejection"
+        ],
+        "recovery_paths": [
+          "Shipment Exception → Shipment Processing（重试）, → Shipment Void（作废）, → Shipment Force Close（强制关闭）"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 15,
+      "last_hit_at": "2026-03-25T08:49:32.859Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_PO-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_PO",
+      "symptom_signals": [
+        "PO push to warehouse failed",
+        "WMS rejects PO",
+        "Push to warehouse fail"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "WMS 拒绝接收采购单",
+          "description_en": "数据校验失败",
+          "probability": 0.5
+        },
+        {
+          "description": "WMS 服务不可用",
+          "description_en": "WMS 服务不可用",
+          "probability": 0.5
+        },
+        {
+          "description": "仓库 ID 无效或未配置",
+          "description_en": "仓库 ID 无效或未配置",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "CHECK_THIRD_PARTY_STATUS",
+        "MANUAL_DATA_FIX"
+      ],
+      "context": {
+        "related_modules": [
+          "Purchase Order Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "WMS rejects or fails to process the PO push"
+        ],
+        "recovery_paths": [
+          "Push To Warehouse Fail → Push To Warehouse（重试）, → PO Cancelled"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_PO-002",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_PO",
+      "symptom_signals": [
+        "PO exception",
+        "Receipt mismatch",
+        "WMS reports PO exception",
+        "PO processing error"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "收货数量与预期不符",
+          "description_en": "receipt mismatch — over-receipt or under-receipt",
+          "probability": 0.5
+        },
+        {
+          "description": "WMS 处理过程中报错",
+          "description_en": "WMS 处理过程中报错",
+          "probability": 0.5
+        },
+        {
+          "description": "系统级错误",
+          "description_en": "系统级错误",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "MANUAL_DATA_FIX",
+        "RETRY_WITH_BACKOFF",
+        "ESCALATE_TO_OPS"
+      ],
+      "context": {
+        "related_modules": [
+          "Purchase Order Module"
+        ],
+        "related_processes": [
+          "Receive Purchase Order Goods（LiteFlow pipeline）"
+        ],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "WMS reports exception, receipt mismatch, or system error"
+        ],
+        "recovery_paths": [
+          "PO Exception → PO Processing（修复后继续）, → PO Cancelled"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 30,
+      "last_hit_at": "2026-03-26T02:04:24.583Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_WORK_ORDER-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_WORK_ORDER",
+      "symptom_signals": [
+        "Work order exception",
+        "WMS reports WO processing failure",
+        "WO exception"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "WMS 处理工单时遇到异常",
+          "description_en": "退货处理失败、合并操作失败",
+          "probability": 0.5
+        },
+        {
+          "description": "工单关联的商品信息不完整",
+          "description_en": "工单关联的商品信息不完整",
+          "probability": 0.5
+        },
+        {
+          "description": "仓库操作异常",
+          "description_en": "仓库操作异常",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "MANUAL_DATA_FIX",
+        "ESCALATE_TO_OPS"
+      ],
+      "context": {
+        "related_modules": [
+          "Work Order Module (within OPC)"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "WMS reports exception or processing failure"
+        ],
+        "recovery_paths": [
+          "WO Exception → WO Processing（修复后继续）, → WO Cancelled"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 30,
+      "last_hit_at": "2026-03-26T02:04:24.583Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_DELIVERY-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_DELIVERY",
+      "symptom_signals": [
+        "Delivery failed",
+        "Consignee refusal",
+        "Address issue",
+        "Carrier delivery problem"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "收件人拒收",
+          "description_en": "收件人拒收",
+          "probability": 0.5
+        },
+        {
+          "description": "地址不正确或不完整",
+          "description_en": "地址不正确或不完整",
+          "probability": 0.5
+        },
+        {
+          "description": "承运商配送问题",
+          "description_en": "车辆故障、天气等",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "NOTIFY_MERCHANT",
+        "MANUAL_DATA_FIX",
+        "CONTACT_CHANNEL_SUPPORT"
+      ],
+      "context": {
+        "related_modules": [
+          "Delivery Order Module (within OTM)"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [
+          "carrier reports delivery failure"
+        ],
+        "recovery_paths": [
+          "DO DeliveryFailed → DO PendingDelivery（重新安排配送）, → DO ReturnToShipper（退回发件人）"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-CHANNEL_INTEGRATION-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "CHANNEL_INTEGRATION",
+      "symptom_signals": [
+        "Webhook delivery failed",
+        "HTTP POST failed",
+        "Webhook endpoint unreachable"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "外部系统 Webhook 端点不可达",
+          "description_en": "外部系统 Webhook 端点不可达",
+          "probability": 0.5
+        },
+        {
+          "description": "目标系统返回错误",
+          "description_en": "5xx, timeout",
+          "probability": 0.5
+        },
+        {
+          "description": "Webhook 配置错误",
+          "description_en": "URL 无效",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "CHECK_THIRD_PARTY_STATUS",
+        "REVIEW_BUSINESS_RULE"
+      ],
+      "context": {
+        "related_modules": [
+          "Channel Integration Module"
+        ],
+        "related_processes": [
+          "Send Webhook Event（serialize payload",
+          "send HTTP POST",
+          "log result",
+          "retry on failure）"
+        ],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-CHANNEL_INTEGRATION-002",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.513Z",
+      "updated_at": "2026-03-25T04:36:13.513Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "CHANNEL_INTEGRATION",
+      "symptom_signals": [
+        "HTTP 401",
+        "Unauthorized",
+        "Invalid access token",
+        "Channel auth expired"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "渠道 API Token 过期",
+          "description_en": "渠道 API Token 过期",
+          "probability": 0.5
+        },
+        {
+          "description": "商户在渠道后台撤销了授权",
+          "description_en": "商户在渠道后台撤销了授权",
+          "probability": 0.5
+        },
+        {
+          "description": "OAuth 刷新失败",
+          "description_en": "OAuth 刷新失败",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "REFRESH_CHANNEL_TOKEN",
+        "NOTIFY_MERCHANT"
+      ],
+      "context": {
+        "related_modules": [
+          "Channel Integration Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-NOTIFICATION-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.514Z",
+      "updated_at": "2026-03-25T04:36:13.514Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "NOTIFICATION",
+      "symptom_signals": [
+        "Email send failed",
+        "Notification delivery failed",
+        "SMTP error"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "邮件服务配置错误",
+          "description_en": "邮件服务配置错误",
+          "probability": 0.5
+        },
+        {
+          "description": "收件人地址无效",
+          "description_en": "收件人地址无效",
+          "probability": 0.5
+        },
+        {
+          "description": "SMTP 服务不可用",
+          "description_en": "SMTP 服务不可用",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF",
+        "REVIEW_BUSINESS_RULE",
+        "CHECK_THIRD_PARTY_STATUS"
+      ],
+      "context": {
+        "related_modules": [
+          "Notification Module"
+        ],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 21,
+      "last_hit_at": "2026-03-26T02:04:24.583Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-RATE_SHOPPING-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.514Z",
+      "updated_at": "2026-03-25T04:36:13.514Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "RATE_SHOPPING",
+      "symptom_signals": [
+        "Rate shopping failed",
+        "No suitable quote",
+        "Carrier API error",
+        "Rule not match",
+        "Rate request timeout"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "运费比价规则未匹配",
+          "description_en": "fail-rule-not-match",
+          "probability": 0.5
+        },
+        {
+          "description": "所有承运商均无合适报价",
+          "description_en": "fail-no-suitable-quote",
+          "probability": 0.5
+        },
+        {
+          "description": "承运商 API 调用失败或超时",
+          "description_en": "承运商 API 调用失败或超时",
+          "probability": 0.5
+        },
+        {
+          "description": "Shipping Account 配置错误或过期",
+          "description_en": "Shipping Account 配置错误或过期",
+          "probability": 0.5
+        },
+        {
+          "description": "包裹尺寸/重量超出承运商限制",
+          "description_en": "包裹尺寸/重量超出承运商限制",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "REVIEW_BUSINESS_RULE",
+        "CHECK_THIRD_PARTY_STATUS",
+        "RETRY_WITH_BACKOFF"
+      ],
+      "context": {
+        "related_modules": [
+          "Rate Shopping Module"
+        ],
+        "related_processes": [],
+        "related_rules": [
+          "Rate Shopping Selection Rule"
+        ],
+        "state_transitions": [],
+        "entry_conditions": [
+          "rule mismatch, no suitable quote from carriers, carrier API error or timeout"
+        ],
+        "recovery_paths": []
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_HOLD-001",
+      "version": 1,
+      "created_at": "2026-03-25T04:36:13.514Z",
+      "updated_at": "2026-03-25T04:36:13.514Z",
+      "source": {
+        "type": "knowledge_graph",
+        "node_ids": []
+      },
+      "domain": "ORDER_HOLD",
+      "symptom_signals": [
+        "Order stuck in OnHold",
+        "Order not processing",
+        "Order held"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "这不是异常，是正常的风控拦截",
+          "description_en": "high-value threshold, restricted SKU, prohibited destination",
+          "probability": 0.5
+        },
+        {
+          "description": "但用户经常误以为是系统故障",
+          "description_en": "但用户经常误以为是系统故障",
+          "probability": 0.5
+        }
+      ],
+      "recommended_actions": [
+        "REVIEW_BUSINESS_RULE"
+      ],
+      "context": {
+        "related_modules": [],
+        "related_processes": [],
+        "related_rules": [
+          "Order Hold Rule — configurable filters on order fields"
+        ],
+        "state_transitions": [],
+        "entry_conditions": [
+          "hold rule engine match during order processing, or manual hold by operator"
+        ],
+        "recovery_paths": [
+          "OnHold → Pending（释放）, → Allocated, → Cancelled"
+        ]
+      },
+      "confidence": 0.8,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_DISPATCH-003",
+      "version": 2,
+      "created_at": "2026-03-25T06:02:39.794Z",
+      "updated_at": "2026-03-25T06:19:43.435Z",
+      "source": {
+        "type": "runtime_learning",
+        "incident_id": "DIAG-20260325061840-jr6r"
+      },
+      "domain": "ORDER_DISPATCH",
+      "symptom_signals": [
+        "Order in Exception state",
+        "Dispatch failure"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "订单处于异常状态，需要重新打开触发自动分派",
+          "description_en": "订单处于异常状态，需要重新打开触发自动分派",
+          "probability": 0.6
+        }
+      ],
+      "recommended_actions": [
+        "RETRY_WITH_BACKOFF"
+      ],
+      "context": {
+        "related_modules": [],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.6,
+      "hit_count": 2,
+      "last_hit_at": "2026-03-25T06:20:37.098Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_DISPATCH-004",
+      "version": 1,
+      "created_at": "2026-03-25T08:49:35.713Z",
+      "updated_at": "2026-03-25T08:49:35.713Z",
+      "source": {
+        "type": "runtime_learning",
+        "incident_id": "DIAG-20260325084932-ioe8"
+      },
+      "domain": "ORDER_DISPATCH",
+      "symptom_signals": [
+        "Shipping address missing",
+        "Address validation failure",
+        "Please add the shipping details"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "订单收货地址缺失或不完整，无法完成分派",
+          "description_en": "订单收货地址缺失或不完整，无法完成分派",
+          "probability": 0.6
+        }
+      ],
+      "recommended_actions": [
+        "NOTIFY_MERCHANT",
+        "RETRY_WITH_BACKOFF"
+      ],
+      "context": {
+        "related_modules": [],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.6,
+      "hit_count": 15,
+      "last_hit_at": "2026-03-26T02:04:24.583Z",
+      "tags": [],
+      "deprecated": false
+    },
+    {
+      "atom_id": "KA-ORDER_WMS_SYNC-002",
+      "version": 1,
+      "created_at": "2026-03-25T10:28:36.948Z",
+      "updated_at": "2026-03-25T10:28:36.948Z",
+      "source": {
+        "type": "runtime_learning",
+        "incident_id": "DIAG-20260325102833-6cay"
+      },
+      "domain": "ORDER_WMS_SYNC",
+      "symptom_signals": [
+        "Item not found",
+        "SKU not found in WMS"
+      ],
+      "likely_root_causes": [
+        {
+          "description": "SKU 在 Item Master 或 WMS 中不存在",
+          "description_en": "SKU 在 Item Master 或 WMS 中不存在",
+          "probability": 0.6
+        }
+      ],
+      "recommended_actions": [
+        "SYNC_ITEM_MASTER"
+      ],
+      "context": {
+        "related_modules": [],
+        "related_processes": [],
+        "related_rules": [],
+        "state_transitions": [],
+        "entry_conditions": [],
+        "recovery_paths": []
+      },
+      "confidence": 0.6,
+      "hit_count": 2,
+      "last_hit_at": "2026-03-26T01:44:01.889Z",
+      "tags": [],
+      "deprecated": false
+    }
+  ],
+  "metadata": {
+    "total_count": 18,
+    "domain_counts": {
+      "ORDER_CREATE": 1,
+      "ORDER_DISPATCH": 4,
+      "ORDER_WMS_SYNC": 2,
+      "ORDER_FULFILLMENT": 2,
+      "ORDER_PO": 2,
+      "ORDER_WORK_ORDER": 1,
+      "ORDER_DELIVERY": 1,
+      "CHANNEL_INTEGRATION": 2,
+      "NOTIFICATION": 1,
+      "RATE_SHOPPING": 1,
+      "ORDER_HOLD": 1
+    }
+  }
+}

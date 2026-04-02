@@ -1,0 +1,212 @@
+{
+  "name": "oms-exception-diagnosis-evals",
+  "description": "异常诊断 Agent 测试用例",
+  "test_cases": [
+    {
+      "id": "DIAG-001",
+      "name": "SKU not found in Item Master — 已知异常精确匹配",
+      "input": {
+        "order_no": "SO00522427",
+        "error_message": "SKU 1823810 not found in item master data."
+      },
+      "expected": {
+        "domain": "ORDER_WMS_SYNC",
+        "root_cause_contains": "ITEM_ID_NOT_MAPPED",
+        "recommended_actions_contain": ["MAP_ITEM_ID", "SYNC_ITEM_MASTER"],
+        "confidence_min": 0.7,
+        "severity": "critical",
+        "handoff_ready": true
+      }
+    },
+    {
+      "id": "DIAG-002",
+      "name": "Product out of stock — 库存不足异常",
+      "input": {
+        "error_message": "Product ABC-123 is currently out of stock"
+      },
+      "expected": {
+        "domain": "INVENTORY_ALLOCATION",
+        "root_cause_contains": "INSUFFICIENT_INVENTORY",
+        "recommended_actions_contain": ["RECALCULATE_INVENTORY"],
+        "confidence_min": 0.6
+      }
+    },
+    {
+      "id": "DIAG-003",
+      "name": "仅提供 order_no — 需要从 order_msg 提取症状",
+      "input": {
+        "order_no": "SO00522427"
+      },
+      "expected": {
+        "order_context_not_null": true,
+        "recent_messages_not_empty": true,
+        "domain_not": "UNKNOWN"
+      }
+    },
+    {
+      "id": "DIAG-004",
+      "name": "ALLOCATED 订单 send_kafka=0 — 推单未发送",
+      "input": {
+        "order_no": "SO_ALLOCATED_TEST",
+        "symptom_text": "订单一直卡在 Allocated 状态不动"
+      },
+      "expected": {
+        "domain": "ORDER_DISPATCH",
+        "order_context.status": 1,
+        "dispatches_send_kafka": 0,
+        "confidence_min": 0.5
+      }
+    },
+    {
+      "id": "DIAG-005",
+      "name": "Webhook 401 — 渠道授权失败",
+      "input": {
+        "error_message": "HTTP 401 Unauthorized - Channel API token expired"
+      },
+      "expected": {
+        "domain": "CHANNEL_INTEGRATION",
+        "recommended_actions_contain": ["REFRESH_CHANNEL_TOKEN"],
+        "confidence_min": 0.6
+      }
+    },
+    {
+      "id": "DIAG-006",
+      "name": "自然语言中文描述 — 模糊匹配",
+      "input": {
+        "symptom_text": "客户说订单一直没发货，已经过了三天了"
+      },
+      "expected": {
+        "domain_one_of": ["ORDER_FULFILLMENT", "ORDER_WMS_SYNC", "ORDER_DISPATCH"],
+        "confidence_min": 0.3
+      }
+    },
+    {
+      "id": "DIAG-007",
+      "name": "完全未知异常 — 应返回 UNKNOWN",
+      "input": {
+        "symptom_text": "系统报了一个从没见过的错误码 XYZ-999"
+      },
+      "expected": {
+        "domain": "UNKNOWN",
+        "confidence_max": 0.3,
+        "handoff_ready": false
+      }
+    },
+    {
+      "id": "DIAG-008",
+      "name": "Rate Shopping Failed — 运费比价失败",
+      "input": {
+        "error_message": "Rate shopping failed: no suitable quote from carriers"
+      },
+      "expected": {
+        "domain": "RATE_SHOPPING",
+        "recommended_actions_contain": ["REVIEW_BUSINESS_RULE", "CHECK_THIRD_PARTY_STATUS"],
+        "confidence_min": 0.6
+      }
+    },
+    {
+      "id": "DIAG-009",
+      "name": "Short Shipment — 发货数量不一致",
+      "input": {
+        "order_no": "SO_SHORT_SHIP_TEST",
+        "symptom_text": "仓库只发了一部分货"
+      },
+      "expected": {
+        "domain": "ORDER_FULFILLMENT",
+        "root_cause_contains": "SHORT_SHIPMENT",
+        "recommended_actions_contain": ["RECALCULATE_INVENTORY", "NOTIFY_MERCHANT"],
+        "confidence_min": 0.5
+      }
+    },
+    {
+      "id": "DIAG-010",
+      "name": "PO Push to Warehouse Fail — 采购单推仓失败",
+      "input": {
+        "error_message": "Push to warehouse failed: WMS rejects PO"
+      },
+      "expected": {
+        "domain": "ORDER_PO",
+        "recommended_actions_contain": ["RETRY_WITH_BACKOFF"],
+        "confidence_min": 0.6
+      }
+    },
+    {
+      "id": "DIAG-011",
+      "name": "推理痕迹完整性 — 验证 reasoning_trace 包含所有步骤",
+      "input": {
+        "order_no": "SO00522427",
+        "error_message": "SKU 1823810 not found in item master data."
+      },
+      "expected": {
+        "reasoning_trace_steps": [1, 2, 3, 4, 5],
+        "reasoning_trace_all_have_duration": true
+      }
+    },
+    {
+      "id": "DIAG-012",
+      "name": "Handoff 阻断 — 低置信度不应 handoff",
+      "input": {
+        "symptom_text": "不知道怎么回事，反正有问题"
+      },
+      "expected": {
+        "handoff_ready": false,
+        "handoff_blocked_reason_not_empty": true,
+        "confidence_max": 0.5
+      }
+    },
+    {
+      "id": "DIAG-013",
+      "name": "探索性推理 — 知识库无匹配时激活 LLM 推理",
+      "input": {
+        "order_no": "SO_UNKNOWN_ERROR",
+        "error_message": "Custom field validation failed: dynamic_fields.inco_term is required for international orders"
+      },
+      "mock_knowledge_response": {
+        "query_knowledge_returns_empty": true
+      },
+      "expected": {
+        "is_exploratory": true,
+        "exploratory_hypothesis_not_null": true,
+        "exploratory_hypothesis.proposed_domain_not": "UNKNOWN",
+        "exploratory_hypothesis.proposed_symptom_signals_not_empty": true,
+        "exploratory_hypothesis.needs_verification": true,
+        "confidence_min": 0.35,
+        "confidence_max": 0.55,
+        "reasoning_trace_contains_step": 3.5
+      }
+    },
+    {
+      "id": "DIAG-014",
+      "name": "探索性推理闭环 — 验证成功后学习 Agent 应能直接入库",
+      "description": "端到端测试：诊断(探索性) → 处理(成功) → 学习(快速入库) → 再次诊断(知识匹配命中)",
+      "input": {
+        "order_no": "SO_EXPLORATORY_E2E",
+        "error_message": "Carrier service USPS_PRIORITY not available for destination country CA"
+      },
+      "mock_knowledge_response": {
+        "query_knowledge_returns_empty": true
+      },
+      "expected_flow": {
+        "step1_diagnosis": {
+          "is_exploratory": true,
+          "proposed_domain": "RATE_SHOPPING",
+          "handoff_ready": true
+        },
+        "step2_repair": {
+          "overall_status": "success",
+          "feedback.is_exploratory": true
+        },
+        "step3_learning": {
+          "event_type": "new_atom_created",
+          "source_type": "exploratory_verified",
+          "new_atom_confidence": 0.6
+        },
+        "step4_re_diagnosis": {
+          "is_exploratory": false,
+          "knowledge_match_score_min": 0.5,
+          "comment": "第二次诊断应该走知识匹配路径，不再需要探索性推理"
+        }
+      }
+    }
+  ]
+}

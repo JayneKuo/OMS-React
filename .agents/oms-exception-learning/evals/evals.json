@@ -1,0 +1,298 @@
+{
+  "name": "oms-exception-learning-evals",
+  "description": "异常学习 Agent 测试用例",
+  "test_cases": [
+    {
+      "id": "LEARN-001",
+      "name": "正向反馈 — confidence 提升",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_id": "DIAG-001",
+          "repair_id": "REPAIR-001",
+          "diagnosis_was_correct": true,
+          "actions_effective": [
+            { "action_code": "MAP_ITEM_ID", "was_effective": true, "order_status_before": 10, "order_status_after": 1 }
+          ],
+          "new_pattern_detected": false
+        },
+        "matched_atom_id": "ATOM-ORDER-WMS-001"
+      },
+      "expected": {
+        "event_type": "confidence_increase",
+        "confidence_delta": 0.05,
+        "learning_event_created": true
+      }
+    },
+    {
+      "id": "LEARN-002",
+      "name": "负向反馈 — confidence 降低",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_id": "DIAG-002",
+          "repair_id": "REPAIR-002",
+          "diagnosis_was_correct": false,
+          "actions_effective": [],
+          "new_pattern_detected": false
+        },
+        "matched_atom_id": "ATOM-ORDER-WMS-001"
+      },
+      "expected": {
+        "event_type": "confidence_decrease",
+        "confidence_delta": -0.10,
+        "learning_event_created": true
+      }
+    },
+    {
+      "id": "LEARN-003",
+      "name": "连续 5 次负向 — 知识废弃",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_was_correct": false
+        },
+        "matched_atom_id": "ATOM-CONSECUTIVE-FAIL",
+        "consecutive_failures": 5
+      },
+      "expected": {
+        "event_type": "atom_deprecated",
+        "deprecate_reason_contains": "连续 5 次"
+      }
+    },
+    {
+      "id": "LEARN-004",
+      "name": "新模式检测 — 累积缓冲区",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_id": "DIAG-004",
+          "repair_id": "REPAIR-004",
+          "diagnosis_was_correct": false,
+          "new_pattern_detected": true,
+          "notes": "新的错误类型: Custom field validation failed"
+        }
+      },
+      "expected": {
+        "pattern_buffer_created": true,
+        "pattern_buffer_status": "accumulating",
+        "new_atom_created": false
+      }
+    },
+    {
+      "id": "LEARN-005",
+      "name": "累积达标 — 创建新知识原子",
+      "input": {
+        "pattern_buffer": {
+          "buffer_id": "BUF-001",
+          "occurrence_count": 3,
+          "symptom_signals": ["Custom field validation failed", "dynamic_fields parse error"],
+          "status": "ready"
+        }
+      },
+      "expected": {
+        "new_atom_created": true,
+        "new_atom_confidence": 0.5,
+        "new_atom_source_type": "learning_agent",
+        "pattern_buffer_status": "created"
+      }
+    },
+    {
+      "id": "LEARN-006",
+      "name": "动作无效 3 次 — 移除动作",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_was_correct": true,
+          "actions_effective": [
+            { "action_code": "RETRY_WITH_BACKOFF", "was_effective": false }
+          ]
+        },
+        "matched_atom_id": "ATOM-CHANNEL-001",
+        "action_failure_count": 3
+      },
+      "expected": {
+        "event_type": "action_weight_adjusted",
+        "action_removed": "RETRY_WITH_BACKOFF"
+      }
+    },
+    {
+      "id": "LEARN-007",
+      "name": "节流 — 1 小时内超过 5 次更新",
+      "input": {
+        "matched_atom_id": "ATOM-THROTTLE-TEST",
+        "updates_in_last_hour": 5
+      },
+      "expected": {
+        "update_deferred": true,
+        "deferred_reason_contains": "节流"
+      }
+    },
+    {
+      "id": "LEARN-008",
+      "name": "知识合并 — 新模式与已有知识相似",
+      "input": {
+        "pattern_buffer": {
+          "symptom_signals": ["SKU mapping error", "Item ID not found in WMS"]
+        },
+        "existing_atom_similarity": 0.7
+      },
+      "expected": {
+        "event_type": "atom_merged",
+        "new_atom_created": false,
+        "symptom_signals_appended": true
+      }
+    },
+    {
+      "id": "LEARN-009",
+      "name": "快速通道 — 探索性推理验证成功直接入库",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_id": "DIAG-013",
+          "repair_id": "REPAIR-013",
+          "diagnosis_was_correct": true,
+          "is_exploratory": true,
+          "exploratory_hypothesis": {
+            "proposed_domain": "ORDER_CREATE",
+            "proposed_symptom_signals": ["Custom field validation failed", "dynamic_fields required"],
+            "proposed_root_cause": "国际订单缺少必填的 inco_term 字段",
+            "proposed_actions": ["MANUAL_DATA_FIX", "REVIEW_BUSINESS_RULE"],
+            "auto_create_knowledge": true
+          },
+          "actions_effective": [
+            { "action_code": "MANUAL_DATA_FIX", "was_effective": true, "order_status_before": 10, "order_status_after": 1 }
+          ],
+          "new_pattern_detected": true
+        }
+      },
+      "expected": {
+        "event_type": "new_atom_created",
+        "source_type": "exploratory_verified",
+        "new_atom_confidence": 0.6,
+        "new_atom_domain": "ORDER_CREATE",
+        "skipped_pattern_buffer": true,
+        "learning_event_created": true
+      }
+    },
+    {
+      "id": "LEARN-010",
+      "name": "探索性推理修复失败 — 进入累积缓冲区（降低阈值）",
+      "input": {
+        "repair_feedback": {
+          "diagnosis_id": "DIAG-014",
+          "repair_id": "REPAIR-014",
+          "diagnosis_was_correct": false,
+          "is_exploratory": true,
+          "exploratory_hypothesis": {
+            "proposed_domain": "CHANNEL_INTEGRATION",
+            "proposed_symptom_signals": ["Unknown webhook error"],
+            "proposed_root_cause": "Webhook 端点配置变更",
+            "proposed_actions": ["CHECK_THIRD_PARTY_STATUS"],
+            "auto_create_knowledge": true
+          },
+          "actions_effective": [
+            { "action_code": "CHECK_THIRD_PARTY_STATUS", "was_effective": false, "order_status_before": 10, "order_status_after": 10 }
+          ],
+          "new_pattern_detected": false
+        }
+      },
+      "expected": {
+        "new_atom_created": false,
+        "pattern_buffer_created": true,
+        "pattern_buffer_threshold": 2,
+        "pattern_buffer_status": "accumulating"
+      }
+    },
+    {
+      "id": "LEARN-011",
+      "name": "人工干预观察 — 可追溯操作直接入库",
+      "input": {
+        "human_intervention": {
+          "order_no": "SO00522500",
+          "original_error": "SKU 9999999 not found in item master data.",
+          "exception_time": "2026-03-24T10:00:00Z",
+          "recovery_time": "2026-03-24T11:30:00Z",
+          "status_before": 10,
+          "status_after": 1,
+          "intervention_type": "manual_data_fix",
+          "traced_actions": ["运营在 Item Master 中手动添加了 SKU 9999999 的映射"],
+          "mapped_action_codes": ["MAP_ITEM_ID", "SYNC_ITEM_MASTER"],
+          "trace_confidence": 0.8
+        }
+      },
+      "expected": {
+        "new_atom_created": true,
+        "source_type": "human_intervention_observed",
+        "new_atom_confidence": 0.5,
+        "new_atom_domain": "ORDER_WMS_SYNC",
+        "learning_event_created": true,
+        "skipped_pattern_buffer": true
+      }
+    },
+    {
+      "id": "LEARN-012",
+      "name": "人工干预观察 — 仅状态变化无法追溯，进入缓冲区",
+      "input": {
+        "human_intervention": {
+          "order_no": "SO00522501",
+          "original_error": "Unknown processing error",
+          "exception_time": "2026-03-24T08:00:00Z",
+          "recovery_time": "2026-03-24T14:00:00Z",
+          "status_before": 10,
+          "status_after": 1,
+          "intervention_type": "unknown",
+          "traced_actions": [],
+          "mapped_action_codes": [],
+          "trace_confidence": 0.1
+        }
+      },
+      "expected": {
+        "new_atom_created": false,
+        "pattern_buffer_created": true,
+        "pattern_buffer_threshold": 2
+      }
+    },
+    {
+      "id": "LEARN-013",
+      "name": "人工干预观察 — hotfix 代码修复入库",
+      "input": {
+        "human_intervention": {
+          "order_no": "SO00522502",
+          "original_error": "NullPointerException in dispatch routing engine",
+          "exception_time": "2026-03-24T09:00:00Z",
+          "recovery_time": "2026-03-24T10:00:00Z",
+          "status_before": 10,
+          "status_after": 9,
+          "intervention_type": "hotfix_deployment",
+          "traced_actions": ["hotfix: 修复 dispatch routing 空指针异常"],
+          "mapped_action_codes": ["ESCALATE_TO_ENGINEERING"],
+          "trace_confidence": 0.7,
+          "git_commit": {
+            "hash": "abc123f",
+            "message": "fix: handle null warehouse config in dispatch routing",
+            "author": "dev@example.com",
+            "timestamp": "2026-03-24T09:45:00Z"
+          }
+        }
+      },
+      "expected": {
+        "new_atom_created": true,
+        "source_type": "human_intervention_observed",
+        "new_atom_confidence": 0.4,
+        "new_atom_actions_contain": ["ESCALATE_TO_ENGINEERING"],
+        "new_atom_metadata_learned_from_human": true,
+        "notes_contains": "代码修复"
+      }
+    },
+    {
+      "id": "LEARN-014",
+      "name": "人工干预观察 — 去重：已被处理 Agent 处理的订单应跳过",
+      "input": {
+        "human_intervention": {
+          "order_no": "SO00522427",
+          "comment": "此订单已有 repair_id 关联"
+        },
+        "existing_repair_id": "REPAIR-001"
+      },
+      "expected": {
+        "skipped": true,
+        "skip_reason": "already_processed_by_repair_agent"
+      }
+    }
+  ]
+}

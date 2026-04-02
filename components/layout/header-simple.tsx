@@ -4,7 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Search, Bell, Settings, User, Check, Building2, Store, ChevronDown, Globe, Clock, Sun, Moon, Monitor, LogOut, Menu, X } from "lucide-react"
+import { Search, Bell, Settings, User, Check, Building2, Store, ChevronDown, Globe, Clock, Sun, Moon, Monitor, LogOut, Menu, X, Sparkles } from "lucide-react"
+import { useAiAssistant } from "@/components/ai-assistant/ai-assistant-context"
 import { useI18n } from "@/components/i18n-provider"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -72,6 +73,7 @@ const tenants = [
 export function HeaderSimple() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const { toggle: toggleAiAssistant, isOpen: isAiOpen } = useAiAssistant()
   
   // Use I18n context for language management
   const { t, language: i18nLanguage, setLanguage: setI18nLanguage } = useI18n()
@@ -564,6 +566,15 @@ export function HeaderSimple() {
             
             <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden">
               <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn("h-9 w-9", isAiOpen && "bg-primary/10 text-primary")}
+              onClick={toggleAiAssistant}
+              aria-label="AI 助手"
+            >
+              <Sparkles className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="h-9 w-9">
               <Bell className="h-4 w-4" />

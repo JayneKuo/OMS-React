@@ -1,0 +1,201 @@
+{
+  "name": "oms-exception-repair-evals",
+  "description": "异常处理 Agent 测试用例",
+  "test_cases": [
+    {
+      "id": "REPAIR-001",
+      "name": "高置信度 SKU 映射修复 — 全自动执行",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0001",
+        "overall_confidence": 0.9,
+        "handoff_ready": true,
+        "domain": "ORDER_WMS_SYNC",
+        "order_context": { "order_no": "SO00522427", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "MAP_ITEM_ID", "priority": 1, "auto_executable": true },
+          { "action_code": "RESYNC_ORDER", "priority": 2, "auto_executable": true }
+        ]
+      },
+      "expected": {
+        "overall_status": "success",
+        "action_results_count": 2,
+        "needs_confirmation": false,
+        "escalations_count": 0,
+        "execution_order": ["MAP_ITEM_ID", "RESYNC_ORDER"]
+      }
+    },
+    {
+      "id": "REPAIR-002",
+      "name": "中置信度修复 — 需要人工确认",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0002",
+        "overall_confidence": 0.65,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522428", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "RETRY_WITH_BACKOFF", "priority": 1, "auto_executable": true }
+        ]
+      },
+      "expected": {
+        "needs_confirmation": true,
+        "overall_status_one_of": ["success", "failed"]
+      }
+    },
+    {
+      "id": "REPAIR-003",
+      "name": "Handoff 验收失败 — confidence 不足",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0003",
+        "overall_confidence": 0.3,
+        "handoff_ready": false,
+        "order_context": { "order_no": "SO00522429", "status": 10 },
+        "recommended_actions": []
+      },
+      "expected": {
+        "overall_status": "skipped",
+        "action_results_count": 0,
+        "feedback_notes_contains": "验收失败"
+      }
+    },
+    {
+      "id": "REPAIR-004",
+      "name": "破坏性动作 — CANCEL_AND_RECREATE 需额外确认",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0004",
+        "overall_confidence": 0.85,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522430", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "CANCEL_AND_RECREATE", "priority": 1, "auto_executable": true }
+        ]
+      },
+      "expected": {
+        "action_results": [
+          { "action_code": "CANCEL_AND_RECREATE", "status": "pending_confirmation" }
+        ]
+      }
+    },
+    {
+      "id": "REPAIR-005",
+      "name": "依赖链 — 上游失败导致下游 skip",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0005",
+        "overall_confidence": 0.8,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522431", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "SYNC_ITEM_MASTER", "priority": 1, "auto_executable": true },
+          { "action_code": "RESYNC_ORDER", "priority": 2, "auto_executable": true }
+        ]
+      },
+      "mock_executor_behavior": {
+        "SYNC_ITEM_MASTER": "fail"
+      },
+      "expected": {
+        "overall_status": "failed",
+        "action_results": [
+          { "action_code": "SYNC_ITEM_MASTER", "status": "failed" },
+          { "action_code": "RESYNC_ORDER", "status": "skipped", "skip_reason_contains": "dependency" }
+        ],
+        "escalations_count_min": 1
+      }
+    },
+    {
+      "id": "REPAIR-006",
+      "name": "混合动作 — 自动 + 人工升级",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0006",
+        "overall_confidence": 0.75,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522432", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "RETRY_WITH_BACKOFF", "priority": 1, "auto_executable": true },
+          { "action_code": "ESCALATE_TO_OPS", "priority": 2, "auto_executable": false },
+          { "action_code": "REVIEW_BUSINESS_RULE", "priority": 3, "auto_executable": false }
+        ]
+      },
+      "expected": {
+        "action_results_count": 1,
+        "escalations_count": 2,
+        "escalations_assigned_to": ["ops", "ops"]
+      }
+    },
+    {
+      "id": "REPAIR-007",
+      "name": "幂等性 — 重复 handoff 不重复执行",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0001",
+        "comment": "与 REPAIR-001 相同的 diagnosis_id"
+      },
+      "expected": {
+        "is_duplicate": true,
+        "returns_previous_result": true
+      }
+    },
+    {
+      "id": "REPAIR-008",
+      "name": "渠道 Token 刷新 — 链式执行",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0008",
+        "overall_confidence": 0.85,
+        "handoff_ready": true,
+        "domain": "CHANNEL_INTEGRATION",
+        "order_context": { "order_no": "SO00522433", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "REFRESH_CHANNEL_TOKEN", "priority": 1, "auto_executable": true },
+          { "action_code": "NOTIFY_MERCHANT", "priority": 2, "auto_executable": true }
+        ]
+      },
+      "expected": {
+        "overall_status": "success",
+        "execution_order": ["REFRESH_CHANNEL_TOKEN", "NOTIFY_MERCHANT"]
+      }
+    },
+    {
+      "id": "REPAIR-009",
+      "name": "总超时 — 剩余动作 skip",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0009",
+        "overall_confidence": 0.8,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522434", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "RESYNC_INVENTORY", "priority": 1, "auto_executable": true },
+          { "action_code": "RECALCULATE_INVENTORY", "priority": 2, "auto_executable": true },
+          { "action_code": "RESYNC_ORDER", "priority": 3, "auto_executable": true }
+        ]
+      },
+      "mock_executor_behavior": {
+        "RESYNC_INVENTORY": "timeout_120s"
+      },
+      "expected": {
+        "overall_status": "partial",
+        "action_results": [
+          { "action_code": "RESYNC_INVENTORY", "status": "timeout" },
+          { "action_code": "RECALCULATE_INVENTORY", "status": "skipped", "skip_reason_contains": "total_timeout" },
+          { "action_code": "RESYNC_ORDER", "status": "skipped", "skip_reason_contains": "total_timeout" }
+        ]
+      }
+    },
+    {
+      "id": "REPAIR-010",
+      "name": "学习反馈生成 — 验证 feedback 结构完整",
+      "input_diagnosis": {
+        "diagnosis_id": "DIAG-20260324-0010",
+        "overall_confidence": 0.9,
+        "handoff_ready": true,
+        "order_context": { "order_no": "SO00522435", "status": 10 },
+        "recommended_actions": [
+          { "action_code": "MAP_ITEM_ID", "priority": 1, "auto_executable": true }
+        ]
+      },
+      "expected": {
+        "feedback_not_null": true,
+        "feedback_has_diagnosis_id": true,
+        "feedback_has_repair_id": true,
+        "feedback_actions_effective_count": 1,
+        "feedback_order_status_before": 10
+      }
+    }
+  ]
+}

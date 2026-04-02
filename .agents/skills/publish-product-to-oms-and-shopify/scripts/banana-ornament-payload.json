@@ -1,0 +1,22 @@
+{
+  "product": {
+    "title": "香蕉摆件",
+    "body_html": "<p>创意香蕉造型装饰摆件，适合家居、办公桌面装饰，趣味设计为空间增添活力。</p><p>Creative banana-shaped decorative ornament, perfect for home and office desk decoration. Fun design adds vitality to any space.</p>",
+    "vendor": "LAN0000002",
+    "product_type": "Home Decor",
+    "handle": "banana-ornament",
+    "status": "active",
+    "tags": "摆件, 装饰, 香蕉, banana, ornament, home decor, desk decoration",
+    "variants": [
+      {
+        "title": "Default",
+        "sku": "BANANA-ORNAMENT-001",
+        "price": "19.99",
+        "inventory_quantity": 0,
+        "inventory_management": "shopify",
+        "requires_shipping": true,
+        "taxable": true
+      }
+    ]
+  }
+}
