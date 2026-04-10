@@ -10,7 +10,7 @@ export async function extractKnowledgeFromText(
   apiKey: string,
   model: string = 'gpt-4o-mini'
 ): Promise<IntentClassification['knowledge']> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(`${process.env.OPENAI_BASE_URL || 'https://api.openai.com'}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

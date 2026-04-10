@@ -32,8 +32,8 @@ interface AiAssistantContextType {
   createConversation: () => string
   selectConversation: (id: string) => void
   deleteConversation: (id: string) => void
-  addMessage: (msg: AiMessage) => void
-  updateMessages: (updater: (prev: AiMessage[]) => AiMessage[]) => void
+  addMessage: (msg: AiMessage, conversationId?: string) => void
+  updateMessages: (updater: (prev: AiMessage[]) => AiMessage[], conversationId?: string) => void
   // History view
   showHistory: boolean
   setShowHistory: (v: boolean) => void
@@ -107,7 +107,12 @@ export function AiAssistantProvider({ children }: { children: React.ReactNode })
     const id = `conv-${Date.now()}`
     const now = new Date()
     const conv: Conversation = { id, title: "新对话", messages: [], createdAt: now, updatedAt: now }
-    setConversations((prev) => [conv, ...prev])
+    setConversations((prev) => {
+      const updated = [conv, ...prev]
+      // [Opt 5] Enforce max conversation limit
+      if (updated.length > 50) return updated.slice(0, 50)
+      return updated
+    })
     setActiveConversationId(id)
     setShowHistory(false)
     return id
@@ -127,11 +132,12 @@ export function AiAssistantProvider({ children }: { children: React.ReactNode })
   )
 
   const addMessage = React.useCallback(
-    (msg: AiMessage) => {
-      if (!activeConversationId) return
+    (msg: AiMessage, conversationId?: string) => {
+      const targetId = conversationId || activeConversationId
+      if (!targetId) return
       setConversations((prev) =>
         prev.map((c) => {
-          if (c.id !== activeConversationId) return c
+          if (c.id !== targetId) return c
           const updated = { ...c, messages: [...c.messages, msg], updatedAt: new Date() }
           updated.title = deriveTitle(updated.messages)
           return updated
@@ -142,11 +148,12 @@ export function AiAssistantProvider({ children }: { children: React.ReactNode })
   )
 
   const updateMessages = React.useCallback(
-    (updater: (prev: AiMessage[]) => AiMessage[]) => {
-      if (!activeConversationId) return
+    (updater: (prev: AiMessage[]) => AiMessage[], conversationId?: string) => {
+      const targetId = conversationId || activeConversationId
+      if (!targetId) return
       setConversations((prev) =>
         prev.map((c) => {
-          if (c.id !== activeConversationId) return c
+          if (c.id !== targetId) return c
           const newMsgs = updater(c.messages)
           const updated = { ...c, messages: newMsgs, updatedAt: new Date() }
           updated.title = deriveTitle(updated.messages)

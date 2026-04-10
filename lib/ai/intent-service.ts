@@ -61,7 +61,7 @@ export async function classifyIntentWithLLM(
 ): Promise<IntentClassification> {
   const userMessage = buildUserMessage(context)
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(`${process.env.OPENAI_BASE_URL || 'https://api.openai.com'}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

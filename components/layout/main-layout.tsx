@@ -24,6 +24,9 @@ interface MainLayoutProps {
 export function MainLayout({ children, sidebarItems, moduleName }: MainLayoutProps) {
   const { isOpen } = useAiAssistant()
 
+  // [Opt 6] Memoize panel to avoid remount flicker on page navigation
+  const panel = React.useMemo(() => <AiAssistantPanel />, [])
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <HeaderSimple />
@@ -41,7 +44,7 @@ export function MainLayout({ children, sidebarItems, moduleName }: MainLayoutPro
           }`}
         >
           <div className="h-full w-[400px]">
-            <AiAssistantPanel />
+            {panel}
           </div>
         </div>
       </div>
