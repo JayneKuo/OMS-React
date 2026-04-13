@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { useAiAssistant } from "./ai-assistant-context"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
@@ -201,41 +203,31 @@ function FeedbackButtons({ messageId }: { messageId: string }) {
 }
 
 // ═══════════════════════════════════════════════
-// AI message bubble — renders structured blocks
+// AI message bubble — renders markdown content
 // ═══════════════════════════════════════════════
 function AiBubble({ content, messageId }: { content: string; messageId: string }) {
-  const parts = React.useMemo(() => {
-    const result: AiResponseBlock[] = []
-    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-    let lastIndex = 0
-    let match: RegExpExecArray | null
-    while ((match = linkRegex.exec(content)) !== null) {
-      if (match.index > lastIndex) {
-        result.push({ type: "text", content: content.slice(lastIndex, match.index).trim() })
-      }
-      result.push({ type: "link", content: match[1], href: match[2] })
-      lastIndex = match.index + match[0].length
-    }
-    if (lastIndex < content.length) {
-      const remaining = content.slice(lastIndex).trim()
-      if (remaining) result.push({ type: "text", content: remaining })
-    }
-    return result
-  }, [content])
-
   return (
     <div className="space-y-2">
-      {parts.map((block, i) => {
-        if (block.type === "link" && block.href) {
-          return (
-            <Link key={i} href={block.href} className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 hover:border-primary/30 w-fit">
-              <ExternalLink className="h-3 w-3" />{block.content}<ArrowRight className="h-3 w-3" />
-            </Link>
-          )
-        }
-        return <p key={i} className="text-sm whitespace-pre-wrap leading-relaxed">{block.content}</p>
-      })}
-      {/* [Opt 3+4] Copy + Feedback */}
+      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-hr:my-2 prose-blockquote:my-1 prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs prose-th:text-xs prose-td:text-xs prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:text-xs">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            // 导航链接渲染为卡片样式
+            a: ({ href, children }) => {
+              if (href && (href.startsWith("/") || href.startsWith("#"))) {
+                return (
+                  <Link href={href} className="no-underline flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 hover:border-primary/30 w-fit my-1">
+                    <ExternalLink className="h-3 w-3" />{children}<ArrowRight className="h-3 w-3" />
+                  </Link>
+                )
+              }
+              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{children}</a>
+            },
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
       <div className="flex items-center gap-2 pt-1">
         <CopyButton text={content} />
         <FeedbackButtons messageId={messageId} />
