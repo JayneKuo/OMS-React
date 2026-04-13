@@ -346,6 +346,9 @@ export function AiAssistantPanel() {
     return createConversation()
   }, [activeConversationId, createConversation])
 
+  // AgentForce session IDs per conversation
+  const agentSessionIds = React.useRef<Record<string, string>>({})
+
   const handleSend = React.useCallback(async (text?: string) => {
     const content = (text || input).trim()
     if (!content || isLoading) return
@@ -358,20 +361,13 @@ export function AiAssistantPanel() {
 
     let aiText: string
     try {
-      const currentConv = conversations.find((c) => c.id === convId)
-      const history = (currentConv?.messages ?? [])
-        .filter((m) => !m.isLoading)
-        .map((m) => ({
-          role: m.role,
-          // 截断过长的历史消息，避免 token 超限
-          content: m.content.length > 2000 ? m.content.slice(0, 2000) + '...' : m.content,
-        }))
-      history.push({ role: "user", content })
-
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, history }),
+        body: JSON.stringify({
+          message: content,
+          sessionId: agentSessionIds.current[convId] || null,
+        }),
       })
 
       if (!res.ok) {
@@ -381,6 +377,11 @@ export function AiAssistantPanel() {
 
       const data = await res.json()
       aiText = data.content
+
+      // 保存 AgentForce session_id 用于多轮对话
+      if (data.sessionId) {
+        agentSessionIds.current[convId] = data.sessionId
+      }
     } catch (err) {
       console.warn("[AI Chat] API 调用失败，降级到模拟回复:", err)
       const blocks = getSimulatedResponse(content)
@@ -389,7 +390,7 @@ export function AiAssistantPanel() {
 
     updateMessages((prev) => prev.filter((m) => !m.isLoading).concat({ id: `ai-${Date.now()}`, role: "ai", content: aiText, timestamp: new Date() }), convId)
     setIsLoading(false)
-  }, [input, isLoading, ensureConversation, addMessage, updateMessages, conversations])
+  }, [input, isLoading, ensureConversation, addMessage, updateMessages])
 
   const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }, [handleSend])
 
