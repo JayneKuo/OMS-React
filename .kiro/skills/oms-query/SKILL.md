@@ -228,13 +228,14 @@ Exception vs Hold 对应关系：
 
 ## 六、环境配置
 
-详见 `docs/oms-agent/07-测试环境配置.md`。
+凭证通过 AgentForce session env 动态注入，不在 Skill 中硬编码。
 
-- Base URL: `https://omsv2-staging.item.com`
-- Token: `POST /api/linker-oms/opc/iam/token`
-- Header: `Authorization: Bearer {token}` + `x-tenant-id: LT`
-- 账号: `lantester@item.com` / `LANLT`
-- 商户: `LAN0000002`
+- Base URL: 由环境变量 `OMS_BASE_URL` 提供（后端配置）
+- Token: 由环境变量 `OMS_TOKEN` 提供（前端登录后传入）
+- Header: `Authorization: Bearer {OMS_TOKEN}` + `x-tenant-id: {OMS_TENANT_ID}`
+- 商户号: 由环境变量 `OMS_MERCHANT_NO` 提供（前端登录后传入）
+
+Fallback（仅本地开发/测试）：如果 `OMS_TOKEN` 未提供，会尝试用 `OMS_USERNAME` + `OMS_PASSWORD` 走 password grant 换 token。
 
 ---
 

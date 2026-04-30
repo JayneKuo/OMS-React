@@ -1,0 +1,40 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic
+        - generic
+      - generic:
+        - navigation
+    - generic:
+      - generic:
+        - generic
+        - generic
+      - main:
+        - generic
+      - generic:
+        - complementary
+  - region "Notifications alt+T"
+  - alert
+  - dialog "Create Mapping" [ref=e619]:
+    - generic [ref=e620]:
+      - heading "Create Mapping" [level=2] [ref=e621]
+      - paragraph [ref=e622]: Prototype-first editor for channel-to-WMS mapping records. Real API persistence can be connected later.
+    - generic [ref=e623]:
+      - generic [ref=e624]:
+        - generic [ref=e625]
+        - generic [ref=e632]
+        - generic [ref=e657]
+        - generic [ref=e679]
+      - generic [ref=e684]:
+        - generic [ref=e685]
+        - generic [ref=e692]
+        - generic [ref=e695]
+    - generic [ref=e705]:
+      - button "Cancel" [ref=e706] [cursor=pointer]
+      - button "Save Mapping" [disabled]:
+        - img
+        - text: Save Mapping
+    - button "Close" [ref=e707] [cursor=pointer]:
+      - img [ref=e708]
+      - generic [ref=e711]: Close

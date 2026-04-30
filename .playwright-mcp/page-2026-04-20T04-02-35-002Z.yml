@@ -1,0 +1,629 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /dashboard
+              - generic:
+                - generic: O
+              - generic: OMS
+            - button:
+              - generic:
+                - generic: Acme Corporation
+                - generic: Acme Store US
+              - img
+        - generic:
+          - generic:
+            - img
+            - searchbox
+          - generic:
+            - button:
+              - img
+            - button:
+              - img
+            - button:
+              - img
+            - generic:
+              - button:
+                - img
+      - generic:
+        - navigation:
+          - link:
+            - /url: /dashboard
+            - text: 仪表板
+          - link:
+            - /url: /orders
+            - text: 订单管理
+          - link:
+            - /url: /returns
+            - text: 退货管理
+          - link:
+            - /url: /purchase
+            - text: 采购管理
+          - link:
+            - /url: /logistics
+            - text: 物流管理
+          - link:
+            - /url: /inventory
+            - text: 库存管理
+          - link:
+            - /url: /product
+            - text: 商品管理
+          - link:
+            - /url: /events
+            - text: 事件管理
+          - link:
+            - /url: /integrations
+            - text: 集成管理
+          - link:
+            - /url: /pom
+            - text: POM管理
+          - link:
+            - /url: /automation
+            - text: 自动化
+          - link:
+            - /url: /customer-management
+            - text: 客户管理
+          - link:
+            - /url: /merchant-management
+            - text: 商户管理
+          - link:
+            - /url: /client-portal
+            - text: 客户门户
+    - generic:
+      - generic:
+        - generic:
+          - generic: Automation
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - navigation:
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Sales Order
+                    - img
+                  - generic:
+                    - link:
+                      - /url: /automation/sales-order/routing
+                      - generic:
+                        - img
+                      - generic: Sales Order Routing
+                    - link:
+                      - /url: /automation/sales-order/fulfillment-mode
+                      - generic:
+                        - img
+                      - generic: Fulfillment Mode
+                    - link:
+                      - /url: /automation/sales-order/designated-warehouse
+                      - generic:
+                        - img
+                      - generic: SKU Designated Warehouse
+                    - link:
+                      - /url: /automation/sales-order/hold-rules
+                      - generic:
+                        - img
+                      - generic: Hold Order Rules
+                    - link:
+                      - /url: /automation/sales-order/filter-by-sku
+                      - generic:
+                        - img
+                      - generic: Filter Orders by SKU
+                    - link:
+                      - /url: /automation/sales-order/update-settings
+                      - generic:
+                        - img
+                      - generic: Order Update Settings
+                    - link:
+                      - /url: /automation/sales-order/mapping
+                      - generic:
+                        - img
+                      - generic: Mapping
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Purchase Order
+                    - img
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Inventory
+                    - img
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Logistics
+                    - img
+                - link:
+                  - /url: /automation/email-notification
+                  - generic:
+                    - img
+                  - generic: Email Notification
+                - link:
+                  - /url: /automation/webhook
+                  - generic:
+                    - img
+                  - generic: Webhook
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Mapping
+                - generic: Prototype
+              - paragraph: Manage how OMS resolves channel-side SKUs into WMS or item master identities, without locking the model to UNIS-only fulfillment.
+            - generic:
+              - generic: 3 Active Mappings
+              - button:
+                - img
+                - text: Create Mapping
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Total Mappings
+                  - paragraph: "4"
+                  - paragraph: All mapping records in the prototype workspace.
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Active
+                  - paragraph: "3"
+                  - paragraph: Mappings currently used by order resolution.
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Conflicts
+                  - paragraph: "0"
+                  - paragraph: Records blocked by duplicate scope or target collision.
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Coverage
+                  - paragraph: 38%
+                  - paragraph: Mapped scope coverage against the current prototype dataset.
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - heading [level=3]: Mapping Records
+              - paragraph: This prototype focuses on list management, validation, and copy workflows first. Real API persistence can be connected behind the same UI later.
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                    - textbox:
+                      - /placeholder: Search source SKU, item code, item name, WMS SKU...
+                  - generic:
+                    - button:
+                      - text: Status
+                      - img
+                    - button:
+                      - img
+                      - text: 更多
+                      - generic: "3"
+              - generic:
+                - generic:
+                  - table:
+                    - rowgroup:
+                      - row:
+                        - columnheader: Source SKU
+                        - columnheader: Channel / Store
+                        - columnheader: Target Item
+                        - columnheader: WMS / Warehouse
+                        - columnheader: Copied Values
+                        - columnheader: Status
+                        - columnheader: Validation
+                        - columnheader: Updated
+                        - columnheader: Actions
+                    - rowgroup:
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: AMZ-BLK-001
+                            - paragraph: "Market: US"
+                        - cell:
+                          - generic:
+                            - paragraph: Amazon US
+                            - paragraph: US Flagship
+                        - cell:
+                          - generic:
+                            - paragraph: IM-10001
+                            - paragraph: Premium Leather Bag - Black
+                            - paragraph: UNIS-BAG-BLK-001
+                        - cell:
+                          - generic:
+                            - paragraph: UNIS WMS
+                            - paragraph: US-West
+                        - cell:
+                          - generic:
+                            - paragraph: "ID: ITEM-90001"
+                            - paragraph: "SKU: UNIS-BAG-BLK-001"
+                        - cell:
+                          - generic:
+                            - switch [checked]
+                            - generic: ACTIVE
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Valid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-18 10:30
+                            - paragraph: Olivia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: Edit
+                            - button:
+                              - img
+                              - text: Copy
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: SHOP-BRN-002
+                            - paragraph: "Market: US"
+                        - cell:
+                          - generic:
+                            - paragraph: Shopify
+                            - paragraph: DTC Store
+                        - cell:
+                          - generic:
+                            - paragraph: IM-10002
+                            - paragraph: Premium Leather Bag - Brown
+                            - paragraph: UNIS-BAG-BRN-002
+                        - cell:
+                          - generic:
+                            - paragraph: UNIS WMS
+                            - paragraph: US-West
+                        - cell:
+                          - generic:
+                            - paragraph: "ID: ITEM-90002"
+                            - paragraph: "SKU: UNIS-BAG-BRN-002"
+                        - cell:
+                          - generic:
+                            - switch [checked]
+                            - generic: ACTIVE
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Valid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-18 14:20
+                            - paragraph: Ethan
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: Edit
+                            - button:
+                              - img
+                              - text: Copy
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: SHEIN-DRESS-S
+                            - paragraph: "Market: EU"
+                        - cell:
+                          - generic:
+                            - paragraph: Shein
+                            - paragraph: Marketplace Store
+                        - cell:
+                          - generic:
+                            - paragraph: IM-10003
+                            - paragraph: Cotton Dress - White Floral S
+                            - paragraph: UNIS-DRESS-WHT-S
+                        - cell:
+                          - generic:
+                            - paragraph: UNIS WMS
+                            - paragraph: EU-Central
+                        - cell:
+                          - generic:
+                            - paragraph: "ID: ITEM-90003"
+                            - paragraph: "SKU: UNIS-DRESS-WHT-S"
+                        - cell:
+                          - generic:
+                            - switch [checked]
+                            - generic: ACTIVE
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Valid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-19 09:10
+                            - paragraph: Sophia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: Edit
+                            - button:
+                              - img
+                              - text: Copy
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: TT-BLK-M-778
+                            - paragraph: "Market: US"
+                        - cell:
+                          - generic:
+                            - paragraph: TikTok Shop
+                            - paragraph: US Flagship
+                        - cell:
+                          - generic:
+                            - paragraph: IM-10004
+                            - paragraph: Basic Tee - Black M
+                            - paragraph: NEXUS-TSHIRT-BLK-M
+                        - cell:
+                          - generic:
+                            - paragraph: 3PL Nexus
+                            - paragraph: East-Hub
+                        - cell:
+                          - generic:
+                            - paragraph: "ID: ITEM-90004"
+                            - paragraph: "SKU: NEXUS-TSHIRT-BLK-M"
+                        - cell:
+                          - generic:
+                            - switch
+                            - generic: DISABLED
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Valid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-19 16:45
+                            - paragraph: Mia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: Edit
+                            - button:
+                              - img
+                              - text: Copy
+      - generic:
+        - complementary:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic:
+                  - generic: OMS AI 助手
+                  - generic: Beta
+                - paragraph: 智能问答 · 操作执行 · 主动洞察
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - generic: 智能洞察
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 异常率上升
+                            - paragraph: 今日订单异常率较昨日上升 23%
+                            - button:
+                              - text: 查看详情
+                              - img
+                          - button:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 销售增长
+                            - paragraph: 本周销售额环比增长 12%
+                            - button:
+                              - text: 查看报表
+                              - img
+                          - button:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 库存预警
+                            - paragraph: 3 个 SKU 库存低于安全水位
+                            - button:
+                              - text: 查看库存
+                              - img
+                          - button:
+                            - img
+                    - generic:
+                      - generic:
+                        - img
+                      - heading [level=2]: 有什么可以帮你？
+                      - paragraph: 我可以帮你查数据、管理订单、智能分仓、操作产品库存、创建自动化工作流。
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: 📊
+                          - generic: 数据与分析
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 查看销售数据
+                          - button:
+                            - img
+                            - generic: 对比业绩表现
+                          - button:
+                            - img
+                            - generic: 导出数据报表
+                      - generic:
+                        - generic:
+                          - generic: 🛍️
+                          - generic: 产品与库存
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 创建/编辑产品
+                          - button:
+                            - img
+                            - generic: 查询库存水平
+                          - button:
+                            - img
+                            - generic: 管理产品集合
+                      - generic:
+                        - generic:
+                          - generic: 🏭
+                          - generic: 智能分仓
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 分仓查询
+                          - button:
+                            - img
+                            - generic: 开仓分析
+                          - button:
+                            - img
+                            - generic: 分仓规则
+                      - generic:
+                        - generic:
+                          - generic: 👥
+                          - generic: 客户管理
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 创建客户细分
+                          - button:
+                            - img
+                            - generic: 查找客户信息
+                      - button:
+                        - text: 展开更多 (3 个分类)
+                        - img
+          - generic:
+            - generic:
+              - textbox:
+                - /placeholder: 问我任何问题...
+              - button [disabled]:
+                - img
+            - paragraph: Enter 发送 · Shift+Enter 换行 · Esc 关闭
+  - region "Notifications alt+T"
+  - alert
+  - dialog "Create Mapping" [ref=e619]:
+    - generic [ref=e620]:
+      - heading "Create Mapping" [level=2] [ref=e621]
+      - paragraph [ref=e622]: Prototype-first editor for channel-to-WMS mapping records. Real API persistence can be connected later.
+    - generic [ref=e623]:
+      - generic [ref=e624]:
+        - generic [ref=e625]:
+          - generic [ref=e626]:
+            - heading "Mapping Type" [level=3] [ref=e627]
+            - paragraph [ref=e628]: Keep the structure flexible for future non-UNIS systems.
+          - combobox [active] [ref=e629] [cursor=pointer]:
+            - generic: Channel SKU -> WMS Item
+            - img [ref=e630]
+        - generic [ref=e632]:
+          - generic [ref=e633]:
+            - generic [ref=e634]:
+              - heading "Source" [level=3] [ref=e635]
+              - paragraph [ref=e636]: Where OMS receives the order line identity from.
+            - combobox [ref=e637] [cursor=pointer]:
+              - generic: Channel
+              - img [ref=e638]
+            - combobox [ref=e640] [cursor=pointer]:
+              - generic: Store
+              - img [ref=e641]
+            - textbox "Source SKU" [ref=e643]
+          - generic [ref=e644]:
+            - generic [ref=e645]:
+              - heading "Target" [level=3] [ref=e646]
+              - paragraph [ref=e647]: Select the WMS item OMS should resolve to.
+            - combobox [ref=e648] [cursor=pointer]:
+              - generic: Target item
+              - img [ref=e649]
+            - generic [ref=e651]:
+              - textbox "WMS" [ref=e652]
+              - textbox "Warehouse" [ref=e653]
+            - generic [ref=e654]:
+              - textbox "Item code" [ref=e655]
+              - textbox "Target SKU" [ref=e656]
+        - generic [ref=e657]:
+          - generic [ref=e658]:
+            - generic [ref=e659]:
+              - heading "Scope" [level=3] [ref=e660]
+              - paragraph [ref=e661]: Scope lets the same source SKU resolve differently by market or warehouse.
+            - combobox [ref=e662] [cursor=pointer]:
+              - generic: Market
+              - img [ref=e663]
+            - generic [ref=e665]:
+              - generic [ref=e666]:
+                - paragraph [ref=e667]: Active mapping
+                - paragraph [ref=e668]: Disabled records stay visible but are skipped by resolution.
+              - switch [checked] [ref=e669] [cursor=pointer]
+          - generic [ref=e670]:
+            - generic [ref=e671]:
+              - heading "Copied Values" [level=3] [ref=e672]
+              - paragraph [ref=e673]: Snapshot values OMS can reuse during order enrichment.
+            - generic [ref=e674]:
+              - textbox "Item master ID" [ref=e675]
+              - textbox "Copied item code" [ref=e676]
+            - textbox "Copied item name" [ref=e677]
+            - textbox "Copied WMS SKU" [ref=e678]
+        - generic [ref=e679]:
+          - generic [ref=e680]:
+            - heading "Notes" [level=3] [ref=e681]
+            - paragraph [ref=e682]: Use notes to explain why this scope exists.
+          - textbox "Notes" [ref=e683]
+      - generic [ref=e684]:
+        - generic [ref=e685]:
+          - generic [ref=e686]:
+            - heading "Validation" [level=3] [ref=e687]
+            - generic [ref=e688]:
+              - img [ref=e689]
+              - text: Conflict
+          - paragraph [ref=e691]: "Prototype validation already reflects OMS rules: source scope uniqueness, one-to-one target usage, and snapshot drift warnings."
+        - generic [ref=e692]:
+          - generic [ref=e693]: Channel, store, and source SKU are required.
+          - generic [ref=e694]: WMS, warehouse, and target item are required.
+        - generic [ref=e695]:
+          - heading "Preview" [level=3] [ref=e696]
+          - generic [ref=e697]:
+            - generic [ref=e698]: "Source: - / - / -"
+            - generic [ref=e699]: "Target: - / - / -"
+            - generic [ref=e700]: "Market: Not set"
+          - generic [ref=e701]:
+            - generic [ref=e702]:
+              - img [ref=e703]
+              - text: Create Mapping
+            - generic [ref=e704]: Prototype State Only
+    - generic [ref=e705]:
+      - button "Cancel" [ref=e706] [cursor=pointer]
+      - button "Save Mapping" [disabled]:
+        - img
+        - text: Save Mapping
+    - button "Close" [ref=e707] [cursor=pointer]:
+      - img [ref=e708]
+      - generic [ref=e711]: Close

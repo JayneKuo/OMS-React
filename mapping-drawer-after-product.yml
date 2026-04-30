@@ -1,0 +1,212 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /dashboard
+              - generic:
+                - generic: O
+              - generic: OMS
+            - button:
+              - generic:
+                - generic: Acme Corporation
+                - generic: Acme Store US
+              - img
+        - generic:
+          - generic:
+            - img
+            - searchbox
+          - generic:
+            - button:
+              - img
+            - button:
+              - img
+            - button:
+              - img
+            - generic:
+              - button:
+                - img
+      - generic:
+        - navigation:
+          - link:
+            - /url: /dashboard
+            - text: 仪表板
+          - link:
+            - /url: /orders
+            - text: 订单管理
+          - link:
+            - /url: /returns
+            - text: 退货管理
+          - link:
+            - /url: /purchase
+            - text: 采购管理
+          - link:
+            - /url: /logistics
+            - text: 物流管理
+          - link:
+            - /url: /inventory
+            - text: 库存管理
+          - link:
+            - /url: /product
+            - text: 商品管理
+          - link:
+            - /url: /events
+            - text: 事件管理
+          - link:
+            - /url: /integrations
+            - text: 集成管理
+          - link:
+            - /url: /pom
+            - text: POM管理
+          - link:
+            - /url: /automation
+            - text: 自动化
+          - link:
+            - /url: /customer-management
+            - text: 客户管理
+          - link:
+            - /url: /merchant-management
+            - text: 商户管理
+          - link:
+            - /url: /client-portal
+            - text: 客户门户
+    - generic:
+      - generic:
+        - generic:
+          - generic: Automation
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - navigation:
+                - generic
+                - generic
+                - generic
+                - generic
+                - link:
+                  - /url: /automation/email-notification
+                - link:
+                  - /url: /automation/webhook
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Mapping Center
+                - generic: Prototype
+              - paragraph: 以 OMS Product 为中心管理 channel SKU 与 warehouse SKU 的履约映射。
+            - generic:
+              - generic: 4 OMS Products
+              - button:
+                - img
+                - text: 新建 Mapping
+          - generic:
+            - generic:
+              - generic:
+                - generic
+                - generic
+            - generic:
+              - generic:
+                - generic
+                - generic
+            - generic:
+              - generic:
+                - generic
+                - generic
+            - generic:
+              - generic:
+                - generic
+                - generic
+          - generic:
+            - generic:
+              - heading [level=3]: OMS Product Mappings
+              - paragraph: 一个 OMS Product 可绑定多个渠道 SKU，但只允许绑定一个仓库 SKU。
+            - generic:
+              - generic:
+                - generic
+              - generic:
+                - generic
+      - generic:
+        - complementary:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic
+                - paragraph: 智能问答 · 操作执行 · 主动洞察
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+          - generic:
+            - generic:
+              - generic:
+                - generic
+          - generic:
+            - generic:
+              - textbox:
+                - /placeholder: 问我任何问题...
+              - button [disabled]:
+                - img
+            - paragraph: Enter 发送 · Shift+Enter 换行 · Esc 关闭
+  - region "Notifications alt+T"
+  - alert
+  - dialog "OMS Product Mapping Detail" [ref=e604]:
+    - generic [ref=e605]:
+      - heading "OMS Product Mapping Detail" [level=2] [ref=e606]
+      - paragraph [ref=e607]: 在一个详情面板中管理多个渠道 SKU 与唯一仓库 SKU。
+    - generic [ref=e611]:
+      - generic [ref=e612]:
+        - generic [ref=e613]:
+          - heading "OMS Product" [level=3] [ref=e614]
+          - paragraph [ref=e615]: 选择本次要管理的 OMS 商品中心对象。
+        - combobox [active] [ref=e616] [cursor=pointer]:
+          - generic: BAG-CLASSIC-001 · Classic Leather Bag
+          - img [ref=e617]
+        - generic [ref=e619]:
+          - textbox "OMS Product Code" [ref=e620]: BAG-CLASSIC-001
+          - textbox "OMS Product Name" [ref=e621]: Classic Leather Bag
+      - generic [ref=e622]:
+        - generic [ref=e623]:
+          - generic [ref=e624]:
+            - heading "Channel Mappings" [level=3] [ref=e625]
+            - paragraph [ref=e626]: 一个 OMS Product 可维护多条渠道 SKU 映射。
+          - button "添加渠道映射" [ref=e627] [cursor=pointer]:
+            - img [ref=e628]
+            - text: 添加渠道映射
+        - generic [ref=e629]: 当前还没有渠道 SKU 映射。
+      - generic [ref=e630]:
+        - generic [ref=e631]:
+          - heading "Warehouse Mapping" [level=3] [ref=e632]
+          - paragraph [ref=e633]: 每个 OMS Product 最多只允许一个仓库 SKU 映射。
+        - combobox [ref=e634] [cursor=pointer]:
+          - generic: 选择仓库 SKU
+          - img [ref=e635]
+        - generic [ref=e637]: 当前未配置 warehouse mapping。
+      - generic [ref=e638]:
+        - generic [ref=e639]:
+          - heading "备注" [level=3] [ref=e640]
+          - paragraph [ref=e641]: 记录该映射存在的原因或切换说明。
+        - textbox "备注" [ref=e642]
+      - generic [ref=e643]:
+        - generic [ref=e644]:
+          - heading "校验结果" [level=3] [ref=e645]
+          - generic [ref=e646]:
+            - img [ref=e671]
+            - text: Unmapped
+        - generic [ref=e680]: 当前没有发现冲突。
+    - generic [ref=e651]:
+      - button "取消" [ref=e652] [cursor=pointer]
+      - button "保存 Mapping" [ref=e681] [cursor=pointer]:
+        - img [ref=e682]
+        - text: 保存 Mapping
+    - button "Close" [ref=e653] [cursor=pointer]:
+      - img [ref=e654]
+      - generic [ref=e657]: Close

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://localhost:3000/events\")",
+      "WebSearch",
+      "WebFetch(domain:sellercloud.com)",
+      "WebFetch(domain:help.sellercloud.com)",
+      "WebFetch(domain:www.netsuite.com)",
+      "WebFetch(domain:www.thoughtspot.com)"
+    ]
+  }
+}

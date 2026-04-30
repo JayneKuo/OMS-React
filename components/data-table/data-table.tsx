@@ -32,6 +32,7 @@ interface DataTableProps<T> {
   loading?: boolean
   emptyMessage?: string
   hideColumnControl?: boolean
+  rowClassName?: (row: T) => string
 }
 
 export function DataTable<T extends { id?: string | number }>({
@@ -48,6 +49,7 @@ export function DataTable<T extends { id?: string | number }>({
   loading = false,
   emptyMessage = "No data available",
   hideColumnControl = false,
+  rowClassName,
 }: DataTableProps<T>) {
   const [visibleColumns, setVisibleColumns] = React.useState<Set<string>>(
     new Set(columns.filter(col => col.defaultVisible !== false).map(col => col.id))
@@ -179,7 +181,7 @@ export function DataTable<T extends { id?: string | number }>({
                   return (
                     <TableRow
                       key={row.id || index}
-                      className={onRowClick ? "cursor-pointer" : ""}
+                      className={[onRowClick ? "cursor-pointer" : "", rowClassName?.(row) ?? ""].filter(Boolean).join(" ")}
                       data-state={isSelected ? "selected" : undefined}
                     >
                       {hasSelection && row.id && (

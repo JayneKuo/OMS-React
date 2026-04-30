@@ -4,17 +4,27 @@
 > - v3.0 (2026-04-08): 基于前端代码扫描整体重写；新增 OPC 模块完整 API；修正路径前缀和认证方式
 > - v1.0 (2026-04-07): 初始版本
 
-Base URL: `https://omsv2-staging.item.com`
+Base URL: 由环境变量 `OMS_BASE_URL` 提供
 
 ---
 
 ## 1. 认证
 
+### 方式一：直接使用 Token（推荐，生产环境）
+
+前端登录后获得的 `access_token` 通过 AgentForce session env 注入为 `OMS_TOKEN`，
+Skill 直接使用，无需再走 password grant。
+
+后续所有请求需携带:
+- `Authorization: Bearer {OMS_TOKEN}`
+- `x-tenant-id: {OMS_TENANT_ID}`
+
+### 方式二：Password Grant（仅本地开发/测试）
+
 ### POST /api/linker-oms/opc/iam/token
 
-Password grant:
 ```json
-{ "grantType": "password", "username": "lantester@item.com", "password": "LANLT" }
+{ "grantType": "password", "username": "{OMS_USERNAME}", "password": "{OMS_PASSWORD}" }
 ```
 
 Authorization code grant:
@@ -26,7 +36,7 @@ Authorization code grant:
 
 后续所有请求需携带:
 - `Authorization: Bearer {access_token}`
-- `x-tenant-id: LT`
+- `x-tenant-id: {OMS_TENANT_ID}`
 
 ---
 

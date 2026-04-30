@@ -35,6 +35,12 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("OMS Agent")
 
 
+def _default_merchant_no() -> str:
+    """从 EngineConfig 获取当前 session 的 merchant_no（由 AgentForce env 注入）。"""
+    from oms_query_engine.config import EngineConfig
+    return EngineConfig().merchant_no
+
+
 # ══════════════════════════════════════════════════════════
 # Tool 1: oms_query — OMS 全域查询
 # ══════════════════════════════════════════════════════════
@@ -101,17 +107,19 @@ def oms_batch_query(
 # ══════════════════════════════════════════════════════════
 
 @mcp.tool()
-def oms_warehouse_list(merchant_no: str = "LAN0000002") -> str:
+def oms_warehouse_list(merchant_no: str = "") -> str:
     """查询当前商户下的所有仓库列表。
 
     返回仓库名称、编码、地址、WMS版本、状态等信息。
 
     Args:
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号，不传则使用当前登录用户的商户号
     """
     from oms_query_engine.api_client import OMSAPIClient
     from oms_query_engine.config import EngineConfig
 
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
     client = OMSAPIClient(EngineConfig())
     client._ensure_token()
     resp = client.post(
@@ -145,17 +153,19 @@ def oms_warehouse_list(merchant_no: str = "LAN0000002") -> str:
 
 
 @mcp.tool()
-def oms_inventory_list(merchant_no: str = "LAN0000002") -> str:
+def oms_inventory_list(merchant_no: str = "") -> str:
     """查询当前商户下的库存列表。
 
     返回各 SKU 在各仓库的库存情况。
 
     Args:
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号，不传则使用当前登录用户的商户号
     """
     from oms_query_engine.api_client import OMSAPIClient
     from oms_query_engine.config import EngineConfig
 
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
     client = OMSAPIClient(EngineConfig())
     client._ensure_token()
     resp = client.post(
@@ -172,16 +182,19 @@ def oms_inventory_list(merchant_no: str = "LAN0000002") -> str:
 
 
 @mcp.tool()
-def oms_rule_list(merchant_no: str = "LAN0000002") -> str:
+def oms_rule_list(merchant_no: str = "") -> str:
     """查询当前商户下的分仓规则配置。
 
     返回路由规则、自定义规则、Hold 规则、SKU 仓库指定规则。
 
     Args:
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号，不传则使用当前登录用户的商户号
     """
     from oms_query_engine.engine_v2 import OMSQueryEngine
     from oms_query_engine.models.request import QueryRequest
+
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
 
     # 用一个虚拟订单号触发规则查询
     engine = OMSQueryEngine()
@@ -199,15 +212,17 @@ def oms_rule_list(merchant_no: str = "LAN0000002") -> str:
 
 
 @mcp.tool()
-def oms_hold_rules(merchant_no: str = "LAN0000002") -> str:
+def oms_hold_rules(merchant_no: str = "") -> str:
     """查询当前商户下的 Hold（暂停履约）规则列表。
 
     Args:
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号（CRM code），不传则使用当前登录用户的商户号
     """
     from oms_query_engine.api_client import OMSAPIClient
     from oms_query_engine.config import EngineConfig
 
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
     client = OMSAPIClient(EngineConfig())
     client._ensure_token()
     resp = client.get(
@@ -220,17 +235,19 @@ def oms_hold_rules(merchant_no: str = "LAN0000002") -> str:
 
 
 @mcp.tool()
-def oms_channel_list(merchant_no: str = "LAN0000002") -> str:
+def oms_channel_list(merchant_no: str = "") -> str:
     """查询当前商户已连接的渠道/连接器列表。
 
     返回渠道名称、连接器类型、连接状态、认证状态等。
 
     Args:
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号（CRM code），不传则使用当前登录用户的商户号
     """
     from oms_query_engine.api_client import OMSAPIClient
     from oms_query_engine.config import EngineConfig
 
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
     client = OMSAPIClient(EngineConfig())
     client._ensure_token()
     resp = client.get(
@@ -303,16 +320,18 @@ def oms_order_timeline(order_no: str) -> str:
 
 
 @mcp.tool()
-def oms_order_logs(order_no: str, merchant_no: str = "LAN0000002") -> str:
+def oms_order_logs(order_no: str, merchant_no: str = "") -> str:
     """查询订单日志（含异常事件、拆单事件等）。
 
     Args:
         order_no: 订单号
-        merchant_no: 商户号，默认 LAN0000002
+        merchant_no: 商户号（CRM code），不传则使用当前登录用户的商户号
     """
     from oms_query_engine.api_client import OMSAPIClient
     from oms_query_engine.config import EngineConfig
 
+    if not merchant_no:
+        merchant_no = _default_merchant_no()
     client = OMSAPIClient(EngineConfig())
     client._ensure_token()
     resp = client.get(

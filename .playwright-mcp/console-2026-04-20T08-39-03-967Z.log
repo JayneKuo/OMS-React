@@ -1,0 +1,7 @@
+[     912ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_cjs_react-dom_development_c9a189.js:32458
+[    1268ms] [LOG] 📏 Navigation Space Check: {headerWidth: 1036, leftWidth: 250.5729217529297, rightWidth: 480, totalNavWidth: 1149.65625, availableSpace: 157.4270782470703} @ http://localhost:3000/_next/static/chunks/components_layout_fbfe62._.js:711
+[    1291ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_90f538._.js:12474
+[    1294ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_90f538._.js:12474
+[    1412ms] [LOG] 📏 Navigation Space Check: {headerWidth: 1036, leftWidth: 250.5729217529297, rightWidth: 480, totalNavWidth: 1149.65625, availableSpace: 157.4270782470703} @ http://localhost:3000/_next/static/chunks/components_layout_fbfe62._.js:711
+[    1684ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_90f538._.js:12474
+[   26860ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_90f538._.js:12474

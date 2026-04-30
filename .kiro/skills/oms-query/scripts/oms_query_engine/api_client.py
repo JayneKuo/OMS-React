@@ -27,7 +27,25 @@ class OMSAPIClient:
     # ── 认证 ──────────────────────────────────────────
 
     def authenticate(self) -> str:
-        """使用 password grant 获取 access_token。"""
+        """获取 access_token。
+
+        优先使用前端传入的 token（通过 AgentForce env 注入），
+        仅在没有 token 时才走 password grant。
+        """
+        # 前端已登录，直接使用传入的 token
+        if self._config.token:
+            self._token = self._config.token
+            # 外部 token 不知道过期时间，设一个较长的有效期，
+            # 如果过期了 OMS API 会返回 401，由调用方处理
+            self._token_expires_at = time.time() + 3600
+            return self._token
+
+        # Fallback: password grant（仅开发/测试环境使用）
+        if not self._config.username or not self._config.password:
+            raise AuthenticationError(
+                0, "未提供 OMS_TOKEN 或 OMS_USERNAME/OMS_PASSWORD，无法认证"
+            )
+
         url = f"{self._config.base_url}{self.TOKEN_PATH}"
         payload = {
             "grantType": "password",
@@ -58,7 +76,7 @@ class OMSAPIClient:
         return self._token
 
     def _ensure_token(self) -> None:
-        """检查 token 有效性，剩余有效期 < buffer 时自动刷新。"""
+        """检查 token 有效性，过期时自动刷新。"""
         if self._token is None or time.time() >= self._token_expires_at:
             self.authenticate()
 

@@ -5,6 +5,7 @@ import Link from "next/link"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { useAiAssistant } from "./ai-assistant-context"
+import { parseCharts, ChatChart } from "./chat-chart"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -203,31 +204,37 @@ function FeedbackButtons({ messageId }: { messageId: string }) {
 }
 
 // ═══════════════════════════════════════════════
-// AI message bubble — renders markdown content
+// AI message bubble — renders markdown + charts
 // ═══════════════════════════════════════════════
 function AiBubble({ content, messageId }: { content: string; messageId: string }) {
+  const { text, charts } = React.useMemo(() => parseCharts(content), [content])
+
   return (
     <div className="space-y-2">
-      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-hr:my-2 prose-blockquote:my-1 prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs prose-th:text-xs prose-td:text-xs prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:text-xs">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            // 导航链接渲染为卡片样式
-            a: ({ href, children }) => {
-              if (href && (href.startsWith("/") || href.startsWith("#"))) {
-                return (
-                  <Link href={href} className="no-underline flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 hover:border-primary/30 w-fit my-1">
-                    <ExternalLink className="h-3 w-3" />{children}<ArrowRight className="h-3 w-3" />
-                  </Link>
-                )
-              }
-              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{children}</a>
-            },
-          }}
-        >
-          {content}
-        </ReactMarkdown>
-      </div>
+      {text && (
+        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-hr:my-2 prose-blockquote:my-1 prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:text-xs prose-th:text-xs prose-td:text-xs prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:text-xs">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ href, children }) => {
+                if (href && (href.startsWith("/") || href.startsWith("#"))) {
+                  return (
+                    <Link href={href} className="no-underline flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 hover:border-primary/30 w-fit my-1">
+                      <ExternalLink className="h-3 w-3" />{children}<ArrowRight className="h-3 w-3" />
+                    </Link>
+                  )
+                }
+                return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{children}</a>
+              },
+            }}
+          >
+            {text}
+          </ReactMarkdown>
+        </div>
+      )}
+      {charts.map((chart, i) => (
+        <ChatChart key={i} chart={chart} />
+      ))}
       <div className="flex items-center gap-2 pt-1">
         <CopyButton text={content} />
         <FeedbackButtons messageId={messageId} />
@@ -341,6 +348,17 @@ export function AiAssistantPanel() {
   // AgentForce session IDs per conversation
   const agentSessionIds = React.useRef<Record<string, string>>({})
 
+  /**
+   * 获取当前用户的 OMS 上下文（token + merchantNo）。
+   * TODO: 替换为你的实际登录态获取逻辑，例如从 auth context / cookie 中读取。
+   */
+  const getOmsContext = React.useCallback(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("oms_token") : null
+    const merchantNo = typeof window !== "undefined" ? localStorage.getItem("oms_merchant_no") : null
+    if (!token || !merchantNo) return undefined
+    return { token, merchantNo }
+  }, [])
+
   const handleSend = React.useCallback(async (text?: string) => {
     const content = (text || input).trim()
     if (!content || isLoading) return
@@ -353,12 +371,16 @@ export function AiAssistantPanel() {
 
     let aiText: string
     try {
+      const isNewSession = !agentSessionIds.current[convId]
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: content,
           sessionId: agentSessionIds.current[convId] || null,
+          // 仅首次创建会话时传 OMS 凭证，后续对话靠 sessionId 复用
+          ...(isNewSession && { omsContext: getOmsContext() }),
         }),
       })
 
@@ -382,7 +404,7 @@ export function AiAssistantPanel() {
 
     updateMessages((prev) => prev.filter((m) => !m.isLoading).concat({ id: `ai-${Date.now()}`, role: "ai", content: aiText, timestamp: new Date() }), convId)
     setIsLoading(false)
-  }, [input, isLoading, ensureConversation, addMessage, updateMessages])
+  }, [input, isLoading, ensureConversation, addMessage, updateMessages, getOmsContext])
 
   const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }, [handleSend])
 

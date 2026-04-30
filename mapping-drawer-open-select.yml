@@ -1,0 +1,170 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /dashboard
+              - generic
+              - generic: OMS
+            - button:
+              - generic
+              - img
+        - generic:
+          - generic:
+            - img
+            - searchbox
+          - generic:
+            - button:
+              - img
+            - button:
+              - img
+            - button:
+              - img
+            - generic:
+              - button
+      - generic:
+        - navigation:
+          - link:
+            - /url: /dashboard
+            - text: 仪表板
+          - link:
+            - /url: /orders
+            - text: 订单管理
+          - link:
+            - /url: /returns
+            - text: 退货管理
+          - link:
+            - /url: /purchase
+            - text: 采购管理
+          - link:
+            - /url: /logistics
+            - text: 物流管理
+          - link:
+            - /url: /inventory
+            - text: 库存管理
+          - link:
+            - /url: /product
+            - text: 商品管理
+          - link:
+            - /url: /events
+            - text: 事件管理
+          - link:
+            - /url: /integrations
+            - text: 集成管理
+          - link:
+            - /url: /pom
+            - text: POM管理
+          - link:
+            - /url: /automation
+            - text: 自动化
+          - link:
+            - /url: /customer-management
+            - text: 客户管理
+          - link:
+            - /url: /merchant-management
+            - text: 商户管理
+          - link:
+            - /url: /client-portal
+            - text: 客户门户
+    - generic:
+      - generic:
+        - generic:
+          - generic: Automation
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - navigation
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic
+              - paragraph: 以 OMS Product 为中心管理 channel SKU 与 warehouse SKU 的履约映射。
+            - generic:
+              - generic: 4 OMS Products
+              - button
+          - generic:
+            - generic:
+              - generic
+            - generic:
+              - generic
+            - generic:
+              - generic
+            - generic:
+              - generic
+          - generic:
+            - generic:
+              - heading [level=3]: OMS Product Mappings
+              - paragraph: 一个 OMS Product 可绑定多个渠道 SKU，但只允许绑定一个仓库 SKU。
+            - generic:
+              - generic
+              - generic
+      - generic:
+        - complementary:
+          - generic:
+            - generic:
+              - generic
+              - generic
+            - generic:
+              - button
+              - button
+              - button
+          - generic:
+            - generic:
+              - generic
+          - generic:
+            - generic:
+              - textbox:
+                - /placeholder: 问我任何问题...
+              - button [disabled]
+            - paragraph: Enter 发送 · Shift+Enter 换行 · Esc 关闭
+  - region "Notifications alt+T"
+  - alert
+  - dialog:
+    - generic:
+      - heading [level=2]: OMS Product Mapping Detail
+      - paragraph: 在一个详情面板中管理多个渠道 SKU 与唯一仓库 SKU。
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic
+              - combobox [expanded]
+              - generic
+            - generic:
+              - generic
+              - generic: 当前还没有渠道 SKU 映射。
+            - generic:
+              - generic
+              - combobox
+              - generic: 当前未配置 warehouse mapping。
+            - generic:
+              - generic
+              - textbox:
+                - /placeholder: 备注
+            - generic:
+              - generic
+              - generic: OMS Product Code 为必填项。
+              - generic: OMS Product Name 为必填项。
+    - generic:
+      - button: 取消
+      - button [disabled]:
+        - img
+        - text: 保存 Mapping
+    - button:
+      - img
+      - generic: Close
+  - listbox [ref=e658]:
+    - option "BAG-CLASSIC-001 · Classic Leather Bag" [active] [ref=e659]:
+      - generic [ref=e661]: BAG-CLASSIC-001 · Classic Leather Bag
+    - option "DRESS-FLORAL-002 · Floral Cotton Dress" [ref=e662]:
+      - generic [ref=e664]: DRESS-FLORAL-002 · Floral Cotton Dress
+    - option "TSHIRT-BASIC-003 · Basic Tee" [ref=e665]:
+      - generic [ref=e667]: TSHIRT-BASIC-003 · Basic Tee
+    - option "SNEAKER-LITE-004 · Lightweight Sneaker" [ref=e668]:
+      - generic [ref=e670]: SNEAKER-LITE-004 · Lightweight Sneaker

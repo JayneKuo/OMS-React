@@ -43,6 +43,10 @@ def _get_client():
     return client
 
 
+def _default_merchant_no():
+    return EngineConfig().merchant_no
+
+
 # ─── Tool implementations (same as mcp_server.py) ───
 
 def tool_oms_query(identifier, intent="status", force_refresh=False):
@@ -58,7 +62,8 @@ def tool_oms_batch_query(query_type, status_filter=None, page_no=1, page_size=20
         page_no=page_no, page_size=page_size))
     return result.model_dump()
 
-def tool_oms_warehouse_list(merchant_no="LAN0000002"):
+def tool_oms_warehouse_list(merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     client = _get_client()
     resp = client.post("/api/linker-oms/opc/app-api/facility/v2/page",
                        {"merchantNo": merchant_no, "pageNo": 1, "pageSize": 100})
@@ -79,7 +84,8 @@ def tool_oms_warehouse_list(merchant_no="LAN0000002"):
         })
     return {"total": len(warehouses), "warehouses": warehouses}
 
-def tool_oms_inventory_list(merchant_no="LAN0000002"):
+def tool_oms_inventory_list(merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     client = _get_client()
     resp = client.post("/api/linker-oms/opc/app-api/inventory/list",
                        {"merchantNo": merchant_no})
@@ -87,7 +93,8 @@ def tool_oms_inventory_list(merchant_no="LAN0000002"):
     items = _extract_list(data)
     return {"total": len(items), "inventory": items}
 
-def tool_oms_rule_list(merchant_no="LAN0000002"):
+def tool_oms_rule_list(merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     engine = OMSQueryEngine()
     from oms_query_engine.models.query_plan import QueryContext
     rule_provider = engine._executor.get_provider("rule")
@@ -98,7 +105,8 @@ def tool_oms_rule_list(merchant_no="LAN0000002"):
         if rule_info: return rule_info.model_dump()
     return {"error": "规则查询失败"}
 
-def tool_oms_hold_rules(merchant_no="LAN0000002"):
+def tool_oms_hold_rules(merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     client = _get_client()
     resp = client.get("/api/linker-oms/opc/app-api/hold-rule-data/page",
                       {"merchantNo": merchant_no})
@@ -106,7 +114,8 @@ def tool_oms_hold_rules(merchant_no="LAN0000002"):
     rules = _extract_list(data)
     return {"total": len(rules), "hold_rules": rules}
 
-def tool_oms_channel_list(merchant_no="LAN0000002"):
+def tool_oms_channel_list(merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     client = _get_client()
     resp = client.get("/api/linker-oms/opc/app-api/channel/*/list",
                       {"tags": merchant_no, "pageSize": -1})
@@ -132,7 +141,8 @@ def tool_oms_order_timeline(order_no):
     events = _extract_list(data)
     return {"order_no": order_no, "total": len(events), "timeline": events}
 
-def tool_oms_order_logs(order_no, merchant_no="LAN0000002"):
+def tool_oms_order_logs(order_no, merchant_no=""):
+    if not merchant_no: merchant_no = _default_merchant_no()
     client = _get_client()
     resp = client.get("/api/linker-oms/opc/app-api/orderLog/list",
                       {"merchantNo": merchant_no, "omsOrderNo": order_no})

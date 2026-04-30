@@ -61,6 +61,8 @@ class QueryOrchestrator:
     def __init__(self, client: OMSAPIClient, cache: QueryCache):
         self._client = client
         self._cache = cache
+        from oms_query_engine.config import EngineConfig
+        self._config = EngineConfig()
 
     # ── 意图检测 ──────────────────────────────────────
 
@@ -81,8 +83,10 @@ class QueryOrchestrator:
     # ── 核心查询 ──────────────────────────────────────
 
     def execute_core(self, order_no: str,
-                     merchant_no: str = "LAN0000002") -> CoreQueryResult:
+                     merchant_no: str = "") -> CoreQueryResult:
         """执行核心查询：search + sale-order + orderLog。"""
+        if not merchant_no:
+            merchant_no = self._config.merchant_no
         result = CoreQueryResult()
         called: list[str] = []
 
@@ -151,9 +155,11 @@ class QueryOrchestrator:
 
     def execute_extended(self, order_no: str, intents: list[str],
                          core_result: CoreQueryResult,
-                         merchant_no: str = "LAN0000002",
+                         merchant_no: str = "",
                          ) -> ExtendedQueryResult:
         """根据意图执行扩展查询，缓存命中时跳过 API 调用。"""
+        if not merchant_no:
+            merchant_no = self._config.merchant_no
         ext = ExtendedQueryResult()
 
         # 确定需要调用的 API 集合

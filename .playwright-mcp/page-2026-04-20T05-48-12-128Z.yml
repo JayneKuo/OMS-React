@@ -1,0 +1,551 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: /dashboard
+              - generic:
+                - generic: O
+              - generic: OMS
+            - button:
+              - generic:
+                - generic: Acme Corporation
+                - generic: Acme Store US
+              - img
+        - generic:
+          - generic:
+            - img
+            - searchbox
+          - generic:
+            - button:
+              - img
+            - button:
+              - img
+            - button:
+              - img
+            - generic:
+              - button:
+                - img
+      - generic:
+        - navigation:
+          - link:
+            - /url: /dashboard
+            - text: 仪表板
+          - link:
+            - /url: /orders
+            - text: 订单管理
+          - link:
+            - /url: /returns
+            - text: 退货管理
+          - link:
+            - /url: /purchase
+            - text: 采购管理
+          - link:
+            - /url: /logistics
+            - text: 物流管理
+          - link:
+            - /url: /inventory
+            - text: 库存管理
+          - link:
+            - /url: /product
+            - text: 商品管理
+          - link:
+            - /url: /events
+            - text: 事件管理
+          - link:
+            - /url: /integrations
+            - text: 集成管理
+          - link:
+            - /url: /pom
+            - text: POM管理
+          - link:
+            - /url: /automation
+            - text: 自动化
+          - link:
+            - /url: /customer-management
+            - text: 客户管理
+          - link:
+            - /url: /merchant-management
+            - text: 商户管理
+          - link:
+            - /url: /client-portal
+            - text: 客户门户
+    - generic:
+      - generic:
+        - generic:
+          - generic: Automation
+          - button:
+            - img
+        - generic:
+          - generic:
+            - generic:
+              - navigation:
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Sales Order
+                    - img
+                  - generic:
+                    - link:
+                      - /url: /automation/sales-order/routing
+                      - generic:
+                        - img
+                      - generic: Sales Order Routing
+                    - link:
+                      - /url: /automation/sales-order/fulfillment-mode
+                      - generic:
+                        - img
+                      - generic: Fulfillment Mode
+                    - link:
+                      - /url: /automation/sales-order/designated-warehouse
+                      - generic:
+                        - img
+                      - generic: SKU Designated Warehouse
+                    - link:
+                      - /url: /automation/sales-order/hold-rules
+                      - generic:
+                        - img
+                      - generic: Hold Order Rules
+                    - link:
+                      - /url: /automation/sales-order/filter-by-sku
+                      - generic:
+                        - img
+                      - generic: Filter Orders by SKU
+                    - link:
+                      - /url: /automation/sales-order/update-settings
+                      - generic:
+                        - img
+                      - generic: Order Update Settings
+                    - link:
+                      - /url: /automation/sales-order/mapping
+                      - generic:
+                        - img
+                      - generic: Mapping
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Purchase Order
+                    - img
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Inventory
+                    - img
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                    - generic: Logistics
+                    - img
+                - link:
+                  - /url: /automation/email-notification
+                  - generic:
+                    - img
+                  - generic: Email Notification
+                - link:
+                  - /url: /automation/webhook
+                  - generic:
+                    - img
+                  - generic: Webhook
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Mapping Center
+                - generic: Prototype
+              - paragraph: 以 OMS Product 为中心管理 channel SKU 与 warehouse SKU 的履约映射。
+            - generic:
+              - generic: 4 OMS Products
+              - button:
+                - img
+                - text: 新建 Mapping
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: OMS Products
+                  - paragraph: "4"
+                  - paragraph: 当前原型中的商品映射聚合数。
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Complete
+                  - paragraph: "0"
+                  - paragraph: 已同时完成 channel 与 warehouse 映射。
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Partial
+                  - paragraph: "1"
+                  - paragraph: 仅完成单侧映射，仍需补全。
+                - generic:
+                  - img
+            - generic:
+              - generic:
+                - generic:
+                  - paragraph: Invalid
+                  - paragraph: "2"
+                  - paragraph: 存在冲突、重复或缺失必填项。
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - heading [level=3]: OMS Product Mappings
+              - paragraph: 一个 OMS Product 可绑定多个渠道 SKU，但只允许绑定一个仓库 SKU。
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                    - textbox:
+                      - /placeholder: 搜索 OMS Product、channel SKU、warehouse SKU...
+                  - generic:
+                    - button:
+                      - text: 状态
+                      - img
+                    - button:
+                      - text: 渠道
+                      - img
+                    - button:
+                      - text: 仓库
+                      - img
+              - generic:
+                - generic:
+                  - table:
+                    - rowgroup:
+                      - row:
+                        - columnheader: OMS Product
+                        - columnheader: Product Name
+                        - columnheader: Channel Mappings
+                        - columnheader: Warehouse Mapping
+                        - columnheader: Status
+                        - columnheader: Updated
+                        - columnheader: 操作
+                    - rowgroup:
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: BAG-CLASSIC-001
+                            - paragraph: OMS-PROD-1001
+                        - cell:
+                          - paragraph: Classic Leather Bag
+                        - cell:
+                          - generic:
+                            - paragraph: "2"
+                            - paragraph: channel rows
+                        - cell:
+                          - generic:
+                            - paragraph: US-West
+                            - paragraph: UNIS-BAG-BLK-001
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Invalid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-19 09:15
+                            - paragraph: Olivia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: 编辑
+                            - button:
+                              - img
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: DRESS-FLORAL-002
+                            - paragraph: OMS-PROD-1002
+                        - cell:
+                          - paragraph: Floral Cotton Dress
+                        - cell:
+                          - generic:
+                            - paragraph: "1"
+                            - paragraph: channel rows
+                        - cell:
+                          - paragraph: 当前未配置 warehouse mapping。
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Partial
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-19 14:40
+                            - paragraph: Sophia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: 编辑
+                            - button:
+                              - img
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: SNEAKER-LITE-004
+                            - paragraph: OMS-PROD-1004
+                        - cell:
+                          - paragraph: Lightweight Sneaker
+                        - cell:
+                          - generic:
+                            - paragraph: "0"
+                            - paragraph: channel rows
+                        - cell:
+                          - paragraph: 当前未配置 warehouse mapping。
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Unmapped
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-20 08:05
+                            - paragraph: Jayne
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: 编辑
+                            - button:
+                              - img
+                      - row:
+                        - cell:
+                          - generic:
+                            - paragraph: TSHIRT-BASIC-003
+                            - paragraph: OMS-PROD-1003
+                        - cell:
+                          - paragraph: Basic Tee
+                        - cell:
+                          - generic:
+                            - paragraph: "1"
+                            - paragraph: channel rows
+                        - cell:
+                          - generic:
+                            - paragraph: East-Hub
+                            - paragraph: NEXUS-TSHIRT-BLK-M
+                        - cell:
+                          - generic:
+                            - img
+                            - text: Invalid
+                        - cell:
+                          - generic:
+                            - paragraph: 2026-04-20 10:20
+                            - paragraph: Mia
+                        - cell:
+                          - generic:
+                            - button:
+                              - img
+                              - text: 编辑
+                            - button:
+                              - img
+      - generic:
+        - complementary:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic:
+                  - generic: OMS AI 助手
+                  - generic: Beta
+                - paragraph: 智能问答 · 操作执行 · 主动洞察
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - button:
+                - img
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - generic: 智能洞察
+                      - generic:
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 异常率上升
+                            - paragraph: 今日订单异常率较昨日上升 23%
+                            - button:
+                              - text: 查看详情
+                              - img
+                          - button:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 销售增长
+                            - paragraph: 本周销售额环比增长 12%
+                            - button:
+                              - text: 查看报表
+                              - img
+                          - button:
+                            - img
+                        - generic:
+                          - generic:
+                            - img
+                          - generic:
+                            - paragraph: 库存预警
+                            - paragraph: 3 个 SKU 库存低于安全水位
+                            - button:
+                              - text: 查看库存
+                              - img
+                          - button:
+                            - img
+                    - generic:
+                      - generic:
+                        - img
+                      - heading [level=2]: 有什么可以帮你？
+                      - paragraph: 我可以帮你查数据、管理订单、智能分仓、操作产品库存、创建自动化工作流。
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: 📊
+                          - generic: 数据与分析
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 查看销售数据
+                          - button:
+                            - img
+                            - generic: 对比业绩表现
+                          - button:
+                            - img
+                            - generic: 导出数据报表
+                      - generic:
+                        - generic:
+                          - generic: 🛍️
+                          - generic: 产品与库存
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 创建/编辑产品
+                          - button:
+                            - img
+                            - generic: 查询库存水平
+                          - button:
+                            - img
+                            - generic: 管理产品集合
+                      - generic:
+                        - generic:
+                          - generic: 🏭
+                          - generic: 智能分仓
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 分仓查询
+                          - button:
+                            - img
+                            - generic: 开仓分析
+                          - button:
+                            - img
+                            - generic: 分仓规则
+                      - generic:
+                        - generic:
+                          - generic: 👥
+                          - generic: 客户管理
+                        - generic:
+                          - button:
+                            - img
+                            - generic: 创建客户细分
+                          - button:
+                            - img
+                            - generic: 查找客户信息
+                      - button:
+                        - text: 展开更多 (3 个分类)
+                        - img
+          - generic:
+            - generic:
+              - textbox:
+                - /placeholder: 问我任何问题...
+              - button [disabled]:
+                - img
+            - paragraph: Enter 发送 · Shift+Enter 换行 · Esc 关闭
+  - region "Notifications alt+T"
+  - alert
+  - dialog "OMS Product Mapping Detail" [ref=e604]:
+    - generic [ref=e605]:
+      - heading "OMS Product Mapping Detail" [level=2] [ref=e606]
+      - paragraph [ref=e607]: 在一个详情面板中管理多个渠道 SKU 与唯一仓库 SKU。
+    - generic [ref=e611]:
+      - generic [ref=e612]:
+        - generic [ref=e613]:
+          - heading "OMS Product" [level=3] [ref=e614]
+          - paragraph [ref=e615]: 选择本次要管理的 OMS 商品中心对象。
+        - combobox [ref=e616] [cursor=pointer]:
+          - generic: BAG-CLASSIC-001 · Classic Leather Bag
+          - img [ref=e617]
+        - generic [ref=e619]:
+          - textbox "OMS Product Code" [ref=e620]: BAG-CLASSIC-001
+          - textbox "OMS Product Name" [ref=e621]: Classic Leather Bag
+      - generic [ref=e622]:
+        - generic [ref=e623]:
+          - generic [ref=e624]:
+            - heading "Channel Mappings" [level=3] [ref=e625]
+            - paragraph [ref=e626]: 一个 OMS Product 可维护多条渠道 SKU 映射。
+          - button "添加渠道映射" [active] [ref=e627] [cursor=pointer]:
+            - img [ref=e628]
+            - text: 添加渠道映射
+        - generic [ref=e686]:
+          - generic [ref=e687]:
+            - generic [ref=e688]: 渠道映射 1
+            - button [ref=e689] [cursor=pointer]:
+              - img [ref=e690]
+          - generic [ref=e693]:
+            - combobox [ref=e694] [cursor=pointer]:
+              - generic: 渠道
+              - img [ref=e695]
+            - combobox [ref=e697] [cursor=pointer]:
+              - generic: 店铺
+              - img [ref=e698]
+            - textbox "渠道 SKU" [ref=e700]
+          - generic [ref=e701]:
+            - generic [ref=e702]:
+              - paragraph [ref=e703]: 启用此渠道映射
+              - paragraph [ref=e704]: 关闭后保留记录，但不参与履约识别。
+            - switch [checked] [ref=e705] [cursor=pointer]
+      - generic [ref=e630]:
+        - generic [ref=e631]:
+          - heading "Warehouse Mapping" [level=3] [ref=e632]
+          - paragraph [ref=e633]: 每个 OMS Product 最多只允许一个仓库 SKU 映射。
+        - combobox [ref=e634] [cursor=pointer]:
+          - generic: 选择仓库 SKU
+          - img [ref=e635]
+        - generic [ref=e637]: 当前未配置 warehouse mapping。
+      - generic [ref=e638]:
+        - generic [ref=e639]:
+          - heading "备注" [level=3] [ref=e640]
+          - paragraph [ref=e641]: 记录该映射存在的原因或切换说明。
+        - textbox "备注" [ref=e642]
+      - generic [ref=e643]:
+        - generic [ref=e644]:
+          - heading "校验结果" [level=3] [ref=e645]
+          - generic [ref=e646]:
+            - img [ref=e706]
+            - text: Invalid
+        - generic [ref=e708]: 每条 channel mapping 都必须填写 channel、store 和 channel SKU。
+    - generic [ref=e651]:
+      - button "取消" [ref=e652] [cursor=pointer]
+      - button "保存 Mapping" [disabled]:
+        - img
+        - text: 保存 Mapping
+    - button "Close" [ref=e653] [cursor=pointer]:
+      - img [ref=e654]
+      - generic [ref=e657]: Close

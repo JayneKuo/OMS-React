@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const AGENTFORCE_BASE = 'https://agentforce.item.pub'
-const AGENTFORCE_AGENT_ID = process.env.AGENTFORCE_AGENT_ID || '01744ffc-3613-4eba-bf28-3d32891b9028'
-const AGENTFORCE_API_KEY = process.env.AGENTFORCE_API_KEY || 'laf_87c2fd49e3b16b11abe0eff733bd17c1'
+const AGENTFORCE_AGENT_ID = process.env.AGENTFORCE_AGENT_ID || ''
+const AGENTFORCE_API_KEY = process.env.AGENTFORCE_API_KEY || ''
 
 interface ChatRequest {
   message: string
   sessionId?: string | null
+  /** 前端登录后获得的 OMS 凭证，首次创建会话时注入 */
+  omsContext?: {
+    token: string
+    merchantNo: string
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -25,6 +30,18 @@ export async function POST(request: NextRequest) {
     // 传入 session_id 以支持多轮对话
     if (body.sessionId) {
       agentforceBody.session_id = body.sessionId
+    }
+
+    // 首次创建会话时，把前端的 OMS 凭证通过 env 注入给 Agent
+    // AgentForce 的 env 仅在不带 session_id 创建新会话时生效
+    // baseUrl 和 tenantId 是固定的，从服务端环境变量读取
+    if (!body.sessionId && body.omsContext?.token) {
+      agentforceBody.env = {
+        OMS_TOKEN: body.omsContext.token,
+        OMS_MERCHANT_NO: body.omsContext.merchantNo,
+        OMS_BASE_URL: process.env.OMS_API_BASE_URL || 'https://omsv2-staging.item.com',
+        OMS_TENANT_ID: process.env.OMS_TENANT_ID || 'LT',
+      }
     }
 
     const response = await fetch(

@@ -1,0 +1,474 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e6]:
+          - link "O OMS" [ref=e7] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e9]: O
+            - generic [ref=e10]: OMS
+          - button "Acme Corporation Acme Store US" [ref=e11] [cursor=pointer]:
+            - generic [ref=e12]:
+              - generic [ref=e13]: Acme Corporation
+              - generic [ref=e14]: Acme Store US
+            - img [ref=e15]
+        - navigation [ref=e18]:
+          - link "仪表板" [ref=e19] [cursor=pointer]:
+            - /url: /dashboard
+          - link "订单管理" [ref=e20] [cursor=pointer]:
+            - /url: /orders
+          - link "退货管理" [ref=e21] [cursor=pointer]:
+            - /url: /returns
+          - link "采购管理" [ref=e22] [cursor=pointer]:
+            - /url: /purchase
+          - link "物流管理" [ref=e23] [cursor=pointer]:
+            - /url: /logistics
+          - link "库存管理" [ref=e24] [cursor=pointer]:
+            - /url: /inventory
+          - link "商品管理" [ref=e25] [cursor=pointer]:
+            - /url: /product
+          - link "事件管理" [ref=e26] [cursor=pointer]:
+            - /url: /events
+          - link "集成管理" [ref=e27] [cursor=pointer]:
+            - /url: /integrations
+          - link "POM管理" [ref=e28] [cursor=pointer]:
+            - /url: /pom
+          - link "自动化" [ref=e29] [cursor=pointer]:
+            - /url: /automation
+          - link "客户管理" [ref=e30] [cursor=pointer]:
+            - /url: /customer-management
+          - link "商户管理" [ref=e31] [cursor=pointer]:
+            - /url: /merchant-management
+          - link "客户门户" [ref=e32] [cursor=pointer]:
+            - /url: /client-portal
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - img [ref=e35]
+            - searchbox "搜索" [ref=e38]
+          - generic [ref=e39]:
+            - button "AI 助手" [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+            - button [ref=e43] [cursor=pointer]:
+              - img [ref=e44]
+            - button [ref=e47] [cursor=pointer]:
+              - img [ref=e48]
+            - button [ref=e52] [cursor=pointer]:
+              - img [ref=e53]
+    - generic [ref=e56]:
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: Automation
+          - button [ref=e60] [cursor=pointer]:
+            - img [ref=e61]
+        - navigation [ref=e66]:
+          - generic [ref=e67]:
+            - button "Sales Order" [ref=e68] [cursor=pointer]:
+              - img [ref=e70]
+              - generic [ref=e75]: Sales Order
+              - img [ref=e76]
+            - generic [ref=e78]:
+              - link "Sales Order Routing" [ref=e79] [cursor=pointer]:
+                - /url: /automation/sales-order/routing
+                - img [ref=e81]
+                - generic [ref=e86]: Sales Order Routing
+              - link "Fulfillment Mode" [ref=e87] [cursor=pointer]:
+                - /url: /automation/sales-order/fulfillment-mode
+                - img [ref=e89]
+                - generic [ref=e93]: Fulfillment Mode
+              - link "SKU Designated Warehouse" [ref=e94] [cursor=pointer]:
+                - /url: /automation/sales-order/designated-warehouse
+                - img [ref=e96]
+                - generic [ref=e99]: SKU Designated Warehouse
+              - link "Hold Order Rules" [ref=e100] [cursor=pointer]:
+                - /url: /automation/sales-order/hold-rules
+                - img [ref=e102]
+                - generic [ref=e104]: Hold Order Rules
+              - link "Filter Orders by SKU" [ref=e105] [cursor=pointer]:
+                - /url: /automation/sales-order/filter-by-sku
+                - img [ref=e107]
+                - generic [ref=e109]: Filter Orders by SKU
+              - link "Order Update Settings" [ref=e110] [cursor=pointer]:
+                - /url: /automation/sales-order/update-settings
+                - img [ref=e112]
+                - generic [ref=e115]: Order Update Settings
+              - link "Mapping" [ref=e116] [cursor=pointer]:
+                - /url: /automation/sales-order/mapping
+                - img [ref=e118]
+                - generic [ref=e121]: Mapping
+          - button "Purchase Order" [ref=e123] [cursor=pointer]:
+            - img [ref=e125]
+            - generic [ref=e129]: Purchase Order
+            - img [ref=e130]
+          - button "Inventory" [ref=e133] [cursor=pointer]:
+            - img [ref=e135]
+            - generic [ref=e138]: Inventory
+            - img [ref=e139]
+          - button "Logistics" [ref=e142] [cursor=pointer]:
+            - img [ref=e144]
+            - generic [ref=e149]: Logistics
+            - img [ref=e150]
+          - link "Email Notification" [ref=e152] [cursor=pointer]:
+            - /url: /automation/email-notification
+            - img [ref=e154]
+            - generic [ref=e157]: Email Notification
+          - link "Webhook" [ref=e158] [cursor=pointer]:
+            - /url: /automation/webhook
+            - img [ref=e160]
+            - generic [ref=e164]: Webhook
+      - main [ref=e165]:
+        - generic [ref=e166]:
+          - generic [ref=e167]:
+            - generic [ref=e168]:
+              - generic [ref=e169]:
+                - heading "Mapping" [level=1] [ref=e170]
+                - generic [ref=e171]: Prototype
+              - paragraph [ref=e172]: Manage how OMS resolves channel-side SKUs into WMS or item master identities, without locking the model to UNIS-only fulfillment.
+            - generic [ref=e173]:
+              - generic [ref=e174]: 3 Active Mappings
+              - button "Create Mapping" [ref=e175] [cursor=pointer]:
+                - img [ref=e176]
+                - text: Create Mapping
+          - generic [ref=e177]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - paragraph [ref=e181]: Total Mappings
+                - paragraph [ref=e182]: "4"
+                - paragraph [ref=e183]: All mapping records in the prototype workspace.
+              - img [ref=e185]
+            - generic [ref=e189]:
+              - generic [ref=e190]:
+                - paragraph [ref=e191]: Active
+                - paragraph [ref=e192]: "3"
+                - paragraph [ref=e193]: Mappings currently used by order resolution.
+              - img [ref=e195]
+            - generic [ref=e199]:
+              - generic [ref=e200]:
+                - paragraph [ref=e201]: Conflicts
+                - paragraph [ref=e202]: "0"
+                - paragraph [ref=e203]: Records blocked by duplicate scope or target collision.
+              - img [ref=e205]
+            - generic [ref=e208]:
+              - generic [ref=e209]:
+                - paragraph [ref=e210]: Coverage
+                - paragraph [ref=e211]: 38%
+                - paragraph [ref=e212]: Mapped scope coverage against the current prototype dataset.
+              - img [ref=e214]
+          - generic [ref=e218]:
+            - generic [ref=e219]:
+              - heading "Mapping Records" [level=3] [ref=e220]
+              - paragraph [ref=e221]: This prototype focuses on list management, validation, and copy workflows first. Real API persistence can be connected behind the same UI later.
+            - generic [ref=e222]:
+              - generic [ref=e224]:
+                - generic [ref=e225]:
+                  - img [ref=e226]
+                  - textbox "Search source SKU, item code, item name, WMS SKU..." [ref=e229]
+                - generic [ref=e230]:
+                  - button "Status" [ref=e231] [cursor=pointer]:
+                    - text: Status
+                    - img [ref=e232]
+                  - button "更多 3" [ref=e234] [cursor=pointer]:
+                    - img [ref=e235]
+                    - text: 更多
+                    - generic [ref=e237]: "3"
+              - table [ref=e240]:
+                - rowgroup [ref=e241]:
+                  - row "Source SKU Channel / Store Target Item WMS / Warehouse Copied Values Status Validation Updated Actions" [ref=e242]:
+                    - columnheader "Source SKU" [ref=e243]
+                    - columnheader "Channel / Store" [ref=e244]
+                    - columnheader "Target Item" [ref=e245]
+                    - columnheader "WMS / Warehouse" [ref=e246]
+                    - columnheader "Copied Values" [ref=e247]
+                    - columnheader "Status" [ref=e248]
+                    - columnheader "Validation" [ref=e249]
+                    - columnheader "Updated" [ref=e250]
+                    - columnheader "Actions" [ref=e251]
+                - rowgroup [ref=e252]:
+                  - 'row "AMZ-BLK-001 Market: US Amazon US US Flagship IM-10001 Premium Leather Bag - Black UNIS-BAG-BLK-001 UNIS WMS US-West ID: ITEM-90001 SKU: UNIS-BAG-BLK-001 ACTIVE Valid 2026-04-18 10:30 Olivia Edit Copy" [ref=e253]':
+                    - 'cell "AMZ-BLK-001 Market: US" [ref=e254]':
+                      - generic [ref=e255]:
+                        - paragraph [ref=e256]: AMZ-BLK-001
+                        - paragraph [ref=e257]: "Market: US"
+                    - cell "Amazon US US Flagship" [ref=e258]:
+                      - generic [ref=e259]:
+                        - paragraph [ref=e260]: Amazon US
+                        - paragraph [ref=e261]: US Flagship
+                    - cell "IM-10001 Premium Leather Bag - Black UNIS-BAG-BLK-001" [ref=e262]:
+                      - generic [ref=e263]:
+                        - paragraph [ref=e264]: IM-10001
+                        - paragraph [ref=e265]: Premium Leather Bag - Black
+                        - paragraph [ref=e266]: UNIS-BAG-BLK-001
+                    - cell "UNIS WMS US-West" [ref=e267]:
+                      - generic [ref=e268]:
+                        - paragraph [ref=e269]: UNIS WMS
+                        - paragraph [ref=e270]: US-West
+                    - 'cell "ID: ITEM-90001 SKU: UNIS-BAG-BLK-001" [ref=e271]':
+                      - generic [ref=e272]:
+                        - paragraph [ref=e273]: "ID: ITEM-90001"
+                        - paragraph [ref=e274]: "SKU: UNIS-BAG-BLK-001"
+                    - cell "ACTIVE" [ref=e275]:
+                      - generic [ref=e276]:
+                        - switch [checked] [ref=e277] [cursor=pointer]
+                        - generic [ref=e278]: ACTIVE
+                    - cell "Valid" [ref=e279]:
+                      - generic [ref=e280]:
+                        - img [ref=e281]
+                        - text: Valid
+                    - cell "2026-04-18 10:30 Olivia" [ref=e284]:
+                      - generic [ref=e285]:
+                        - paragraph [ref=e286]: 2026-04-18 10:30
+                        - paragraph [ref=e287]: Olivia
+                    - cell "Edit Copy" [ref=e288]:
+                      - generic [ref=e289]:
+                        - button "Edit" [ref=e290] [cursor=pointer]:
+                          - img [ref=e291]
+                          - text: Edit
+                        - button "Copy" [ref=e294] [cursor=pointer]:
+                          - img [ref=e295]
+                          - text: Copy
+                  - 'row "SHOP-BRN-002 Market: US Shopify DTC Store IM-10002 Premium Leather Bag - Brown UNIS-BAG-BRN-002 UNIS WMS US-West ID: ITEM-90002 SKU: UNIS-BAG-BRN-002 ACTIVE Valid 2026-04-18 14:20 Ethan Edit Copy" [ref=e298]':
+                    - 'cell "SHOP-BRN-002 Market: US" [ref=e299]':
+                      - generic [ref=e300]:
+                        - paragraph [ref=e301]: SHOP-BRN-002
+                        - paragraph [ref=e302]: "Market: US"
+                    - cell "Shopify DTC Store" [ref=e303]:
+                      - generic [ref=e304]:
+                        - paragraph [ref=e305]: Shopify
+                        - paragraph [ref=e306]: DTC Store
+                    - cell "IM-10002 Premium Leather Bag - Brown UNIS-BAG-BRN-002" [ref=e307]:
+                      - generic [ref=e308]:
+                        - paragraph [ref=e309]: IM-10002
+                        - paragraph [ref=e310]: Premium Leather Bag - Brown
+                        - paragraph [ref=e311]: UNIS-BAG-BRN-002
+                    - cell "UNIS WMS US-West" [ref=e312]:
+                      - generic [ref=e313]:
+                        - paragraph [ref=e314]: UNIS WMS
+                        - paragraph [ref=e315]: US-West
+                    - 'cell "ID: ITEM-90002 SKU: UNIS-BAG-BRN-002" [ref=e316]':
+                      - generic [ref=e317]:
+                        - paragraph [ref=e318]: "ID: ITEM-90002"
+                        - paragraph [ref=e319]: "SKU: UNIS-BAG-BRN-002"
+                    - cell "ACTIVE" [ref=e320]:
+                      - generic [ref=e321]:
+                        - switch [checked] [ref=e322] [cursor=pointer]
+                        - generic [ref=e323]: ACTIVE
+                    - cell "Valid" [ref=e324]:
+                      - generic [ref=e325]:
+                        - img [ref=e326]
+                        - text: Valid
+                    - cell "2026-04-18 14:20 Ethan" [ref=e329]:
+                      - generic [ref=e330]:
+                        - paragraph [ref=e331]: 2026-04-18 14:20
+                        - paragraph [ref=e332]: Ethan
+                    - cell "Edit Copy" [ref=e333]:
+                      - generic [ref=e334]:
+                        - button "Edit" [ref=e335] [cursor=pointer]:
+                          - img [ref=e336]
+                          - text: Edit
+                        - button "Copy" [ref=e339] [cursor=pointer]:
+                          - img [ref=e340]
+                          - text: Copy
+                  - 'row "SHEIN-DRESS-S Market: EU Shein Marketplace Store IM-10003 Cotton Dress - White Floral S UNIS-DRESS-WHT-S UNIS WMS EU-Central ID: ITEM-90003 SKU: UNIS-DRESS-WHT-S ACTIVE Valid 2026-04-19 09:10 Sophia Edit Copy" [ref=e343]':
+                    - 'cell "SHEIN-DRESS-S Market: EU" [ref=e344]':
+                      - generic [ref=e345]:
+                        - paragraph [ref=e346]: SHEIN-DRESS-S
+                        - paragraph [ref=e347]: "Market: EU"
+                    - cell "Shein Marketplace Store" [ref=e348]:
+                      - generic [ref=e349]:
+                        - paragraph [ref=e350]: Shein
+                        - paragraph [ref=e351]: Marketplace Store
+                    - cell "IM-10003 Cotton Dress - White Floral S UNIS-DRESS-WHT-S" [ref=e352]:
+                      - generic [ref=e353]:
+                        - paragraph [ref=e354]: IM-10003
+                        - paragraph [ref=e355]: Cotton Dress - White Floral S
+                        - paragraph [ref=e356]: UNIS-DRESS-WHT-S
+                    - cell "UNIS WMS EU-Central" [ref=e357]:
+                      - generic [ref=e358]:
+                        - paragraph [ref=e359]: UNIS WMS
+                        - paragraph [ref=e360]: EU-Central
+                    - 'cell "ID: ITEM-90003 SKU: UNIS-DRESS-WHT-S" [ref=e361]':
+                      - generic [ref=e362]:
+                        - paragraph [ref=e363]: "ID: ITEM-90003"
+                        - paragraph [ref=e364]: "SKU: UNIS-DRESS-WHT-S"
+                    - cell "ACTIVE" [ref=e365]:
+                      - generic [ref=e366]:
+                        - switch [checked] [ref=e367] [cursor=pointer]
+                        - generic [ref=e368]: ACTIVE
+                    - cell "Valid" [ref=e369]:
+                      - generic [ref=e370]:
+                        - img [ref=e371]
+                        - text: Valid
+                    - cell "2026-04-19 09:10 Sophia" [ref=e374]:
+                      - generic [ref=e375]:
+                        - paragraph [ref=e376]: 2026-04-19 09:10
+                        - paragraph [ref=e377]: Sophia
+                    - cell "Edit Copy" [ref=e378]:
+                      - generic [ref=e379]:
+                        - button "Edit" [ref=e380] [cursor=pointer]:
+                          - img [ref=e381]
+                          - text: Edit
+                        - button "Copy" [ref=e384] [cursor=pointer]:
+                          - img [ref=e385]
+                          - text: Copy
+                  - 'row "TT-BLK-M-778 Market: US TikTok Shop US Flagship IM-10004 Basic Tee - Black M NEXUS-TSHIRT-BLK-M 3PL Nexus East-Hub ID: ITEM-90004 SKU: NEXUS-TSHIRT-BLK-M DISABLED Valid 2026-04-19 16:45 Mia Edit Copy" [ref=e388]':
+                    - 'cell "TT-BLK-M-778 Market: US" [ref=e389]':
+                      - generic [ref=e390]:
+                        - paragraph [ref=e391]: TT-BLK-M-778
+                        - paragraph [ref=e392]: "Market: US"
+                    - cell "TikTok Shop US Flagship" [ref=e393]:
+                      - generic [ref=e394]:
+                        - paragraph [ref=e395]: TikTok Shop
+                        - paragraph [ref=e396]: US Flagship
+                    - cell "IM-10004 Basic Tee - Black M NEXUS-TSHIRT-BLK-M" [ref=e397]:
+                      - generic [ref=e398]:
+                        - paragraph [ref=e399]: IM-10004
+                        - paragraph [ref=e400]: Basic Tee - Black M
+                        - paragraph [ref=e401]: NEXUS-TSHIRT-BLK-M
+                    - cell "3PL Nexus East-Hub" [ref=e402]:
+                      - generic [ref=e403]:
+                        - paragraph [ref=e404]: 3PL Nexus
+                        - paragraph [ref=e405]: East-Hub
+                    - 'cell "ID: ITEM-90004 SKU: NEXUS-TSHIRT-BLK-M" [ref=e406]':
+                      - generic [ref=e407]:
+                        - paragraph [ref=e408]: "ID: ITEM-90004"
+                        - paragraph [ref=e409]: "SKU: NEXUS-TSHIRT-BLK-M"
+                    - cell "DISABLED" [ref=e410]:
+                      - generic [ref=e411]:
+                        - switch [ref=e412] [cursor=pointer]
+                        - generic [ref=e413]: DISABLED
+                    - cell "Valid" [ref=e414]:
+                      - generic [ref=e415]:
+                        - img [ref=e416]
+                        - text: Valid
+                    - cell "2026-04-19 16:45 Mia" [ref=e419]:
+                      - generic [ref=e420]:
+                        - paragraph [ref=e421]: 2026-04-19 16:45
+                        - paragraph [ref=e422]: Mia
+                    - cell "Edit Copy" [ref=e423]:
+                      - generic [ref=e424]:
+                        - button "Edit" [ref=e425] [cursor=pointer]:
+                          - img [ref=e426]
+                          - text: Edit
+                        - button "Copy" [ref=e429] [cursor=pointer]:
+                          - img [ref=e430]
+                          - text: Copy
+      - complementary "AI 助手" [ref=e434]:
+        - generic [ref=e435]:
+          - generic [ref=e436]:
+            - img [ref=e438]
+            - generic [ref=e440]:
+              - generic [ref=e441]:
+                - generic [ref=e442]: OMS AI 助手
+                - generic [ref=e443]: Beta
+              - paragraph [ref=e444]: 智能问答 · 操作执行 · 主动洞察
+          - generic [ref=e445]:
+            - button "新建对话" [ref=e446] [cursor=pointer]:
+              - img [ref=e447]
+            - button "对话历史" [ref=e448] [cursor=pointer]:
+              - img [ref=e449]
+            - button "关闭" [ref=e453] [cursor=pointer]:
+              - img [ref=e454]
+        - generic [ref=e461]:
+          - generic [ref=e462]:
+            - generic [ref=e463]:
+              - img [ref=e464]
+              - generic [ref=e466]: 智能洞察
+            - generic [ref=e467]:
+              - generic [ref=e468]:
+                - img [ref=e470]
+                - generic [ref=e472]:
+                  - paragraph [ref=e473]: 异常率上升
+                  - paragraph [ref=e474]: 今日订单异常率较昨日上升 23%
+                  - button "查看详情" [ref=e475] [cursor=pointer]:
+                    - text: 查看详情
+                    - img [ref=e476]
+                - button "关闭" [ref=e478] [cursor=pointer]:
+                  - img [ref=e479]
+              - generic [ref=e482]:
+                - img [ref=e484]
+                - generic [ref=e487]:
+                  - paragraph [ref=e488]: 销售增长
+                  - paragraph [ref=e489]: 本周销售额环比增长 12%
+                  - button "查看报表" [ref=e490] [cursor=pointer]:
+                    - text: 查看报表
+                    - img [ref=e491]
+                - button "关闭" [ref=e493] [cursor=pointer]:
+                  - img [ref=e494]
+              - generic [ref=e497]:
+                - img [ref=e499]
+                - generic [ref=e505]:
+                  - paragraph [ref=e506]: 库存预警
+                  - paragraph [ref=e507]: 3 个 SKU 库存低于安全水位
+                  - button "查看库存" [ref=e508] [cursor=pointer]:
+                    - text: 查看库存
+                    - img [ref=e509]
+                - button "关闭" [ref=e511] [cursor=pointer]:
+                  - img [ref=e512]
+          - generic [ref=e515]:
+            - img [ref=e517]
+            - heading "有什么可以帮你？" [level=2] [ref=e519]
+            - paragraph [ref=e520]: 我可以帮你查数据、管理订单、智能分仓、操作产品库存、创建自动化工作流。
+          - generic [ref=e521]:
+            - generic [ref=e522]:
+              - generic [ref=e523]:
+                - generic [ref=e524]: 📊
+                - generic [ref=e525]: 数据与分析
+              - generic [ref=e526]:
+                - button "查看销售数据" [ref=e527] [cursor=pointer]:
+                  - img [ref=e528]
+                  - generic [ref=e531]: 查看销售数据
+                - button "对比业绩表现" [ref=e532] [cursor=pointer]:
+                  - img [ref=e533]
+                  - generic [ref=e535]: 对比业绩表现
+                - button "导出数据报表" [ref=e536] [cursor=pointer]:
+                  - img [ref=e537]
+                  - generic [ref=e541]: 导出数据报表
+            - generic [ref=e542]:
+              - generic [ref=e543]:
+                - generic [ref=e544]: 🛍️
+                - generic [ref=e545]: 产品与库存
+              - generic [ref=e546]:
+                - button "创建/编辑产品" [ref=e547] [cursor=pointer]:
+                  - img [ref=e548]
+                  - generic [ref=e551]: 创建/编辑产品
+                - button "查询库存水平" [ref=e552] [cursor=pointer]:
+                  - img [ref=e553]
+                  - generic [ref=e559]: 查询库存水平
+                - button "管理产品集合" [ref=e560] [cursor=pointer]:
+                  - img [ref=e561]
+                  - generic [ref=e571]: 管理产品集合
+            - generic [ref=e572]:
+              - generic [ref=e573]:
+                - generic [ref=e574]: 🏭
+                - generic [ref=e575]: 智能分仓
+              - generic [ref=e576]:
+                - button "分仓查询" [ref=e577] [cursor=pointer]:
+                  - img [ref=e578]
+                  - generic [ref=e581]: 分仓查询
+                - button "开仓分析" [ref=e582] [cursor=pointer]:
+                  - img [ref=e583]
+                  - generic [ref=e585]: 开仓分析
+                - button "分仓规则" [ref=e586] [cursor=pointer]:
+                  - img [ref=e587]
+                  - generic [ref=e590]: 分仓规则
+            - generic [ref=e591]:
+              - generic [ref=e592]:
+                - generic [ref=e593]: 👥
+                - generic [ref=e594]: 客户管理
+              - generic [ref=e595]:
+                - button "创建客户细分" [ref=e596] [cursor=pointer]:
+                  - img [ref=e597]
+                  - generic [ref=e602]: 创建客户细分
+                - button "查找客户信息" [ref=e603] [cursor=pointer]:
+                  - img [ref=e604]
+                  - generic [ref=e609]: 查找客户信息
+            - button "展开更多 (3 个分类)" [ref=e610] [cursor=pointer]:
+              - text: 展开更多 (3 个分类)
+              - img [ref=e611]
+        - generic [ref=e613]:
+          - generic [ref=e614]:
+            - textbox "问我任何问题..." [ref=e615]
+            - button "发送" [disabled]:
+              - img
+          - paragraph [ref=e616]: Enter 发送 · Shift+Enter 换行 · Esc 关闭
+  - region "Notifications alt+T"
+  - alert [ref=e617]
