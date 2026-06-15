@@ -45,6 +45,10 @@ interface PurchaseOrder {
   originalPoNo: string // Original PO number from external system
   prNos: string[] // Related PR numbers (multiple PRs can be consolidated into one PO)
   referenceNo: string
+  purchaseType?: "STANDARD" | "FACTORY_DIRECT"
+  supplyAllocationStatus?: "PENDING_ALLOCATION" | "ALLOCATED" | "RELEASED"
+  fulfillmentRoute?: "DIRECT" | "VIA_FG"
+  vendorFgWarehouseName?: string | null
   supplierName: string
   supplierNo: string
   destination: string
@@ -102,11 +106,51 @@ interface PurchaseOrder {
 // Mock data with simplified status system (NEW, PROCESSING, CLOSED, CANCELLED, EXCEPTION)
 const mockPOs: PurchaseOrder[] = [
   {
+    id: "fd-missing-fg",
+    orderNo: "PO202403150099",
+    originalPoNo: "EXT-PO-2024-099",
+    prNos: ["PR202402010099"],
+    referenceNo: "REF202403150099",
+    purchaseType: "FACTORY_DIRECT",
+    supplyAllocationStatus: "PENDING_ALLOCATION",
+    fulfillmentRoute: "VIA_FG",
+    vendorFgWarehouseName: null,
+    supplierName: "Shenzhen Smart Factory",
+    supplierNo: "FAC-SZ01",
+    destination: "Main Warehouse - Los Angeles",
+    warehouseName: "Main Warehouse",
+    status: POStatus.PROCESSING,
+    shippingStatus: null,
+    receivingStatus: ReceivingStatus.NOT_RECEIVED,
+    dataSource: "PR_CONVERSION",
+    totalOrderQty: 320,
+    shippedQty: 0,
+    receivedQty: 0,
+    totalPrice: 89600.00,
+    currency: "USD",
+    asnCount: 0,
+    created: "2024-02-05T09:30:00Z",
+    updated: "2024-02-05T09:30:00Z",
+    expectedArrivalDate: "2024-02-20T15:00:00Z",
+    purchaseOrderDate: "2024-02-05",
+    toCity: "Los Angeles",
+    toState: "CA",
+    toCountry: "USA",
+    shippingService: "Factory Direct",
+    shippingCarrier: "Vendor Managed",
+    shippingNotes: "Destination RN created first; VIA_FG route requires vendor FG warehouse assignment.",
+    itemCount: 9,
+    exceptions: ["Missing vendor FG warehouse"],
+    sentToSupplier: false,
+  },
+  {
     id: "1",
     orderNo: "PO202403150001",
     originalPoNo: "EXT-PO-2024-001",
     prNos: ["PR202401100001", "PR202401100002"],
     referenceNo: "REF202403150001",
+    purchaseType: "FACTORY_DIRECT",
+    supplyAllocationStatus: "PENDING_ALLOCATION",
     supplierName: "ABC Suppliers Inc.",
     supplierNo: "SUP001",
     destination: "Main Warehouse - Los Angeles",
@@ -156,6 +200,8 @@ const mockPOs: PurchaseOrder[] = [
     originalPoNo: "EXT-PO-2024-002",
     prNos: ["PR202401090001"],
     referenceNo: "REF202403150002",
+    purchaseType: "FACTORY_DIRECT",
+    supplyAllocationStatus: "ALLOCATED",
     supplierName: "Global Trading Co.",
     supplierNo: "SUP002",
     destination: "East Distribution Center - New York",
@@ -1162,6 +1208,15 @@ export default function POPage() {
       ],
     },
     {
+      id: "purchaseType",
+      label: t('purchaseType'),
+      type: "multiple",
+      options: [
+        { id: "standard", label: "Standard Purchase", value: "STANDARD" },
+        { id: "factory_direct", label: "Factory Direct", value: "FACTORY_DIRECT" },
+      ],
+    },
+    {
       id: "shippingStatus",
       label: t('shippingStatus'),
       type: "multiple",
@@ -1359,6 +1414,8 @@ export default function POPage() {
         )
       } else if (filter.filterId === "status") {
         filtered = filtered.filter(po => po.status === filter.optionValue)
+      } else if (filter.filterId === "purchaseType") {
+        filtered = filtered.filter(po => (po.purchaseType || "STANDARD") === filter.optionValue)
       } else if (filter.filterId === "shippingStatus") {
         filtered = filtered.filter(po => po.shippingStatus === filter.optionValue)
       } else if (filter.filterId === "receivingStatus") {
@@ -1387,7 +1444,7 @@ export default function POPage() {
       cell: (row) => (
         <OrderNumberCell
           orderNumber={row.orderNo}
-          onClick={() => router.push(`/po-detail-v2`)}
+          onClick={() => router.push(`/po-detail-v2?poNo=${encodeURIComponent(row.orderNo)}`)}
         />
       ),
     },
@@ -1399,6 +1456,56 @@ export default function POPage() {
       cell: (row) => (
         <StatusBadge status={row.status} language="cn" />
       ),
+    },
+    {
+      id: "purchaseType",
+      header: t('purchaseType'),
+      width: "170px",
+      defaultVisible: true,
+      cell: (row) => {
+        const isFactoryDirect = row.purchaseType === "FACTORY_DIRECT"
+        const missingFgWarehouse = isFactoryDirect && row.fulfillmentRoute === "VIA_FG" && !row.vendorFgWarehouseName
+        const allocationMeta = {
+          PENDING_ALLOCATION: {
+            label: "Pending Allocation",
+            className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+          },
+          ALLOCATED: {
+            label: "Allocated",
+            className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+          },
+          RELEASED: {
+            label: "Released",
+            className: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800",
+          },
+        }[row.supplyAllocationStatus || ""] || null
+
+        if (!isFactoryDirect) {
+          return (
+            <Badge variant="outline" className="text-muted-foreground">
+              Standard Purchase
+            </Badge>
+          )
+        }
+
+        return (
+          <div className="flex flex-col items-start gap-1">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
+              Factory Direct
+            </Badge>
+            {allocationMeta && (
+              <Badge variant="outline" className={cn("text-[10px]", allocationMeta.className)}>
+                {allocationMeta.label}
+              </Badge>
+            )}
+            {missingFgWarehouse && (
+              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                Pending Vendor
+              </Badge>
+            )}
+          </div>
+        )
+      },
     },
     {
       id: "originalPoNo",

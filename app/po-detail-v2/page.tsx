@@ -11,8 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { POSendDialog } from "@/components/purchase/po-send-dialog"
 import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +29,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogTrigger,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -35,7 +39,7 @@ import {
   FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send,
   Download, Eye, Copy, Check, AlertCircle, Calendar, Building, User, MapPin, Clock,
   TrendingUp, RefreshCw, ExternalLink, Phone, Mail, History, Info, XCircle,
-  FilePlus, Loader2, Lock, MoreHorizontal, Pencil, Ban
+  FilePlus, Loader2, Lock, MoreHorizontal, Pencil, Ban, Plus
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -45,8 +49,35 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useI18n } from "@/components/i18n-provider"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createPurchaseSidebarItems } from "@/lib/purchase-sidebar-items"
+import { cn } from "@/lib/utils"
+
+type SupplyLineDraft = {
+  sourceLineNo: number
+  skuCode: string
+  productName: string
+  quantity: number
+  allocatedQty?: number
+  uom: string
+}
+
+type VendorAllocationDraft = {
+  id: string
+  sourceName: string
+  sourceCode: string
+  sourceWarehouseName: string
+  sourceWarehouseCode: string
+  routeType: "DIRECT" | "VIA_FG"
+  intermediateWarehouseName?: string
+  destinationWarehouseName: string
+  destinationWarehouseCode: string
+  soStrategy: "BY_VENDOR_PO" | "BY_MASTER_PO"
+  lineQtys: Record<string, number>
+  isOriginal?: boolean
+}
+
+type VendorRnStatus = "NO_RN" | "RN_CREATED" | "PUSH_FAILED" | "WAITING_ACCEPT" | "REJECTED" | "ACCEPTED" | "RN_CANCELLED"
 
 // Mock PO Detail Data - ALL data from original file
 const mockPODetail = {
@@ -58,6 +89,8 @@ const mockPODetail = {
   shippingStatus: "SHIPMENT_CREATED",
   receivingStatus: "PARTIALLY_RECEIVED",
   dataSource: "PR_CONVERSION",
+  purchaseType: "FACTORY_DIRECT",
+  factoryFulfillmentStatus: "PARTIALLY_RELEASED",
 
   // Basic Info
   supplierName: "ABC Suppliers Inc.",
@@ -95,6 +128,47 @@ const mockPODetail = {
 
   // Related PRs
   relatedPRs: ["PR202401100001", "PR202401100002"],
+
+  unallocatedSupplyDemand: {
+    status: "PENDING_ALLOCATION",
+    destinationWarehouseName: "Main Warehouse - Los Angeles",
+    destinationWarehouseCode: "WH001",
+    lines: [
+      { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", quantity: 100, allocatedQty: 0, uom: "PCS" },
+      { sourceLineNo: 3, skuCode: "SKU003", productName: "iPad Pro", quantity: 80, allocatedQty: 0, uom: "PCS" },
+    ],
+  },
+
+  supplyAllocationOrders: [
+    {
+      id: "sao-2",
+      allocationNo: "SAO202403150001-02",
+      allocationName: "Factory direct supply allocation - allocated",
+      sourceType: "VENDOR_WAREHOUSE",
+      sourceName: "Shenzhen Smart Factory",
+      sourceCode: "FAC-SZ01",
+      sourceWarehouseName: "Shenzhen Smart Factory Warehouse",
+      sourceWarehouseCode: "FAC-WH-SZ01",
+      routeType: "VIA_FG",
+      intermediateWarehouseName: "Shenzhen Vendor FG Warehouse",
+      destinationWarehouseName: "Main Warehouse - Los Angeles",
+      destinationWarehouseCode: "WH001",
+      vendorReceiptNo: "VRN-SZ01-0008",
+      outboundOrderNo: "SO-FAC-SZ01-0008",
+      finalReceiptNo: "RN-PO202403150001",
+      vendorRnStatus: "PUSH_FAILED" as VendorRnStatus,
+      vendorRnError: "Kafka publish failed: broker timeout after 30s",
+      vendorRnMessageId: "oms.vendor-rn.202403150001.02",
+      vendorRnLastPushedAt: "2024-03-15T09:42:00Z",
+      vendorRnRetryCount: 2,
+      status: "ALLOCATED",
+      canChangeVendor: true,
+      lines: [
+        { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", quantity: 60, allocatedQty: 60, uom: "PCS" },
+        { sourceLineNo: 2, skuCode: "SKU002", productName: "MacBook Pro", quantity: 50, allocatedQty: 50, uom: "PCS" },
+      ],
+    },
+  ],
 
   // Email tracking
   sentToSupplier: true,
@@ -347,72 +421,64 @@ const mockPODetail = {
   // Receipt Records
   receiptRecords: [
     {
-      id: "1",
-      receiptNo: "RCP202401200001",
-      wmsReceiptNo: "RN-2024-001", // WMS Receipt Number
+      id: "vrn-sz01-0008",
+      receiptNo: "VRN-SZ01-0008",
+      wmsReceiptNo: "WMS-VRN-SZ01-0008",
+      receiptType: "VENDOR_WAREHOUSE_RECEIPT",
+      sourceAllocationNo: "SAO202403150001-02",
+      sourceWarehouseName: "Shenzhen Smart Factory Warehouse",
+      sourceWarehouseCode: "FAC-WH-SZ01",
+      targetWarehouseName: "Shenzhen Vendor FG Warehouse",
+      targetWarehouseCode: "VFG-SZ01",
+      finalReceiptNo: "RN-PO202403150001",
+      outboundOrderNo: "SO-FAC-SZ01-0008",
       receiptDate: "2024-01-20T09:30:00Z",
-      receivedQty: 50,
-      receivedBy: "张三",
+      receivedQty: 110,
+      expectedQty: 110,
+      receivedBy: "Factory Dock Team",
       receiptStatus: "CLOSED",
-      notes: "部分收货，剩余货物预计明日到达",
-      relatedShipment: "SHP202401150001",
-      warehouseLocation: "A区-01-001",
+      notes: "Vendor warehouse receipt generated from Supply Allocation Order SAO202403150001-02.",
+      relatedShipment: "Internal factory transfer",
+      warehouseLocation: "VFG-SZ01 / FG-A-01",
       qualityStatus: "PASSED",
       damageQty: 0,
       rejectedQty: 0,
       pushedToWarehouse: true,
       pushedDate: "2024-01-20T10:00:00Z",
+      lines: [
+        { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", expectedQty: 60, receivedQty: 60, uom: "PCS" },
+        { sourceLineNo: 2, skuCode: "SKU002", productName: "MacBook Pro", expectedQty: 50, receivedQty: 50, uom: "PCS" },
+      ],
     },
     {
-      id: "2",
-      receiptNo: "RCP202401180001",
-      wmsReceiptNo: "RN-2024-002", // WMS Receipt Number
-      receiptDate: "2024-01-18T14:15:00Z",
-      receivedQty: 25,
-      receivedBy: "李四",
-      receiptStatus: "CLOSED",
-      notes: "货物状态良好，已入库",
-      relatedShipment: "SHP202401120001",
-      warehouseLocation: "A区-01-002",
-      qualityStatus: "PASSED",
-      damageQty: 0,
-      rejectedQty: 0,
-      pushedToWarehouse: true,
-      pushedDate: "2024-01-18T15:00:00Z",
-    },
-    {
-      id: "3",
-      receiptNo: "RCP202401220001",
-      wmsReceiptNo: "RN-2024-003", // WMS Receipt Number
-      receiptDate: "2024-01-22T11:45:00Z",
-      receivedQty: 18,
-      receivedBy: "王五",
-      receiptStatus: "PARTIAL_DAMAGE",
-      notes: "部分货物包装破损，已分拣处理",
-      relatedShipment: "SHP202401100001",
-      warehouseLocation: "A区-01-003",
-      qualityStatus: "PARTIAL_DAMAGE",
-      damageQty: 2,
-      rejectedQty: 0,
-      pushedToWarehouse: false,
-      pushedDate: null,
-    },
-    {
-      id: "4",
-      receiptNo: "RCP202401250001",
-      wmsReceiptNo: null, // 未推送到仓库，没有WMS单号
+      id: "rn-po202403150001",
+      receiptNo: "RN-PO202403150001",
+      wmsReceiptNo: "WMS-RN-PO202403150001",
+      receiptType: "FINAL_WAREHOUSE_RECEIPT",
+      sourceAllocationNo: "SAO202403150001-02",
+      sourceWarehouseName: "Shenzhen Vendor FG Warehouse",
+      sourceWarehouseCode: "VFG-SZ01",
+      targetWarehouseName: "Main Warehouse - Los Angeles",
+      targetWarehouseCode: "WH001",
+      finalReceiptNo: "RN-PO202403150001",
+      outboundOrderNo: "SO-FAC-SZ01-0008",
       receiptDate: "2024-01-25T16:30:00Z",
-      receivedQty: 35,
-      receivedBy: "赵六",
+      receivedQty: 0,
+      expectedQty: 110,
+      receivedBy: "LA Receiving Team",
       receiptStatus: "NEW",
-      notes: "新收货单，待推送到仓库",
-      relatedShipment: "SHP202401150001",
-      warehouseLocation: "待分配",
+      notes: "Main warehouse receipt for the original PO. It receives goods from the vendor FG warehouse after outbound/SO execution.",
+      relatedShipment: "SO-FAC-SZ01-0008",
+      warehouseLocation: "Pending putaway",
       qualityStatus: "PENDING",
       damageQty: 0,
       rejectedQty: 0,
       pushedToWarehouse: false,
       pushedDate: null,
+      lines: [
+        { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", expectedQty: 60, receivedQty: 0, uom: "PCS" },
+        { sourceLineNo: 2, skuCode: "SKU002", productName: "MacBook Pro", expectedQty: 50, receivedQty: 0, uom: "PCS" },
+      ],
     },
   ],
 
@@ -476,6 +542,73 @@ const mockPODetail = {
       sentBy: "Jane Smith"
     }
   ],
+}
+
+const missingFgWarehousePODetail = {
+  ...mockPODetail,
+  id: "fd-missing-fg",
+  orderNo: "PO202403150099",
+  originalPoNo: "EXT-PO-2024-099",
+  referenceNo: "REF202403150099",
+  status: "PROCESSING",
+  shippingStatus: null,
+  receivingStatus: "NOT_RECEIVED",
+  supplierName: "Shenzhen Smart Factory",
+  supplierCode: "FAC-SZ01",
+  contactPerson: "Factory Ops Team",
+  contactPhone: "+86-755-0100-0099",
+  contactEmail: "ops@sz-smart-factory.example",
+  totalOrderQty: 320,
+  shippedQty: 0,
+  receivedQty: 0,
+  totalAmount: 89600.00,
+  created: "2024-02-05T09:30:00Z",
+  updated: "2024-02-05T09:30:00Z",
+  expectedArrivalDate: "2024-02-20",
+  relatedPRs: ["PR202402010099"],
+  factoryFulfillmentStatus: "PENDING_VENDOR_ASSIGNMENT",
+  unallocatedSupplyDemand: {
+    status: "PENDING_ALLOCATION",
+    destinationWarehouseName: "Main Warehouse - Los Angeles",
+    destinationWarehouseCode: "WH001",
+    routeType: "VIA_FG",
+    missingRequirement: "VENDOR_FG_WAREHOUSE",
+    lines: [
+      { sourceLineNo: 1, skuCode: "SKU099-A", productName: "Smart Speaker Hub", quantity: 120, allocatedQty: 0, uom: "PCS" },
+      { sourceLineNo: 2, skuCode: "SKU099-B", productName: "Factory Direct Tablet", quantity: 200, allocatedQty: 0, uom: "PCS" },
+    ],
+  },
+  supplyAllocationOrders: [],
+  receiptRecords: [
+    {
+      id: "rn-destination-precreated-099",
+      receiptNo: "RN-PO202403150099",
+      receiptType: "FINAL_WAREHOUSE_RECEIPT",
+      receiptDate: "2024-02-05T09:45:00Z",
+      sourceAllocationNo: null,
+      sourceWarehouseName: "Pending Vendor FG Warehouse",
+      targetWarehouseName: "Main Warehouse - Los Angeles",
+      targetWarehouseCode: "WH001",
+      sourceDocumentNo: "PO202403150099",
+      pushedToWarehouse: false,
+      receivedQty: 0,
+      expectedQty: 320,
+      receivedBy: null,
+      receiptStatus: "NEW",
+      notes: "Destination RN was created first. VIA_FG route is blocked until a Vendor FG warehouse is assigned.",
+      relatedShipment: null,
+      warehouseLocation: "Pending",
+      qualityStatus: "PENDING",
+      damageQty: 0,
+      rejectedQty: 0,
+    },
+  ],
+  emailHistory: [],
+}
+
+const poDetailScenarios: Record<string, typeof mockPODetail> = {
+  [mockPODetail.orderNo]: mockPODetail,
+  [missingFgWarehousePODetail.orderNo]: missingFgWarehousePODetail,
 }
 
 
@@ -1042,8 +1175,12 @@ const getProgressSteps = (poStatus: string) => {
 }
 
 export default function PODetailPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const tf = React.useCallback((en: string, zh: string) => language === "zh" ? zh : en, [language])
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const requestedPoNo = searchParams.get("poNo")
+  const initialPODetail = requestedPoNo ? (poDetailScenarios[requestedPoNo] || mockPODetail) : mockPODetail
   const sidebarItems = createPurchaseSidebarItems(t)
   const [activeMainTab, setActiveMainTab] = React.useState("items")
   const [activeSideTab, setActiveSideTab] = React.useState("routing")
@@ -1053,13 +1190,422 @@ export default function PODetailPage() {
   const [showCancelDialog, setShowCancelDialog] = React.useState(false)
   const [showCloseLineDialog, setShowCloseLineDialog] = React.useState(false)
   const [showProductSelectionDialog, setShowProductSelectionDialog] = React.useState(false)
+  const [showSupplyAllocationDialog, setShowSupplyAllocationDialog] = React.useState(false)
+  const [showChangeVendorDialog, setShowChangeVendorDialog] = React.useState(false)
+  const [selectedSupplyAllocation, setSelectedSupplyAllocation] = React.useState<typeof mockPODetail.supplyAllocationOrders[0] | null>(null)
+  const [showAllocationItemDialog, setShowAllocationItemDialog] = React.useState(false)
+  const [allocationMode, setAllocationMode] = React.useState<"allocate" | "revise">("allocate")
+  const [editingVendorDraftId, setEditingVendorDraftId] = React.useState<string | null>(null)
+  const [allocationDrafts, setAllocationDrafts] = React.useState<VendorAllocationDraft[]>([])
+  const [revisionDrafts, setRevisionDrafts] = React.useState<VendorAllocationDraft[]>([])
+  const [dialogStep, setDialogStep] = React.useState<"impact" | "plan" | "confirm">("plan")
   const [selectedLineForClose, setSelectedLineForClose] = React.useState<typeof mockPODetail.lineItems[0] | null>(null)
-  const [editedLineItems, setEditedLineItems] = React.useState(mockPODetail.lineItems)
+  const [editedLineItems, setEditedLineItems] = React.useState(initialPODetail.lineItems)
   const [editErrors, setEditErrors] = React.useState<Record<string, string>>({})
-  const [selectedReceipt, setSelectedReceipt] = React.useState<string | null>(mockPODetail.receiptRecords[0]?.id || null)
-  const [selectedShipment, setSelectedShipment] = React.useState<string | null>(mockPODetail.shipmentRecords[0]?.id || null)
-  const [poData, setPOData] = React.useState(mockPODetail)
+  const [selectedAllocationOrder, setSelectedAllocationOrder] = React.useState<string | null>(initialPODetail.supplyAllocationOrders[0]?.id || null)
+  const [selectedReceipt, setSelectedReceipt] = React.useState<string | null>(initialPODetail.receiptRecords[0]?.id || null)
+  const [selectedShipment, setSelectedShipment] = React.useState<string | null>(initialPODetail.shipmentRecords[0]?.id || null)
+  const [poData, setPOData] = React.useState(initialPODetail)
   const [copiedField, setCopiedField] = React.useState<string | null>(null)
+  const unallocatedSupplyQty = React.useMemo(() => (
+    poData.unallocatedSupplyDemand.lines.reduce((sum, line) => sum + line.quantity, 0)
+  ), [poData.unallocatedSupplyDemand.lines])
+  const missingFgWarehouse = poData.purchaseType === "FACTORY_DIRECT"
+    && poData.unallocatedSupplyDemand.routeType === "VIA_FG"
+    && poData.unallocatedSupplyDemand.missingRequirement === "VENDOR_FG_WAREHOUSE"
+  const activeDrafts = allocationMode === "allocate" ? allocationDrafts : revisionDrafts
+  const activeDemandLines = allocationMode === "allocate" ? poData.unallocatedSupplyDemand.lines : (selectedSupplyAllocation?.lines || [])
+  const activeEditingDraft = activeDrafts.find((draft) => draft.id === editingVendorDraftId) || null
+
+  const buildDefaultVendorDraft = React.useCallback((id: string, vendor: "DG" | "SZ" = "DG"): VendorAllocationDraft => {
+    if (vendor === "SZ") {
+      return {
+        id,
+        sourceName: "Shenzhen Smart Factory",
+        sourceCode: "FAC-SZ01",
+        sourceWarehouseName: "Shenzhen Smart Factory Warehouse",
+        sourceWarehouseCode: "FAC-WH-SZ01",
+        routeType: "VIA_FG",
+        intermediateWarehouseName: "Shenzhen Vendor FG Warehouse",
+        destinationWarehouseName: "Main Warehouse - Los Angeles",
+        destinationWarehouseCode: "WH001",
+        soStrategy: "BY_VENDOR_PO",
+        lineQtys: {},
+      }
+    }
+
+    return {
+      id,
+      sourceName: "Dongguan Precision Works",
+      sourceCode: "FAC-DG01",
+      sourceWarehouseName: "Dongguan Factory Warehouse",
+      sourceWarehouseCode: "FAC-WH-DG01",
+      routeType: "VIA_FG",
+      intermediateWarehouseName: "Dongguan Vendor FG Warehouse",
+      destinationWarehouseName: "Main Warehouse - Los Angeles",
+      destinationWarehouseCode: "WH001",
+      soStrategy: "BY_VENDOR_PO",
+      lineQtys: {},
+    }
+  }, [])
+
+  const getDraftTotal = React.useCallback((draft: VendorAllocationDraft) => {
+    return Object.values(draft.lineQtys).reduce((sum, qty) => sum + qty, 0)
+  }, [])
+
+  const getLineAllocatedTotal = React.useCallback((line: SupplyLineDraft, drafts: VendorAllocationDraft[]) => {
+    return drafts.reduce((sum, draft) => sum + (draft.lineQtys[line.skuCode] || 0), 0)
+  }, [])
+
+  const getActiveTotal = React.useCallback((drafts: VendorAllocationDraft[]) => {
+    return drafts.reduce((sum, draft) => sum + getDraftTotal(draft), 0)
+  }, [getDraftTotal])
+
+  const revisionLineSummary = React.useMemo(() => {
+    if (!selectedSupplyAllocation) return []
+    return selectedSupplyAllocation.lines.map((line) => {
+      const revisedQty = getLineAllocatedTotal(line, revisionDrafts)
+      return {
+        ...line,
+        revisedQty,
+        deltaQty: revisedQty - line.allocatedQty,
+      }
+    })
+  }, [getLineAllocatedTotal, revisionDrafts, selectedSupplyAllocation])
+
+  const revisionTotalQty = React.useMemo(() => (
+    revisionDrafts.reduce((sum, draft) => sum + getDraftTotal(draft), 0)
+  ), [getDraftTotal, revisionDrafts])
+
+  const revisionOriginalQty = React.useMemo(() => (
+    selectedSupplyAllocation?.lines.reduce((sum, line) => sum + line.allocatedQty, 0) || 0
+  ), [selectedSupplyAllocation])
+
+  const revisionBalanced = revisionLineSummary.length > 0 && revisionLineSummary.every((line) => line.revisedQty === line.allocatedQty)
+
+  const updateDraftLineQty = React.useCallback((draftId: string, skuCode: string, quantity: number, mode: "allocate" | "revise") => {
+    const updater = (drafts: VendorAllocationDraft[]) => drafts.map((draft) => {
+      if (draft.id !== draftId) return draft
+      const nextLineQtys = { ...draft.lineQtys }
+      if (quantity <= 0) {
+        delete nextLineQtys[skuCode]
+      } else {
+        nextLineQtys[skuCode] = quantity
+      }
+      return { ...draft, lineQtys: nextLineQtys }
+    })
+
+    if (mode === "allocate") {
+      setAllocationDrafts(updater)
+    } else {
+      setRevisionDrafts(updater)
+    }
+  }, [])
+
+  const addVendorDraft = React.useCallback((mode: "allocate" | "revise") => {
+    const id = `${mode}-vendor-${Date.now()}`
+    const nextDraft = buildDefaultVendorDraft(id, "DG")
+    if (mode === "allocate") {
+      setAllocationDrafts((drafts) => [...drafts, nextDraft])
+    } else {
+      setRevisionDrafts((drafts) => [...drafts, nextDraft])
+    }
+  }, [buildDefaultVendorDraft])
+
+  const removeVendorDraft = React.useCallback((mode: "allocate" | "revise", draftId: string) => {
+    if (mode === "allocate") {
+      setAllocationDrafts((drafts) => drafts.filter((draft) => draft.id !== draftId))
+      return
+    }
+
+    setRevisionDrafts((drafts) => drafts.filter((draft) => draft.id !== draftId))
+  }, [])
+
+  const openItemPicker = React.useCallback((mode: "allocate" | "revise", draftId: string) => {
+    setAllocationMode(mode)
+    setEditingVendorDraftId(draftId)
+    setShowAllocationItemDialog(true)
+  }, [])
+
+  const openAllocateSupplyDialog = React.useCallback(() => {
+    const firstDraft = buildDefaultVendorDraft("allocate-vendor-1", "DG")
+    firstDraft.lineQtys = Object.fromEntries(poData.unallocatedSupplyDemand.lines.map((line) => [line.skuCode, line.quantity]))
+    setAllocationMode("allocate")
+    setDialogStep("plan")
+    setSelectedSupplyAllocation(poData.unallocatedSupplyDemand as any)
+    setAllocationDrafts([firstDraft])
+    setShowSupplyAllocationDialog(true)
+  }, [buildDefaultVendorDraft, poData.unallocatedSupplyDemand])
+
+  const openReviseAllocationDialog = React.useCallback((order: typeof mockPODetail.supplyAllocationOrders[0]) => {
+    const vendorType = order.sourceCode === "FAC-SZ01" ? "SZ" : "DG"
+    const draft = buildDefaultVendorDraft("revise-vendor", vendorType)
+    draft.isOriginal = true
+    draft.lineQtys = Object.fromEntries(order.lines.map((line) => [line.skuCode, line.allocatedQty]))
+
+    setAllocationMode("revise")
+    setDialogStep("impact")
+    setSelectedSupplyAllocation(order)
+    setRevisionDrafts([draft])
+    setShowChangeVendorDialog(true)
+  }, [buildDefaultVendorDraft])
+
+  const updateSupplyAllocationOrder = React.useCallback((orderId: string, updater: (order: typeof mockPODetail.supplyAllocationOrders[0]) => typeof mockPODetail.supplyAllocationOrders[0]) => {
+    setPOData((current) => ({
+      ...current,
+      supplyAllocationOrders: current.supplyAllocationOrders.map((order) => (
+        order.id === orderId ? updater(order) : order
+      )),
+    }))
+  }, [])
+
+  const handleRetryVendorRnPush = React.useCallback((order: typeof mockPODetail.supplyAllocationOrders[0]) => {
+    updateSupplyAllocationOrder(order.id, (currentOrder) => ({
+      ...currentOrder,
+      vendorRnStatus: "WAITING_ACCEPT" as VendorRnStatus,
+      vendorRnError: "",
+      vendorRnMessageId: currentOrder.vendorRnMessageId || `oms.vendor-rn.${currentOrder.allocationNo}`,
+      vendorRnLastPushedAt: new Date().toISOString(),
+      vendorRnRetryCount: (currentOrder.vendorRnRetryCount || 0) + 1,
+    }))
+    toast.success(tf("Vendor RN pushed again", "Vendor RN 已重新推送"), {
+      description: tf("Waiting for downstream acceptance.", "正在等待下游接收。"),
+    })
+  }, [tf, updateSupplyAllocationOrder])
+
+  const handleCancelVendorRn = React.useCallback((order: typeof mockPODetail.supplyAllocationOrders[0]) => {
+    updateSupplyAllocationOrder(order.id, (currentOrder) => ({
+      ...currentOrder,
+      vendorReceiptNo: "",
+      outboundOrderNo: "",
+      vendorRnStatus: "RN_CANCELLED" as VendorRnStatus,
+      vendorRnError: tf("Vendor RN was cancelled manually. Recreate it from the vendor order.", "Vendor RN 已人工取消，需要从 Vendor Order 重新创建。"),
+      vendorRnLastPushedAt: new Date().toISOString(),
+      canChangeVendor: true,
+    }))
+    setPOData((current) => ({
+      ...current,
+      receiptRecords: current.receiptRecords.map((receipt: any) => (
+        receipt.sourceAllocationNo === order.allocationNo && receipt.receiptType === "VENDOR_WAREHOUSE_RECEIPT"
+          ? { ...receipt, receiptStatus: "CANCELLED", pushedToWarehouse: false, notes: `${receipt.notes} Vendor RN cancelled before downstream acceptance.` }
+          : receipt
+      )),
+    }))
+    toast.success(tf("Vendor RN cancelled", "Vendor RN 已取消"), {
+      description: tf("The vendor order can create a new RN now.", "当前 Vendor Order 现在可以重新创建 RN。"),
+    })
+  }, [tf, updateSupplyAllocationOrder])
+
+  const handleCreateVendorRn = React.useCallback((order: typeof mockPODetail.supplyAllocationOrders[0]) => {
+    const suffix = `${Date.now()}`.slice(-4)
+    const newVendorReceiptNo = `VRN-${order.sourceCode.replace("FAC-", "")}-${suffix}`
+    const newOutboundOrderNo = `SO-${order.sourceCode}-${suffix}`
+
+    updateSupplyAllocationOrder(order.id, (currentOrder) => ({
+      ...currentOrder,
+      vendorReceiptNo: newVendorReceiptNo,
+      outboundOrderNo: newOutboundOrderNo,
+      vendorRnStatus: "RN_CREATED" as VendorRnStatus,
+      vendorRnError: "",
+      vendorRnMessageId: "",
+      vendorRnLastPushedAt: null,
+      vendorRnRetryCount: 0,
+    }))
+    toast.success(tf("Vendor RN recreated", "Vendor RN 已重新创建"), {
+      description: newVendorReceiptNo,
+    })
+  }, [tf, updateSupplyAllocationOrder])
+
+  const buildGeneratedAllocation = React.useCallback((draft: VendorAllocationDraft, lines: SupplyLineDraft[], suffix: string, status: "ALLOCATED" | "REVISED" = "ALLOCATED") => {
+    const draftLines = lines
+      .map((line) => ({
+        sourceLineNo: line.sourceLineNo,
+        skuCode: line.skuCode,
+        productName: line.productName,
+        quantity: draft.lineQtys[line.skuCode] || 0,
+        allocatedQty: draft.lineQtys[line.skuCode] || 0,
+        uom: line.uom,
+      }))
+      .filter((line) => line.quantity > 0)
+
+    const receiptNo = `VRN-${draft.sourceCode.replace("FAC-", "")}-${suffix}`
+    const outboundNo = `SO-${draft.sourceCode}-${suffix}`
+
+    return {
+      id: `sao-${suffix}-${draft.id}`,
+      allocationNo: `SAO${poData.orderNo.replace("PO", "")}-${suffix}`,
+      allocationName: status === "REVISED" ? "Factory direct supply allocation - revised" : "Factory direct supply allocation - allocated",
+      sourceType: "VENDOR_WAREHOUSE",
+      sourceName: draft.sourceName,
+      sourceCode: draft.sourceCode,
+      sourceWarehouseName: draft.sourceWarehouseName,
+      sourceWarehouseCode: draft.sourceWarehouseCode,
+      routeType: draft.routeType,
+      intermediateWarehouseName: draft.routeType === "VIA_FG" ? draft.intermediateWarehouseName : "",
+      destinationWarehouseName: draft.destinationWarehouseName,
+      destinationWarehouseCode: draft.destinationWarehouseCode,
+      vendorReceiptNo: receiptNo,
+      outboundOrderNo: outboundNo,
+      finalReceiptNo: `RN-${poData.orderNo}`,
+      vendorRnStatus: "RN_CREATED" as VendorRnStatus,
+      vendorRnError: "",
+      vendorRnMessageId: "",
+      vendorRnLastPushedAt: null,
+      vendorRnRetryCount: 0,
+      status: "ALLOCATED",
+      canChangeVendor: true,
+      lines: draftLines,
+    }
+  }, [poData.orderNo])
+
+  const buildGeneratedReceipts = React.useCallback((allocation: any) => {
+    const expectedQty = allocation.lines.reduce((sum: number, line: any) => sum + line.allocatedQty, 0)
+    return [
+      {
+        id: allocation.vendorReceiptNo.toLowerCase(),
+        receiptNo: allocation.vendorReceiptNo,
+        wmsReceiptNo: `WMS-${allocation.vendorReceiptNo}`,
+        receiptType: "VENDOR_WAREHOUSE_RECEIPT",
+        sourceAllocationNo: allocation.allocationNo,
+        sourceWarehouseName: allocation.sourceWarehouseName,
+        sourceWarehouseCode: allocation.sourceWarehouseCode,
+        targetWarehouseName: allocation.intermediateWarehouseName || allocation.destinationWarehouseName,
+        targetWarehouseCode: allocation.routeType === "VIA_FG" ? `VFG-${allocation.sourceCode.replace("FAC-", "")}` : allocation.destinationWarehouseCode,
+        finalReceiptNo: allocation.finalReceiptNo,
+        outboundOrderNo: allocation.outboundOrderNo,
+        receiptDate: new Date().toISOString(),
+        receivedQty: 0,
+        expectedQty,
+        receivedBy: "Factory Dock Team",
+        receiptStatus: "NEW",
+        notes: `Vendor warehouse receipt generated from ${allocation.allocationNo}.`,
+        relatedShipment: "Internal factory transfer",
+        warehouseLocation: "Pending putaway",
+        qualityStatus: "PENDING",
+        damageQty: 0,
+        rejectedQty: 0,
+        pushedToWarehouse: false,
+        pushedDate: null,
+        lines: allocation.lines.map((line: any) => ({ ...line, expectedQty: line.allocatedQty, receivedQty: 0 })),
+      },
+      {
+        id: `${allocation.finalReceiptNo.toLowerCase()}-${allocation.sourceCode.toLowerCase()}`,
+        receiptNo: `${allocation.finalReceiptNo}-${allocation.sourceCode}`,
+        wmsReceiptNo: `WMS-${allocation.finalReceiptNo}-${allocation.sourceCode}`,
+        receiptType: "FINAL_WAREHOUSE_RECEIPT",
+        sourceAllocationNo: allocation.allocationNo,
+        sourceWarehouseName: allocation.intermediateWarehouseName || allocation.sourceWarehouseName,
+        sourceWarehouseCode: allocation.routeType === "VIA_FG" ? `VFG-${allocation.sourceCode.replace("FAC-", "")}` : allocation.sourceWarehouseCode,
+        targetWarehouseName: allocation.destinationWarehouseName,
+        targetWarehouseCode: allocation.destinationWarehouseCode,
+        finalReceiptNo: allocation.finalReceiptNo,
+        outboundOrderNo: allocation.outboundOrderNo,
+        receiptDate: new Date().toISOString(),
+        receivedQty: 0,
+        expectedQty,
+        receivedBy: "LA Receiving Team",
+        receiptStatus: "NEW",
+        notes: `Final warehouse receipt generated from ${allocation.allocationNo}.`,
+        relatedShipment: allocation.outboundOrderNo,
+        warehouseLocation: "Pending putaway",
+        qualityStatus: "PENDING",
+        damageQty: 0,
+        rejectedQty: 0,
+        pushedToWarehouse: false,
+        pushedDate: null,
+        lines: allocation.lines.map((line: any) => ({ ...line, expectedQty: line.allocatedQty, receivedQty: 0 })),
+      },
+    ]
+  }, [])
+
+  const handleGenerateAllocation = React.useCallback(() => {
+    const validDrafts = allocationDrafts.filter((draft) => getDraftTotal(draft) > 0)
+    if (validDrafts.length === 0) {
+      toast.error(tf("Add at least one vendor and item quantity first", "请先添加至少一个 vendor 并分配商品数量"))
+      return
+    }
+
+    const hasMissingLine = poData.unallocatedSupplyDemand.lines.some((line) => getLineAllocatedTotal(line, allocationDrafts) !== line.quantity)
+    if (hasMissingLine) {
+      toast.error(tf("Every PO demand line must be fully allocated before generation", "生成前每一行 PO 需求都必须完整分配"))
+      return
+    }
+
+    const generatedAllocations = validDrafts.map((draft, index) => buildGeneratedAllocation(draft, poData.unallocatedSupplyDemand.lines, `A${index + 1}`))
+    const generatedReceipts = generatedAllocations.flatMap((allocation) => buildGeneratedReceipts(allocation))
+
+    setPOData((current) => ({
+      ...current,
+      factoryFulfillmentStatus: "ALLOCATED",
+      unallocatedSupplyDemand: {
+        ...current.unallocatedSupplyDemand,
+        status: "ALLOCATED",
+        lines: [],
+      },
+      supplyAllocationOrders: [...current.supplyAllocationOrders, ...generatedAllocations],
+      receiptRecords: [...generatedReceipts, ...current.receiptRecords],
+    }))
+    setSelectedAllocationOrder(generatedAllocations[0]?.id || selectedAllocationOrder)
+    setSelectedReceipt(generatedReceipts[0]?.id || selectedReceipt)
+    setShowSupplyAllocationDialog(false)
+    setActiveMainTab("supply-allocation")
+    toast.success(tf("Vendor PO / SO generated", "Vendor PO / SO 已生成"), {
+      description: tf("Allocation orders and warehouse receipts were added to this PO.", "已在当前 PO 下新增分配单和入库单。"),
+    })
+  }, [allocationDrafts, buildGeneratedAllocation, buildGeneratedReceipts, getDraftTotal, getLineAllocatedTotal, poData.unallocatedSupplyDemand.lines, selectedAllocationOrder, selectedReceipt, tf])
+
+  const handleApplyRevision = React.useCallback(() => {
+    if (!selectedSupplyAllocation) return
+
+    const validDrafts = revisionDrafts.filter((draft) => getDraftTotal(draft) > 0)
+    if (validDrafts.length === 0) {
+      toast.error(tf("Keep at least one item line in the revised vendor plan", "修订方案里至少保留一条 item line"))
+      return
+    }
+
+    const activeDraft = validDrafts[0]
+    const hasInvalidQty = selectedSupplyAllocation.lines.some((line) => {
+      const qty = activeDraft.lineQtys[line.skuCode]
+      return qty !== undefined && qty <= 0
+    })
+    if (hasInvalidQty) {
+      toast.error(tf("Vendor quantities must be greater than 0", "Vendor 数量必须大于 0"))
+      return
+    }
+
+    const generatedAllocations = validDrafts.map((draft, index) => buildGeneratedAllocation(draft, selectedSupplyAllocation.lines, `R${index + 1}`, "REVISED"))
+    const generatedReceipts = generatedAllocations.flatMap((allocation) => buildGeneratedReceipts(allocation))
+    const vendorChanged = activeDraft.sourceCode !== selectedSupplyAllocation.sourceCode
+
+    setPOData((current) => ({
+      ...current,
+      supplyAllocationOrders: [
+        ...current.supplyAllocationOrders.map((order) => (
+          order.id === selectedSupplyAllocation.id
+            ? { ...order, status: "VOIDED", canChangeVendor: false, allocationName: `${order.allocationName} - voided by revision` }
+            : order
+        )),
+        ...generatedAllocations,
+      ],
+      receiptRecords: [
+        ...current.receiptRecords.map((receipt: any) => (
+          receipt.sourceAllocationNo === selectedSupplyAllocation.allocationNo
+            ? { ...receipt, receiptStatus: "CANCELLED", notes: `${receipt.notes} Cancelled by allocation revision.` }
+            : receipt
+        )),
+        ...generatedReceipts,
+      ],
+    }))
+    setSelectedAllocationOrder(generatedAllocations[0]?.id || selectedAllocationOrder)
+    setSelectedReceipt(generatedReceipts[0]?.id || selectedReceipt)
+    setShowChangeVendorDialog(false)
+    setActiveMainTab("supply-allocation")
+    toast.success(tf("Allocation revised", "分配已修订"), {
+      description: vendorChanged
+        ? tf("Old vendor documents were cancelled before generating the new vendor PO / SO.", "已先取消原 vendor 单据，再生成新的 Vendor PO / SO。")
+        : tf("The vendor allocation was updated.", "已更新当前 vendor 的分配方案。"),
+    })
+  }, [buildGeneratedAllocation, buildGeneratedReceipts, getDraftTotal, revisionDrafts, selectedAllocationOrder, selectedReceipt, selectedSupplyAllocation, tf])
 
   // Copy helper
   const copyToClipboard = React.useCallback((text: string, fieldKey: string) => {
@@ -1114,6 +1660,150 @@ export default function PODetailPage() {
     FULLY_RECEIVED: { label: "收货完成", color: "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400" },
   }
 
+  const renderDraftCards = (mode: "allocate" | "revise") => {
+    const drafts = mode === "allocate" ? allocationDrafts : revisionDrafts
+    const lines = mode === "allocate" ? poData.unallocatedSupplyDemand.lines : (selectedSupplyAllocation?.lines || [])
+
+    return (
+      <div className="space-y-3">
+        {drafts.map((draft) => {
+          const assignedLines = lines.filter((line) => (draft.lineQtys[line.skuCode] || 0) > 0)
+          const assignedQty = getDraftTotal(draft)
+
+          return (
+            <Card key={draft.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">{draft.sourceName}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{draft.sourceCode} / {draft.sourceWarehouseName}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {draft.isOriginal ? tf("Original vendor", "原 vendor") : tf("New vendor", "新 vendor")}
+                    </Badge>
+                    <Badge variant="secondary">{assignedQty} PCS</Badge>
+                    {!draft.isOriginal && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => removeVendorDraft(mode, draft.id)}
+                      >
+                        <XCircle className="mr-1 h-4 w-4" />
+                        {tf("Delete vendor", "删除 vendor")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>{tf("Vendor", "Vendor")}</Label>
+                    <Select
+                      value={draft.sourceCode}
+                      onValueChange={(value) => {
+                        const vendorType = value === "FAC-SZ01" ? "SZ" : "DG"
+                        const next = buildDefaultVendorDraft(draft.id, vendorType)
+                        next.lineQtys = draft.lineQtys
+                        next.isOriginal = draft.isOriginal
+                        const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                        setter((items) => items.map((item) => item.id === draft.id ? next : item))
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FAC-DG01">Dongguan Precision Works</SelectItem>
+                        <SelectItem value="FAC-SZ01">Shenzhen Smart Factory</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{tf("Ship-from", "发货仓")}</Label>
+                    <Input value={draft.sourceWarehouseName} readOnly />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{tf("Route", "路径")}</Label>
+                    <Select
+                      value={draft.routeType}
+                      onValueChange={(value: "DIRECT" | "VIA_FG") => {
+                        const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                        setter((items) => items.map((item) => item.id === draft.id ? { ...item, routeType: value } : item))
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VIA_FG">{tf("Via vendor FG warehouse", "经 vendor 成品仓")}</SelectItem>
+                        <SelectItem value="DIRECT">{tf("Direct", "直发")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>{tf("Assigned items", "分配商品")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {assignedLines.length ? tf("Click Add Items to adjust item quantities.", "点击添加商品调整 item 和数量。") : tf("No item assigned yet.", "还没有分配商品。")}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => openItemPicker(mode, draft.id)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {tf("Add Items", "添加商品")}
+                  </Button>
+                </div>
+
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>{tf("Line", "行号")}</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>{tf("Product", "商品")}</TableHead>
+                        <TableHead className="text-right">{tf("Demand Qty", "需求数量")}</TableHead>
+                        <TableHead className="text-right">{tf("Vendor Qty", "Vendor 数量")}</TableHead>
+                        <TableHead className="text-right">{tf("Actions", "操作")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignedLines.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-20 text-center text-sm text-muted-foreground">
+                            {tf("Use Add Items to assign PO lines to this vendor.", "点击添加商品，将 PO 行分配给这个 vendor。")}
+                          </TableCell>
+                        </TableRow>
+                      ) : assignedLines.map((line) => (
+                        <TableRow key={`${draft.id}-${line.skuCode}`}>
+                          <TableCell>{line.sourceLineNo}</TableCell>
+                          <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
+                          <TableCell>{line.productName}</TableCell>
+                          <TableCell className="text-right">{line.quantity} {line.uom}</TableCell>
+                          <TableCell className="text-right font-medium">{draft.lineQtys[line.skuCode]} {line.uom}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => updateDraftLineQty(draft.id, line.skuCode, 0, mode)}
+                            >
+                              <XCircle className="mr-1 h-4 w-4" />
+                              {tf("Delete", "删除")}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <TooltipProvider>
       <MainLayout sidebarItems={sidebarItems} moduleName="Purchase">
@@ -1142,6 +1832,11 @@ export default function PODetailPage() {
                           {receivingStatusConfig[poData.receivingStatus as keyof typeof receivingStatusConfig]?.label}
                         </Badge>
                       )}
+                      {missingFgWarehouse && (
+                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                          {tf("Pending Vendor Assignment", "待分配 Vendor")}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
@@ -1155,6 +1850,12 @@ export default function PODetailPage() {
               </div>
 
               <div className="flex gap-2">
+                {missingFgWarehouse && (
+                  <Button size="sm" onClick={openAllocateSupplyDialog}>
+                    <FilePlus className="h-4 w-4" />
+                    <span className="ml-2">{tf("Allocate Vendor", "分配 Vendor")}</span>
+                  </Button>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1211,6 +1912,43 @@ export default function PODetailPage() {
               </div>
             </div>
           </div>
+
+          {poData.purchaseType === "FACTORY_DIRECT" && unallocatedSupplyQty > 0 && (
+            <Card className="border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                        {missingFgWarehouse
+                          ? tf("Vendor FG warehouse is required", "\u9700\u8981\u6307\u5b9a Vendor \u6210\u54c1\u4ed3")
+                          : tf("Factory direct supply is not fully allocated", "\u5de5\u5382\u76f4\u53d1\u4f9b\u5e94\u5c1a\u672a\u5b8c\u6210\u5206\u914d")}
+                      </div>
+                      <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                        {missingFgWarehouse
+                          ? tf(
+                              "Destination RN has been created first. Via FG route requires a Vendor FG warehouse before vendor fulfillment can continue.",
+                              "\u76ee\u7684\u5730 RN \u5df2\u4f18\u5148\u521b\u5efa\u3002\u7ecf\u6210\u54c1\u4ed3\u8def\u5f84\u9700\u8981\u5148\u6307\u5b9a Vendor \u6210\u54c1\u4ed3\uff0c\u624d\u80fd\u7ee7\u7eed vendor \u5c65\u7ea6\u3002"
+                            )
+                          : tf(
+                              `${unallocatedSupplyQty} PCS still need vendor / warehouse allocation. Allocation orders will appear in the Supply Allocation Order tab after saving.`,
+                              `${unallocatedSupplyQty} PCS \u8fd8\u9700\u8981\u5206\u914d vendor / \u6765\u6e90\u4ed3\u3002\u4fdd\u5b58\u540e\u624d\u4f1a\u51fa\u73b0\u5728 Supply Allocation Order tab \u91cc\u3002`
+                            )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={openAllocateSupplyDialog}
+                  >
+                    <FilePlus className="mr-2 h-4 w-4" />
+                    {tf("Allocate Supply", "\u5206\u914d\u4f9b\u5e94")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
 
           {/* Progress Steps Component */}
@@ -1294,10 +2032,75 @@ export default function PODetailPage() {
           {/* Two-column grid layout */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* LEFT COLUMN - Main Tabs (3/4 width) */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-blue-600" />{tf("Basic Summary", "基础摘要")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">PO:</span><span className="font-mono font-medium text-right">{poData.orderNo}</span></div>
+                    {poData.originalPoNo && <div className="flex justify-between gap-3"><span className="text-muted-foreground">Original PO:</span><span className="font-mono text-right">{poData.originalPoNo}</span></div>}
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">Reference:</span><span className="font-mono text-right">{poData.referenceNo}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Data Source", "数据来源")}:</span><span className="text-right">{poData.dataSource === 'PR_CONVERSION' ? tf('PR Conversion', 'PR转单') : tf('Manual', '手动创建')}</span></div>
+                    {poData.relatedPRs.length > 0 && <div className="space-y-1"><div className="text-muted-foreground">Related PRs</div><div className="flex flex-wrap gap-1">{poData.relatedPRs.map((prNo) => <Badge key={prNo} variant="outline" className="text-[10px]">{prNo}</Badge>)}</div></div>}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><Building className="h-4 w-4 text-cyan-600" />{tf("Vendor Fulfillment", "Vendor 履约摘要")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor Count", "Vendor 数量")}:</span><span className="font-medium text-right">{poData.purchaseType === "FACTORY_DIRECT" ? Math.max(poData.supplyAllocationOrders.length, missingFgWarehouse ? 0 : 1) : 1}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Current Stage", "当前阶段")}:</span><span className="text-right">{missingFgWarehouse ? tf("Pending Vendor", "待分配 Vendor") : tf("In Fulfillment", "履约中")}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Allocation Status", "分配状态")}:</span><span className="text-right">{poData.supplyAllocationOrders.length > 0 ? tf("Allocated", "已分配") : tf("Pending", "待分配")}</span></div>
+                    <div className="space-y-1 pt-1">
+                      <div className="text-muted-foreground">{tf("Vendor Preview", "Vendor 预览")}</div>
+                      <div className="rounded-md border bg-muted/20 p-2 text-foreground">
+                        {poData.supplyAllocationOrders.length > 0
+                          ? (() => {
+                              const vendorNames = Array.from(new Set(poData.supplyAllocationOrders.map((order) => order.sourceName)))
+                              const preview = vendorNames.slice(0, 2).join(", ")
+                              const moreCount = vendorNames.length - 2
+                              return moreCount > 0 ? `${preview} +${moreCount}` : preview
+                            })()
+                          : tf("No vendors assigned yet", "当前还没有分配 Vendor")}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />{tf("Receiving Summary", "收货摘要")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Warehouse", "仓库")}:</span><span className="font-medium text-right">{poData.warehouseName}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">Code:</span><span className="text-right">{poData.warehouseCode}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Expected Arrival", "预计到货")}:</span><span className="text-right">{new Date(poData.expectedArrivalDate).toLocaleDateString()}</span></div>
+                    <div className="space-y-1 pt-1"><div className="text-muted-foreground">{tf("Receiving Address", "收货地址")}</div><div className="rounded-md border bg-muted/20 p-2 text-foreground">{poData.warehouseAddress}</div></div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2"><Truck className="h-4 w-4 text-purple-600" />{tf("Terms & Fulfillment", "条款与履约")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs">
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Shipping Method", "运输方式")}:</span><span className="text-right">Air Freight</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Delivery Terms", "贸易条款")}:</span><span className="text-right">{poData.deliveryTerms}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Payment Terms", "付款条款")}:</span><span className="text-right">{poData.paymentTerms}</span></div>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="rounded-md border bg-muted/20 p-2"><div className="text-muted-foreground">{tf("Shipments", "发货单")}</div><div className="font-semibold">{poData.shipmentRecords.length}</div><div className="text-muted-foreground">{tf("Shipped", "已发")}: {poData.shippedQty}</div></div>
+                      <div className="rounded-md border bg-muted/20 p-2"><div className="text-muted-foreground">{tf("Receipts", "收货单")}</div><div className="font-semibold">{poData.receiptRecords.length}</div><div className="text-muted-foreground">{tf("Received", "已收")}: {poData.receivedQty}</div></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
               <Tabs value={activeMainTab} onValueChange={setActiveMainTab}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="items">Items</TabsTrigger>
+                  {poData.purchaseType === "FACTORY_DIRECT" && (
+                    <TabsTrigger value="supply-allocation">Supply Allocation Order</TabsTrigger>
+                  )}
                   <TabsTrigger value="receipts">Warehouse Receipts</TabsTrigger>
                   <TabsTrigger value="confirmation">Receipt Confirmation</TabsTrigger>
                   <TabsTrigger value="shipments">Shipment Tracking</TabsTrigger>
@@ -1458,7 +2261,270 @@ export default function PODetailPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
+                {poData.purchaseType === "FACTORY_DIRECT" && (
+                  <TabsContent value="supply-allocation" className="mt-4">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg">Supply Allocation Order</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-0 border-t">
+                          <div className="md:col-span-1 border-r">
+                            <div className="p-3 bg-muted/50 border-b">
+                              <input type="text" placeholder="Search allocation no, vendor, warehouse" className="w-full h-8 px-3 text-xs border border-input rounded-md bg-background" />
+                            </div>
+                            <div className="divide-y max-h-[600px] overflow-y-auto">
+                              {poData.supplyAllocationOrders.length === 0 && missingFgWarehouse && (
+                                <div className="p-4 text-xs text-muted-foreground">
+                                  {tf("No allocation orders yet.", "暂无分配单。")}
+                                </div>
+                              )}
+                              {poData.supplyAllocationOrders.map((order) => {
+                                const demandQty = order.lines.reduce((sum, line) => sum + line.quantity, 0)
+                                const allocatedQty = order.lines.reduce((sum, line) => sum + line.allocatedQty, 0)
+                                const statusMeta = {
+                                  PENDING_ALLOCATION: { label: tf("Pending Allocation", "\u5f85\u5206\u914d"), className: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" },
+                                  ALLOCATED: { label: tf("Allocated", "\u5df2\u5206\u914d"), className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
+                                  RELEASED: { label: tf("Released", "\u5df2\u53d1\u9001"), className: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
+                                  VOIDED: { label: tf("Voided", "\u5df2\u4f5c\u5e9f"), className: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" },
+                                }[order.status as "PENDING_ALLOCATION" | "ALLOCATED" | "RELEASED" | "VOIDED"] || { label: order.status, className: "bg-gray-100 text-gray-800" }
+                                const vendorRnStatusMeta = {
+                                  NO_RN: { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700" },
+                                  RN_CREATED: { label: tf("RN Created", "RN \u5df2\u521b\u5efa"), className: "border-blue-200 bg-blue-50 text-blue-700" },
+                                  PUSH_FAILED: { label: tf("Kafka Failed", "Kafka \u5931\u8d25"), className: "border-red-200 bg-red-50 text-red-700" },
+                                  WAITING_ACCEPT: { label: tf("Waiting Accept", "\u7b49\u5f85\u63a5\u6536"), className: "border-amber-200 bg-amber-50 text-amber-700" },
+                                  REJECTED: { label: tf("Rejected", "\u5df2\u62d2\u6536"), className: "border-red-200 bg-red-50 text-red-700" },
+                                  ACCEPTED: { label: tf("Accepted", "\u5df2\u63a5\u6536"), className: "border-green-200 bg-green-50 text-green-700" },
+                                  RN_CANCELLED: { label: tf("RN Cancelled", "RN \u5df2\u53d6\u6d88"), className: "border-gray-300 bg-gray-100 text-gray-700" },
+                                }[order.vendorRnStatus as VendorRnStatus] || { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700" }
 
+                                return (
+                                  <div key={order.id} onClick={() => setSelectedAllocationOrder(order.id)} className={cn("p-3 cursor-pointer transition-colors border-l-4", selectedAllocationOrder === order.id ? "bg-primary/10 border-l-primary" : "hover:bg-muted/50 border-l-transparent")}>
+                                    <div className="flex items-start justify-between mb-2 gap-2">
+                                      <div>
+                                        <div className="font-mono text-sm font-medium">{order.allocationNo || tf("PO Demand", "PO \u9700\u6c42")}</div>
+                                        <div className="mt-1 text-xs text-muted-foreground">{order.lines.length} line(s)</div>
+                                      </div>
+                                      <div className="flex flex-col items-end gap-1">
+                                        <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
+                                        <Badge variant="outline" className={cn("text-[10px]", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground space-y-1">
+                                      <div>{order.sourceName}</div>
+                                      <div>{tf("Qty", "\u6570\u91cf")}: {demandQty} / {allocatedQty} PCS</div>
+                                      <div>{tf("To", "\u5230")}: {order.destinationWarehouseName}</div>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-3">
+                            {!selectedAllocationOrder && missingFgWarehouse && (
+                              <div className="flex min-h-[320px] items-center justify-center p-6">
+                                <div className="max-w-md text-center space-y-2">
+                                  <div className="text-sm font-medium">{tf("No allocation orders yet", "暂无分配单")}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {tf(
+                                      "No supply allocation orders yet. They will appear here after vendor allocation is completed.",
+                                      "当前尚未分配 Vendor，完成分配后会在这里生成 Supply Allocation Order。"
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {selectedAllocationOrder && (() => {
+                              const order = poData.supplyAllocationOrders.find(item => item.id === selectedAllocationOrder)
+                              if (!order) return null
+                              const demandQty = order.lines.reduce((sum, line) => sum + line.quantity, 0)
+                              const allocatedQty = order.lines.reduce((sum, line) => sum + line.allocatedQty, 0)
+                              const remainingQty = demandQty - allocatedQty
+                              const allocationRate = demandQty > 0 ? allocatedQty / demandQty : 0
+                              const relatedReceipts = poData.receiptRecords.filter((receipt) => receipt.sourceAllocationNo === order.allocationNo)
+                              const routeTypeLabel = order.routeType === "VIA_FG" ? tf("Via FG warehouse", "经成品仓") : tf("Direct", "直发")
+                              const routePath = order.routeType === "VIA_FG"
+                                ? [order.sourceWarehouseName, order.intermediateWarehouseName, order.destinationWarehouseName].filter(Boolean).join(" -> ")
+                                : [order.sourceWarehouseName, order.destinationWarehouseName].filter(Boolean).join(" -> ")
+                              const isAllocated = order.status === "ALLOCATED"
+                              const vendorRnStatus = (order.vendorRnStatus || (order.vendorReceiptNo ? "RN_CREATED" : "NO_RN")) as VendorRnStatus
+                              const canRetryVendorRn = ["PUSH_FAILED", "WAITING_ACCEPT", "REJECTED", "RN_CREATED"].includes(vendorRnStatus)
+                              const canCancelVendorRn = ["PUSH_FAILED", "WAITING_ACCEPT", "REJECTED", "RN_CREATED"].includes(vendorRnStatus)
+                              const canCreateVendorRn = ["NO_RN", "RN_CANCELLED"].includes(vendorRnStatus)
+                              const vendorRnStatusMeta = {
+                                NO_RN: { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700", tone: "idle" },
+                                RN_CREATED: { label: tf("RN Created", "RN \u5df2\u521b\u5efa"), className: "border-blue-200 bg-blue-50 text-blue-700", tone: "ready" },
+                                PUSH_FAILED: { label: tf("Kafka Failed", "Kafka \u5931\u8d25"), className: "border-red-200 bg-red-50 text-red-700", tone: "error" },
+                                WAITING_ACCEPT: { label: tf("Waiting Accept", "\u7b49\u5f85\u63a5\u6536"), className: "border-amber-200 bg-amber-50 text-amber-700", tone: "waiting" },
+                                REJECTED: { label: tf("Rejected", "\u5df2\u62d2\u6536"), className: "border-red-200 bg-red-50 text-red-700", tone: "error" },
+                                ACCEPTED: { label: tf("Accepted", "\u5df2\u63a5\u6536"), className: "border-green-200 bg-green-50 text-green-700", tone: "success" },
+                                RN_CANCELLED: { label: tf("RN Cancelled", "RN \u5df2\u53d6\u6d88"), className: "border-gray-300 bg-gray-100 text-gray-700", tone: "cancelled" },
+                              }[vendorRnStatus]
+                              const vendorRnNodeDone = ["RN_CREATED", "WAITING_ACCEPT", "ACCEPTED"].includes(vendorRnStatus)
+                              const vendorRnNodeError = ["PUSH_FAILED", "REJECTED"].includes(vendorRnStatus)
+                              const statusMeta = {
+                                PENDING_ALLOCATION: { label: tf("Pending Allocation", "\u5f85\u5206\u914d"), className: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" },
+                                ALLOCATED: { label: tf("Allocated", "\u5df2\u5206\u914d"), className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
+                                RELEASED: { label: tf("Released", "\u5df2\u53d1\u9001"), className: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
+                                VOIDED: { label: tf("Voided", "\u5df2\u4f5c\u5e9f"), className: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" },
+                              }[order.status as "PENDING_ALLOCATION" | "ALLOCATED" | "RELEASED" | "VOIDED"] || { label: order.status, className: "bg-gray-100 text-gray-800" }
+
+                              return (
+                                <div className="p-6 space-y-6">
+                                  <div className="flex items-start justify-between pb-4 border-b">
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-3">
+                                        <h3 className="text-xl font-semibold font-mono">{order.allocationNo || tf("PO Demand", "PO \u9700\u6c42")}</h3>
+                                        <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
+                                        <Badge variant="outline" className={cn("text-xs", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge>
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">{order.allocationName}</div>
+                                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                        <span>{tf("Source", "\u6765\u6e90")}: <span className="font-medium text-foreground">{order.sourceName}</span></span>
+                                        <span>{tf("Destination", "\u76ee\u6807\u4ed3")}: <span className="font-medium text-foreground">{order.destinationWarehouseName}</span></span>
+                                        <span>{tf("Route", "\u8def\u5f84")}: <span className="font-medium text-foreground">{routeTypeLabel}</span></span>
+                                        {order.outboundOrderNo && (
+                                          <span>{tf("Outbound / SO", "\u51fa\u5e93\u5355 / SO")}: <span className="font-mono text-foreground">{order.outboundOrderNo}</span></span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      {order.canChangeVendor && (
+                                        <Button variant="outline" size="sm" onClick={() => openReviseAllocationDialog(order)}>
+                                          <RefreshCw className="h-4 w-4 mr-2" />
+                                          {tf("Revise Allocation", "\u4fee\u8ba2\u5206\u914d")}
+                                        </Button>
+                                      )}
+                                      {canCreateVendorRn && (
+                                        <Button size="sm" onClick={() => handleCreateVendorRn(order)}>
+                                          <FilePlus className="h-4 w-4 mr-2" />
+                                          {tf("Create Vendor RN", "\u521b\u5efa Vendor RN")}
+                                        </Button>
+                                      )}
+                                      {canRetryVendorRn && (
+                                        <Button size="sm" onClick={() => handleRetryVendorRnPush(order)}>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          {tf("Retry Push", "\u91cd\u63a8")}
+                                        </Button>
+                                      )}
+                                      {canCancelVendorRn && (
+                                        <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleCancelVendorRn(order)}>
+                                          <Ban className="h-4 w-4 mr-2" />
+                                          {tf("Cancel RN", "\u53d6\u6d88 RN")}
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+
+
+                                  <div className="rounded-lg border bg-muted/30 p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex flex-col items-center flex-1">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center"><CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /></div>
+                                        <div className="mt-2 text-center"><div className="text-sm font-medium">{tf("Target RN Created", "目标仓 RN 已创建")}</div><div className="text-xs text-muted-foreground">{order.finalReceiptNo || tf("Pending", "待处理")}</div></div>
+                                      </div>
+                                      <div className="flex-1 h-0.5 mx-2 bg-green-300 dark:bg-green-700" />
+                                      <div className="flex flex-col items-center flex-1">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/20"><CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /></div>
+                                        <div className="mt-2 text-center"><div className="text-sm font-medium">{tf("Vendor Assigned", "Vendor 已指派")}</div><div className="text-xs text-muted-foreground">{allocatedQty} PCS</div></div>
+                                      </div>
+                                      {order.routeType === "VIA_FG" && (
+                                        <>
+                                          <div className={cn("flex-1 h-0.5 mx-2", vendorRnNodeDone ? "bg-green-300 dark:bg-green-700" : vendorRnNodeError ? "bg-red-300 dark:bg-red-700" : "bg-gray-200 dark:bg-gray-700")} />
+                                          <div className="flex flex-col items-center flex-1">
+                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", vendorRnNodeDone ? "bg-green-100 dark:bg-green-900/20" : vendorRnNodeError ? "bg-red-100 dark:bg-red-900/20" : "bg-gray-100 dark:bg-gray-800")}>{vendorRnNodeDone ? <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /> : vendorRnNodeError ? <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" /> : <Package className="h-4 w-4 text-gray-400" />}</div>
+                                            <div className="mt-2 text-center"><div className={cn("text-sm font-medium", !vendorRnNodeDone && "text-muted-foreground")}>{tf("Vendor RN / FG Receipt", "Vendor RN / 成品仓入库")}</div><div className="text-xs text-muted-foreground">{order.vendorReceiptNo || vendorRnStatusMeta.label}</div></div>
+                                          </div>
+                                          <div className={cn("flex-1 h-0.5 mx-2", order.outboundOrderNo ? "bg-green-300 dark:bg-green-700" : "bg-gray-200 dark:bg-gray-700")} />
+                                          <div className="flex flex-col items-center flex-1">
+                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", order.outboundOrderNo ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800")}>{order.outboundOrderNo ? <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /> : <Truck className="h-4 w-4 text-gray-400" />}</div>
+                                            <div className="mt-2 text-center"><div className={cn("text-sm font-medium", !order.outboundOrderNo && "text-muted-foreground")}>{tf("Outbound / SO", "出库单 / SO")}</div><div className="text-xs text-muted-foreground">{order.outboundOrderNo || tf("Pending", "待处理")}</div></div>
+                                          </div>
+                                        </>
+                                      )}
+                                      <div className="flex-1 h-0.5 mx-2 bg-gray-200 dark:bg-gray-700" />
+                                      <div className="flex flex-col items-center flex-1">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                        <div className="mt-2 text-center"><div className="text-sm font-medium text-muted-foreground">{tf("Target Fulfillment", "目标仓履约")}</div><div className="text-xs text-muted-foreground">{remainingQty > 0 ? `${remainingQty} PCS ${tf("remaining", "剩余")}` : tf("Ready", "就绪")}</div></div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="rounded-md border overflow-hidden">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow className="bg-muted/50">
+                                          <TableHead>{tf("Line", "\u884c\u53f7")}</TableHead>
+                                          <TableHead>SKU</TableHead>
+                                          <TableHead>{tf("Product", "\u5546\u54c1")}</TableHead>
+                                          <TableHead className="text-right">{tf("PO Demand", "PO \u9700\u6c42")}</TableHead>
+                                          <TableHead className="text-right">{tf("Allocated Qty", "\u5df2\u5206\u914d\u6570")}</TableHead>
+                                          <TableHead className="text-right">{tf("Remaining Qty", "\u5269\u4f59\u6570\u91cf")}</TableHead>
+                                          <TableHead>{tf("UOM", "\u5355\u4f4d")}</TableHead>
+                                          <TableHead className="text-right">{tf("Allocation %", "\u5206\u914d\u6bd4\u4f8b")}</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>{order.lines.map((line) => {
+                                        const lineRemainingQty = line.quantity - line.allocatedQty
+                                        const lineAllocationPct = line.quantity > 0 ? line.allocatedQty / line.quantity : 0
+                                        return (
+                                          <TableRow key={line.sourceLineNo + '-' + line.skuCode}>
+                                            <TableCell>{line.sourceLineNo}</TableCell>
+                                            <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
+                                            <TableCell>{line.productName}</TableCell>
+                                            <TableCell className="text-right">{line.quantity}</TableCell>
+                                            <TableCell className="text-right font-medium">{line.allocatedQty}</TableCell>
+                                            <TableCell className={cn("text-right font-medium", lineRemainingQty > 0 && "text-orange-600")}>{lineRemainingQty}</TableCell>
+                                            <TableCell>{line.uom}</TableCell>
+                                            <TableCell className="text-right font-medium">{Math.round(lineAllocationPct * 100)}%</TableCell>
+                                          </TableRow>
+                                        )
+                                      })}</TableBody>
+                                    </Table>
+                                  </div>
+
+                                  <div className="grid gap-4 lg:grid-cols-2">
+                                    <Card>
+                                      <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Building className="h-4 w-4 text-cyan-600" />{tf("Vendor-side", "Vendor \u4fa7")}</CardTitle></CardHeader>
+                                      <CardContent className="space-y-2 text-xs">
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor", "Vendor")}:</span><span className="font-medium text-right">{order.sourceName}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Source Warehouse", "\u6765\u6e90\u4ed3")}:</span><span className="text-right">{order.sourceWarehouseName || "-"}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor FG Warehouse", "Vendor \u6210\u54c1\u4ed3")}:</span><span className="text-right">{order.intermediateWarehouseName || "-"}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor RN", "Vendor RN")}:</span><span className="font-mono text-right">{order.vendorReceiptNo || "-"}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Push Status", "\u63a8\u9001\u72b6\u6001")}:</span><Badge variant="outline" className={cn("text-[10px]", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Last Push", "\u6700\u540e\u63a8\u9001")}:</span><span className="text-right">{order.vendorRnLastPushedAt ? new Date(order.vendorRnLastPushedAt).toLocaleString() : "-"}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Retry Count", "\u91cd\u8bd5\u6b21\u6570")}:</span><span className="font-medium text-right">{order.vendorRnRetryCount || 0}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Message ID", "\u6d88\u606f ID")}:</span><span className="font-mono text-right break-all">{order.vendorRnMessageId || "-"}</span></div>
+                                        {order.vendorRnError && (
+                                          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-red-800">
+                                            <div className="font-medium">{tf("Push exception", "\u63a8\u9001\u5f02\u5e38")}</div>
+                                            <div className="mt-1">{order.vendorRnError}</div>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Outbound / SO", "\u51fa\u5e93\u5355 / SO")}:</span><span className="font-mono text-right">{order.outboundOrderNo || "-"}</span></div>
+                                      </CardContent>
+                                    </Card>
+                                    <Card>
+                                      <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />{tf("Target-side", "\u76ee\u6807\u4ed3\u4fa7")}</CardTitle></CardHeader>
+                                      <CardContent className="space-y-2 text-xs">
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Target RN", "\u76ee\u6807\u4ed3 RN")}:</span><span className="font-mono text-right">{order.finalReceiptNo || "-"}</span></div>
+                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Target Warehouse", "\u76ee\u6807\u4ed3")}:</span><span className="font-medium text-right">{order.destinationWarehouseName}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Demand Qty", "\u9700\u6c42\u6570\u91cf")}:</span><span className="font-medium">{demandQty} PCS</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Allocated Qty", "\u5df2\u5206\u914d\u6570\u91cf")}:</span><span className="font-medium text-green-600">{allocatedQty} PCS</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Remaining Qty", "\u5269\u4f59\u6570\u91cf")}:</span><span className={cn("font-medium", remainingQty > 0 && "text-orange-600")}>{remainingQty} PCS</span></div>
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                </div>
+                              )
+                            })()}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
 
                 {/* Warehouse Receipts Tab - List-Detail Layout */}
                 <TabsContent value="receipts" className="mt-4">
@@ -1473,12 +2539,12 @@ export default function PODetailPage() {
                           <div className="p-3 bg-muted/50 border-b">
                             <input
                               type="text"
-                              placeholder="Search by dispatch number, warehouse, staff"
+                              placeholder="Search receipt no, allocation, warehouse"
                               className="w-full h-8 px-3 text-xs border border-input rounded-md bg-background"
                             />
                           </div>
                           <div className="divide-y max-h-[600px] overflow-y-auto">
-                            {mockPODetail.receiptRecords.map((receipt) => (
+                            {poData.receiptRecords.map((receipt) => (
                               <div
                                 key={receipt.id}
                                 onClick={() => setSelectedReceipt(receipt.id)}
@@ -1493,15 +2559,11 @@ export default function PODetailPage() {
                                     <Badge className={
                                       receipt.receiptStatus === 'CLOSED'
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                        : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                                          : receipt.receiptStatus === 'NEW'
-                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                        : receipt.receiptStatus === 'NEW'
+                                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                     }>
-                                      {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' :
-                                        receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' :
-                                          receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
+                                      {receipt.receiptStatus === 'CLOSED' ? 'Closed' : receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
                                     </Badge>
                                     {!receipt.pushedToWarehouse && (
                                       <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
@@ -1511,8 +2573,8 @@ export default function PODetailPage() {
                                   </div>
                                 </div>
                                 <div className="text-xs text-muted-foreground space-y-1">
-                                  <div>Warehouse: {mockPODetail.warehouseName}</div>
-                                  <div>Location: {receipt.warehouseLocation}</div>
+                                  <div>{receipt.receiptType === "VENDOR_WAREHOUSE_RECEIPT" ? "Vendor RN / FG Receipt" : "Target RN"}</div>
+                                  <div>{receipt.sourceWarehouseName} {"->"} {receipt.targetWarehouseName}</div>
                                 </div>
                               </div>
                             ))}
@@ -1522,8 +2584,11 @@ export default function PODetailPage() {
                         {/* Right: Receipt Detail - 3/4 width */}
                         <div className="md:col-span-3">
                           {selectedReceipt && (() => {
-                            const receipt = mockPODetail.receiptRecords.find(r => r.id === selectedReceipt)
+                            const receipt = poData.receiptRecords.find(r => r.id === selectedReceipt)
                             if (!receipt) return null
+                            const receiptLines = receipt.lines || []
+                            const isVendorRN = receipt.receiptType === "VENDOR_WAREHOUSE_RECEIPT"
+                            const receiptTypeLabel = isVendorRN ? "Vendor RN / FG Receipt" : "Target RN"
 
                             return (
                               <div className="p-6 space-y-6">
@@ -1535,15 +2600,15 @@ export default function PODetailPage() {
                                       <Badge className={
                                         receipt.receiptStatus === 'CLOSED'
                                           ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                          : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-                                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                          : receipt.receiptStatus === 'NEW'
+                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
                                       }>
-                                        {receipt.receiptStatus === 'CLOSED' ? 'Warehouse Received' : receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'Partial Damage' : 'In Progress'}
+                                        {receipt.receiptStatus === 'CLOSED' ? 'Closed' : receipt.receiptStatus === 'NEW' ? 'New' : 'In Progress'}
                                       </Badge>
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {new Date(receipt.receiptDate).toLocaleString()}
+                                      {receiptTypeLabel} {"->"} {new Date(receipt.receiptDate).toLocaleString()}
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
@@ -1568,6 +2633,34 @@ export default function PODetailPage() {
                                   </div>
                                 </div>
 
+                                {(receipt.sourceAllocationNo || missingFgWarehouse) && (
+                                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+                                    <div className="font-medium">
+                                      {missingFgWarehouse
+                                        ? tf("Target RN is pre-created", "目标仓 RN 已预创建")
+                                        : isVendorRN
+                                          ? tf("Vendor RN is separate from Target RN", "Vendor RN 与目标仓 RN 是分开的单据")
+                                          : tf("Target RN is fulfilled by the allocation chain", "目标仓 RN 由分配链路履约")}
+                                    </div>
+                                    <div className="mt-1 text-xs text-amber-800/90">
+                                      {missingFgWarehouse
+                                        ? tf(
+                                            "This target RN is waiting for Vendor FG warehouse assignment before the Via FG fulfillment chain can continue.",
+                                            "该目标仓 RN 正在等待 Vendor 成品仓指派，之后才能继续经成品仓履约链路。"
+                                          )
+                                        : isVendorRN
+                                          ? tf(
+                                              "This Vendor RN receives goods into the vendor / FG warehouse. It does not replace the target warehouse RN.",
+                                              "该 Vendor RN 用于 vendor / 成品仓入库，不替代目标仓 RN。"
+                                            )
+                                          : tf(
+                                              "This target RN is the final receiving demand. Change vendor, qty, or routing through Revise Allocation.",
+                                              "该目标仓 RN 是最终收货需求。如需修改 vendor、数量或路径，请通过 Revise Allocation。"
+                                            )}
+                                    </div>
+                                  </div>
+                                )}
+
                                 {/* Receipt Progress Steps */}
                                 <div className="bg-muted/30 rounded-lg p-4">
                                   <div className="flex items-center justify-between">
@@ -1585,81 +2678,65 @@ export default function PODetailPage() {
 
                                     {/* Pending Receipt */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED'
                                         ? 'bg-green-100 dark:bg-green-900/20'
                                         : 'bg-gray-100 dark:bg-gray-800'
                                         }`}>
-                                        {receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
+                                        {receipt.receiptStatus === 'CLOSED' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
                                           <Clock className="h-4 w-4 text-gray-400" />
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' ? '' : 'text-muted-foreground'
                                           }`}>Pending Receipt</div>
                                         <div className="text-xs text-muted-foreground">Waiting</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED'
                                       ? 'bg-green-300 dark:bg-green-700'
                                       : 'bg-gray-200 dark:bg-gray-700'
                                       }`} />
 
                                     {/* Receiving */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE'
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'CLOSED'
                                         ? 'bg-green-100 dark:bg-green-900/20'
                                         : 'bg-gray-100 dark:bg-gray-800'
                                         }`}>
-                                        {receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
+                                        {receipt.receiptStatus === 'CLOSED' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
                                           <Package className="h-4 w-4 text-gray-400" />
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' || receipt.receiptStatus === 'PARTIAL_DAMAGE' ? '' : 'text-muted-foreground'
+                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'CLOSED' ? '' : 'text-muted-foreground'
                                           }`}>Receiving</div>
                                         <div className="text-xs text-muted-foreground">In Process</div>
                                       </div>
                                     </div>
                                     <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED'
                                       ? 'bg-green-300 dark:bg-green-700'
-                                      : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                        ? 'bg-orange-300 dark:bg-orange-700'
-                                        : 'bg-gray-200 dark:bg-gray-700'
+                                      : 'bg-gray-200 dark:bg-gray-700'
                                       }`} />
 
-                                    {/* Partially Received */}
+                                    {/* Received */}
                                     <div className="flex flex-col items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                        ? 'bg-orange-100 dark:bg-orange-900/20'
-                                        : receipt.receiptStatus === 'CLOSED'
-                                          ? 'bg-green-100 dark:bg-green-900/20'
-                                          : 'bg-gray-100 dark:bg-gray-800'
-                                        }`}>
-                                        {receipt.receiptStatus === 'PARTIAL_DAMAGE' ? (
-                                          <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                        ) : receipt.receiptStatus === 'CLOSED' ? (
+                                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", receipt.receiptStatus === 'CLOSED' ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800")}>
+                                        {receipt.receiptStatus === 'CLOSED' ? (
                                           <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                         ) : (
-                                          <TrendingUp className="h-4 w-4 text-gray-400" />
+                                          <Package className="h-4 w-4 text-gray-400" />
                                         )}
                                       </div>
                                       <div className="mt-2 text-center">
-                                        <div className={`text-sm font-medium ${receipt.receiptStatus === 'PARTIAL_DAMAGE' ? 'text-orange-600 dark:text-orange-400' :
-                                          receipt.receiptStatus === 'CLOSED' ? '' : 'text-muted-foreground'
-                                          }`}>Partially Received</div>
-                                        <div className="text-xs text-muted-foreground">Partial</div>
+                                        <div className={cn("text-sm font-medium", receipt.receiptStatus !== 'CLOSED' && "text-muted-foreground")}>Received</div>
+                                        <div className="text-xs text-muted-foreground">{receipt.receivedQty} / {receipt.expectedQty}</div>
                                       </div>
                                     </div>
-                                    <div className={`flex-1 h-0.5 mx-2 ${receipt.receiptStatus === 'CLOSED'
-                                      ? 'bg-green-300 dark:bg-green-700'
-                                      : receipt.receiptStatus === 'PARTIAL_DAMAGE'
-                                        ? 'bg-orange-300 dark:bg-orange-700'
-                                        : 'bg-gray-200 dark:bg-gray-700'
-                                      }`} />
+                                    <div className={cn("flex-1 h-0.5 mx-2", receipt.receiptStatus === 'CLOSED' ? "bg-green-300 dark:bg-green-700" : "bg-gray-200 dark:bg-gray-700")} />
 
                                     {/* Close/Cancelled/Exception */}
                                     <div className="flex flex-col items-center flex-1">
@@ -1705,7 +2782,7 @@ export default function PODetailPage() {
                                       <TableRow className="bg-muted/50">
                                         <TableHead className="text-xs p-3">Product</TableHead>
                                         <TableHead className="text-xs p-3 text-center">Qty</TableHead>
-                                        <TableHead className="text-xs p-3 text-center">Unit Price</TableHead>
+                                        <TableHead className="text-xs p-3 text-center">Expected</TableHead>
                                         <TableHead className="text-xs p-3">UOM</TableHead>
                                         <TableHead className="text-xs p-3 text-right">Pallet Count</TableHead>
                                         <TableHead className="text-xs p-3">SN Product</TableHead>
@@ -1715,21 +2792,30 @@ export default function PODetailPage() {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      <TableRow className="hover:bg-muted/50">
-                                        <TableCell className="text-xs p-3">
-                                          <div className="font-medium">SKU: CCC</div>
-                                        </TableCell>
-                                        <TableCell className="text-xs p-3 text-center font-medium">{receipt.receivedQty}</TableCell>
-                                        <TableCell className="text-xs p-3 text-center font-mono">$0.00</TableCell>
-                                        <TableCell className="text-xs p-3">
-                                          <Badge variant="outline" className="text-xs">EA</Badge>
-                                        </TableCell>
-                                        <TableCell className="text-xs p-3 text-right font-medium text-muted-foreground">1</TableCell>
-                                        <TableCell className="text-xs p-3 text-muted-foreground">-</TableCell>
-                                        <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
-                                        <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
-                                        <TableCell className="text-xs p-3 text-muted-foreground">-</TableCell>
-                                      </TableRow>
+                                      {receiptLines.length > 0 ? receiptLines.map((line) => (
+                                        <TableRow key={`${line.sourceLineNo}-${line.skuCode}`} className="hover:bg-muted/50">
+                                          <TableCell className="text-xs p-3">
+                                            <div className="font-medium">{line.productName}</div>
+                                            <div className="text-muted-foreground font-mono">{line.skuCode}</div>
+                                          </TableCell>
+                                          <TableCell className="text-xs p-3 text-center font-medium">{line.receivedQty}</TableCell>
+                                          <TableCell className="text-xs p-3 text-center font-mono">{line.expectedQty}</TableCell>
+                                          <TableCell className="text-xs p-3">
+                                            <Badge variant="outline" className="text-xs">{line.uom}</Badge>
+                                          </TableCell>
+                                          <TableCell className="text-xs p-3 text-right font-medium text-muted-foreground">-</TableCell>
+                                          <TableCell className="text-xs p-3 text-muted-foreground">-</TableCell>
+                                          <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
+                                          <TableCell className="text-xs p-3 text-right text-muted-foreground">-</TableCell>
+                                          <TableCell className="text-xs p-3 text-muted-foreground">Allocation {receipt.sourceAllocationNo}</TableCell>
+                                        </TableRow>
+                                      )) : (
+                                        <TableRow>
+                                          <TableCell colSpan={9} className="h-20 text-center text-sm text-muted-foreground">
+                                            {tf("No receipt lines yet. This destination RN is waiting for fulfillment configuration.", "暂无入库明细。该目的地 RN 正在等待履约配置。")}
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
                                     </TableBody>
                                   </Table>
                                 </div>
@@ -1756,8 +2842,8 @@ export default function PODetailPage() {
                                         <span className="font-medium">{receipt.receivedBy}</span>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Received Qty:</span>
-                                        <span className="font-medium text-green-600 dark:text-green-400">{receipt.receivedQty}</span>
+                                        <span className="text-muted-foreground">Expected / Received:</span>
+                                        <span className="font-medium text-green-600 dark:text-green-400">{receipt.expectedQty} / {receipt.receivedQty}</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-muted-foreground">Damage Qty:</span>
@@ -1776,13 +2862,13 @@ export default function PODetailPage() {
                                     <h4 className="text-sm font-semibold">Warehouse & Location</h4>
                                     <div className="space-y-2 text-sm">
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Warehouse:</span>
-                                        <span className="font-medium">{mockPODetail.warehouseName}</span>
+                                        <span className="text-muted-foreground">Target Warehouse:</span>
+                                        <span className="font-medium">{receipt.targetWarehouseName}</span>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Warehouse Code:</span>
+                                        <span className="text-muted-foreground">Target Code:</span>
                                         <Badge variant="outline" className="text-xs font-mono">
-                                          {mockPODetail.warehouseCode}
+                                          {receipt.targetWarehouseCode}
                                         </Badge>
                                       </div>
                                       <div className="flex justify-between">
@@ -1796,12 +2882,16 @@ export default function PODetailPage() {
                                             ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                             : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
                                         }>
-                                          {receipt.qualityStatus === 'PASSED' ? 'Passed' : 'Partial Damage'}
+                                          {receipt.qualityStatus === 'PASSED' ? 'Passed' : 'Pending'}
                                         </Badge>
                                       </div>
                                       <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Related Shipment:</span>
-                                        <span className="font-mono text-xs">{receipt.relatedShipment}</span>
+                                        <span className="text-muted-foreground">Source Allocation:</span>
+                                        <span className="font-mono text-xs">{receipt.sourceAllocationNo}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Outbound / SO:</span>
+                                        <span className="font-mono text-xs">{receipt.outboundOrderNo || "-"}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -2702,10 +3792,9 @@ export default function PODetailPage() {
               <Card>
                 <Tabs value={activeSideTab} onValueChange={setActiveSideTab}>
                   <CardHeader className="pb-3">
-                    <TabsList className="grid grid-cols-3 w-auto inline-grid">
+                    <TabsList className="grid grid-cols-2 w-auto inline-grid">
                       <TabsTrigger value="routing" className="px-4">Routing</TabsTrigger>
                       <TabsTrigger value="events" className="px-4">Events</TabsTrigger>
-                      <TabsTrigger value="info" className="px-4">Info</TabsTrigger>
                     </TabsList>
                   </CardHeader>
 
@@ -2775,186 +3864,6 @@ export default function PODetailPage() {
                     </CardContent>
                   </TabsContent>
 
-
-                  {/* Order Info Tab - Combined info from original 4 cards */}
-                  <TabsContent value="info" className="mt-0">
-                    <CardContent>
-                      <div className="space-y-6">
-                        {/* Basic Information - Now includes supplier info */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <FileText className="h-4 w-4 text-blue-600" />
-                            <span>基本信息</span>
-                          </div>
-                          <div className="space-y-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">PO Number:</span>
-                              <span className="font-mono font-medium">{mockPODetail.orderNo}</span>
-                            </div>
-                            {mockPODetail.originalPoNo && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Original PO:</span>
-                                <span className="font-mono">{mockPODetail.originalPoNo}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Reference:</span>
-                              <span className="font-mono">{mockPODetail.referenceNo}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">供应商:</span>
-                              <span className="font-medium">{mockPODetail.supplierName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">供应商编码:</span>
-                              <Badge variant="outline" className="text-xs h-5">
-                                {mockPODetail.supplierCode}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">联系人:</span>
-                              <span className="font-medium">{mockPODetail.contactPerson}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">联系电话:</span>
-                              <span className="font-mono text-xs">{mockPODetail.contactPhone}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Data Source:</span>
-                              <Badge variant="outline" className="text-xs h-5">
-                                {mockPODetail.dataSource === 'PR_CONVERSION' ? 'PR转单' : '手动创建'}
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Created:</span>
-                              <span>{new Date(mockPODetail.created).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          {mockPODetail.relatedPRs.length > 0 && (
-                            <div>
-                              <div className="text-xs text-muted-foreground mb-1">Related PRs ({mockPODetail.relatedPRs.length})</div>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPODetail.relatedPRs.map((prNo, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs h-5">
-                                    {prNo}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <Separator />
-
-                        {/* Shipping Address (发货地址) - Supplier Address */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <Building className="h-4 w-4 text-blue-600" />
-                            <span>发货地址</span>
-                          </div>
-                          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <div className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
-                              {mockPODetail.supplierName}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              {mockPODetail.supplierAddress}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Delivery Address (收货地址) - Warehouse Address */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <MapPin className="h-4 w-4 text-green-600" />
-                            <span>收货地址</span>
-                          </div>
-                          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                            <div className="font-medium text-sm text-green-800 dark:text-green-200 mb-1">
-                              {mockPODetail.warehouseName}
-                            </div>
-                            <div className="text-xs text-green-600 dark:text-green-400 mb-2">
-                              Code: {mockPODetail.warehouseCode}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {mockPODetail.warehouseAddress}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Logistics Terms (物流条款) */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <Truck className="h-4 w-4 text-purple-600" />
-                            <span>物流条款</span>
-                          </div>
-                          <div className="space-y-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">交货期日:</span>
-                              <span className="font-medium text-orange-600 dark:text-orange-400">
-                                {new Date(mockPODetail.expectedArrivalDate).toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">最晚发运时间:</span>
-                              <span className="font-medium">2024-01-20 18:00:00</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">运输方式:</span>
-                              <Badge variant="outline" className="text-xs h-5">
-                                Air Freight
-                              </Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">运费条款:</span>
-                              <span className="font-medium">FOB</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">贸易条款:</span>
-                              <span className="font-medium">{mockPODetail.deliveryTerms}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">付款条款:</span>
-                              <span className="font-medium">{mockPODetail.paymentTerms}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Logistics Summary */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <Package className="h-4 w-4 text-indigo-600" />
-                            <span>物流汇总</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                              <div className="text-muted-foreground mb-1">发货单</div>
-                              <div className="font-bold text-blue-600 dark:text-blue-400">
-                                {mockPODetail.shipmentRecords.length}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                已发: {mockPODetail.shippedQty}
-                              </div>
-                            </div>
-                            <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800">
-                              <div className="text-muted-foreground mb-1">收货单</div>
-                              <div className="font-bold text-green-600 dark:text-green-400">
-                                {mockPODetail.receiptRecords.length}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                已收: {mockPODetail.receivedQty}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </TabsContent>
                 </Tabs>
               </Card>
             </div>
@@ -2976,6 +3885,245 @@ export default function PODetailPage() {
           onSend={handleSendPO}
         />
 
+        <Dialog open={showSupplyAllocationDialog} onOpenChange={setShowSupplyAllocationDialog}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>{tf("Allocate Supply", "\u5206\u914d\u4f9b\u5e94")}</DialogTitle>
+              <DialogDescription>
+                {tf("Create vendor fulfillment from the PO demand. Keep the original allocation logic while editing in a cleaner single-column layout.", "\u4ece PO \u9700\u6c42\u521b\u5efa vendor \u5c65\u7ea6\uff0c\u5728\u66f4\u6e05\u6670\u7684\u5355\u5217\u5e03\u5c40\u4e2d\u4fdd\u7559\u539f\u6709\u5206\u914d\u903b\u8f91\u3002")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="rounded-lg border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">PO</div>
+                  <div className="mt-1 font-mono font-medium">{poData.orderNo}</div>
+                </div>
+                <div className="rounded-lg border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">{tf("Unallocated qty", "\u672a\u5206\u914d\u6570\u91cf")}</div>
+                  <div className="mt-1 font-medium">{unallocatedSupplyQty} PCS</div>
+                </div>
+                <div className="rounded-lg border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">{tf("Target", "\u76ee\u6807\u4ed3")}</div>
+                  <div className="mt-1 font-medium">{poData.unallocatedSupplyDemand.destinationWarehouseCode}</div>
+                </div>
+                <div className="rounded-lg border bg-muted/20 p-3">
+                  <div className="text-xs text-muted-foreground">{tf("Assigned total", "\u5f53\u524d\u5df2\u5206\u914d")}</div>
+                  <div className="mt-1 font-medium">{getActiveTotal(allocationDrafts)} PCS</div>
+                </div>
+              </div>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">{tf("Generation strategy", "\u751f\u6210\u7b56\u7565")}</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{tf("Vendor PO", "Vendor PO")}</Label>
+                    <Select defaultValue="PER_VENDOR"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PER_VENDOR">{tf("One vendor PO per vendor", "\u6bcf\u4e2a vendor \u4e00\u5f20 PO")}</SelectItem><SelectItem value="CONSOLIDATED">{tf("One execution PO", "\u5408\u5e76\u4e00\u5f20\u6267\u884c PO")}</SelectItem></SelectContent></Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{tf("Sales Order", "SO")}</Label>
+                    <Select defaultValue="BY_VENDOR_PO"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="BY_VENDOR_PO">{tf("Create SO by vendor PO", "\u6309 vendor PO \u521b\u5efa SO")}</SelectItem><SelectItem value="BY_MASTER_PO">{tf("Create one SO by master PO", "\u6309\u6574\u5f20\u4e3b PO \u521b\u5efa\u4e00\u5f20 SO")}</SelectItem></SelectContent></Select>
+                  </div>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 md:col-span-2">
+                    {tf("The SO strategy is global for the whole allocation result. Every vendor follows the same strategy.", "SO \u7b56\u7565\u662f\u6574\u6b21\u5206\u914d\u7684\u5168\u5c40\u7b56\u7565\uff0c\u6240\u6709 vendor \u5fc5\u987b\u9075\u4ece\u540c\u4e00\u5957\u89c4\u5219\u3002")}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold">{tf("Allocate vendors", "\u5206\u914d\u4f9b\u5e94\u5546")}</h3>
+                    <p className="text-xs text-muted-foreground">{tf("Add a vendor draft first, then use Add Items to assign lines and quantities.", "\u5148\u65b0\u589e vendor draft\uff0c\u518d\u901a\u8fc7\u201c\u6dfb\u52a0\u5546\u54c1\u201d\u5206\u914d\u5546\u54c1\u884c\u548c\u6570\u91cf\u3002")}</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => addVendorDraft("allocate")}><Plus className="mr-2 h-4 w-4" />{tf("Add Vendor", "\u6dfb\u52a0 Vendor")}</Button>
+                </div>
+
+                {renderDraftCards("allocate")}
+              </div>
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setShowSupplyAllocationDialog(false)}>{tf("Cancel", "\u53d6\u6d88")}</Button><Button onClick={handleGenerateAllocation}>{tf("Generate Vendor PO / SO", "\u751f\u6210 Vendor PO / SO")}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showChangeVendorDialog} onOpenChange={setShowChangeVendorDialog}>
+          <DialogContent className="max-h-[90vh] max-w-6xl overflow-auto">
+            <DialogHeader>
+              <DialogTitle>{tf("Revise Allocation", "修订分配")}</DialogTitle>
+              <DialogDescription>
+                {tf(
+                  "Review affected documents first, then rebuild the vendor fulfillment plan.",
+                  "先检查受影响单据，再重建 vendor 履约方案。"
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/20 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold">{tf("Affected documents", "受影响单据")}</div>
+                    <div className="mt-2 grid gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+                      <span>{tf("Vendor PO", "Vendor PO")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.allocationNo?.replace("SAO", "VPO") || "-"}</span></span>
+                      <span>{tf("Vendor RN", "Vendor RN")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.vendorReceiptNo || "-"}</span></span>
+                      <span>{tf("Outbound / SO", "出库单 / SO")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.outboundOrderNo || "-"}</span></span>
+                      <span>{tf("Target RN", "目标仓 RN")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.finalReceiptNo || "-"}</span></span>
+                    </div>
+                  </div>
+                  <Badge variant="outline">{revisionTotalQty} / {revisionOriginalQty} PCS</Badge>
+                </div>
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
+                  {tf(
+                    "Saving will cancel the old vendor document chain first, then generate the revised vendor PO / SO chain.",
+                    "保存时会先取消旧 vendor 单据链路，再生成修订后的 vendor PO / SO 链路。"
+                  )}
+                </div>
+              </div>
+
+              <Card className="overflow-hidden">
+                <CardHeader className="border-b bg-muted/20">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-base">{tf("Vendor fulfillment plans", "Vendor 履约方案")}</CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {tf(
+                          "Add vendors first, configure each fulfillment route, then assign items and quantities inside each vendor block.",
+                          "先添加 vendor，再配置每个 vendor 的履约路径，最后在对应 vendor block 内分配商品和数量。"
+                        )}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => addVendorDraft("revise")}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      {tf("Add Vendor", "添加 Vendor")}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-5">
+                  {selectedSupplyAllocation && revisionDrafts.length > 0 ? (
+                    <>
+                      {renderDraftCards("revise")}
+                    </>
+                  ) : (
+                    <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                      {tf("Add a vendor to start rebuilding the fulfillment plan.", "添加一个 vendor，开始重建履约方案。")}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowChangeVendorDialog(false)}>{tf("Cancel", "取消")}</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button>{tf("Save changes", "保存修改")}</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{tf("Confirm vendor replacement", "确认替换 vendor")}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {revisionDrafts[0]?.sourceCode !== selectedSupplyAllocation?.sourceCode
+                        ? tf("Changing vendor will cancel the old documents first, then generate the new vendor PO / SO. Continue?", "替换 vendor 后，会先取消原单据，再生成新的 vendor PO / SO。是否继续？")
+                        : tf("This will save the updated quantities for the current vendor plan. Continue?", "将保存当前 vendor 方案中的数量变更。是否继续？")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{tf("Back", "返回")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleApplyRevision}>{tf("Confirm", "确认")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAllocationItemDialog} onOpenChange={setShowAllocationItemDialog}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>{tf("Assign Items", "分配商品")}</DialogTitle>
+              <DialogDescription>
+                {activeEditingDraft
+                  ? tf("Select PO lines and enter the quantity this vendor will fulfill.", "选择 PO 行，并输入当前 vendor 要承接的数量。")
+                  : tf("Choose a vendor first.", "请先选择一个 vendor。")}
+              </DialogDescription>
+            </DialogHeader>
+
+            {activeEditingDraft && (
+              <div className="space-y-4">
+                <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-medium">{activeEditingDraft.sourceName}</div>
+                      <div className="text-xs text-muted-foreground">{activeEditingDraft.sourceWarehouseName}</div>
+                    </div>
+                    <Badge variant="secondary">{getDraftTotal(activeEditingDraft)} PCS</Badge>
+                  </div>
+                </div>
+
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>{tf("Line", "行号")}</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>{tf("Product", "商品")}</TableHead>
+                        <TableHead className="text-right">{tf("Demand Qty", "需求数量")}</TableHead>
+                        <TableHead className="text-right">{tf("Allocated by all vendors", "全部 vendor 已分配")}</TableHead>
+                        <TableHead className="w-36 text-right">{tf("This vendor", "当前 vendor")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeDemandLines.map((line) => {
+                        const currentQty = activeEditingDraft.lineQtys[line.skuCode] || 0
+                        const totalAllocated = getLineAllocatedTotal(line, activeDrafts)
+                        const otherAllocated = totalAllocated - currentQty
+                        const maxQty = Math.max(0, line.quantity - otherAllocated)
+
+                        return (
+                          <TableRow key={`picker-${line.skuCode}`}>
+                            <TableCell>{line.sourceLineNo}</TableCell>
+                            <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
+                            <TableCell>{line.productName}</TableCell>
+                            <TableCell className="text-right">{line.quantity} {line.uom}</TableCell>
+                            <TableCell className="text-right">
+                              <span className={cn(totalAllocated === line.quantity ? "text-green-600" : totalAllocated > line.quantity ? "text-red-600" : "text-amber-600")}>
+                                {totalAllocated} / {line.quantity}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={maxQty}
+                                value={currentQty}
+                                className="text-right"
+                                onChange={(event) => {
+                                  const nextQty = Math.max(0, Math.min(maxQty, Number(event.target.value) || 0))
+                                  updateDraftLineQty(activeEditingDraft.id, line.skuCode, nextQty, allocationMode)
+                                }}
+                              />
+                              <div className="mt-1 text-right text-[11px] text-muted-foreground">
+                                {tf("Max", "最多")} {maxQty}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAllocationItemDialog(false)}>{tf("Cancel", "取消")}</Button>
+              <Button onClick={() => setShowAllocationItemDialog(false)}>{tf("Apply", "应用")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         {/* PO Edit Dialog - Inline Implementation */}
         <Dialog open={showEditDialog} onOpenChange={(open) => {
           setShowEditDialog(open)
