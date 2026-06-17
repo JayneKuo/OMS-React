@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -1190,7 +1191,7 @@ const getProgressSteps = (poStatus: string) => {
   })
 }
 
-export default function PODetailPage() {
+function PODetailPageContent() {
   const { t, language } = useI18n()
   const tf = React.useCallback((en: string, zh: string) => language === "zh" ? zh : en, [language])
   const router = useRouter()
@@ -4547,5 +4548,13 @@ export default function PODetailPage() {
         </AlertDialog>
       </MainLayout>
     </TooltipProvider>
+  )
+}
+
+export default function PODetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <PODetailPageContent />
+    </Suspense>
   )
 }
