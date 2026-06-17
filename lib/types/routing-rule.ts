@@ -178,7 +178,7 @@ export type ActionType =
 
 export interface WorkflowAction {
   type: "SET_WORKFLOW"
-  workflow: "FACTORY_DIRECT" | "STANDARD" | "DROPSHIP" | "CROSS_DOCK"
+  workflow: "FACTORY_DIRECT" | "STANDARD" | "DROPSHIP" | "CROSS_DOCK" | "CONSIGNMENT" | "JIT"
   config: {
     enableFGStaging?: boolean
     generateFGReceipt?: boolean
@@ -191,6 +191,16 @@ export interface WorkflowAction {
     crossDockWarehouse?: string
     autoCreateReceipt?: boolean
     pushToWMS?: boolean
+    vendorResolutionMode?: "KEEP_UPSTREAM" | "AUTO_ASSIGN_SINGLE" | "AUTO_ASSIGN_MULTIPLE"
+    vendorSelectionBasis?: "RULE_MATCH" | "SKU_VENDOR_MAPPING" | "LOWEST_COST" | "FASTEST_LEAD_TIME" | "PREFERRED_VENDOR"
+    allowVendorSplit?: boolean
+    createVendorPOs?: boolean
+    receiptGenerationMode?: "NONE" | "PER_PO" | "PER_VENDOR" | "PER_VENDOR_AND_WAREHOUSE"
+    autoPushReceipt?: boolean
+    receiptPushTarget?: "WAREHOUSE" | "DELIVERY_ADDRESS"
+    allowWarehouseChangeAfterPush?: boolean
+    warehouseChangePolicy?: "MANUAL_REVIEW" | "CANCEL_AND_RECREATE_RN"
+    cancelPreviousReceiptOnWarehouseChange?: boolean
   }
 }
 

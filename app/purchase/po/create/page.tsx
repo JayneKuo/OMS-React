@@ -75,14 +75,190 @@ interface Product {
 // Factory Direct Config Interface
 interface FactoryDirectConfig {
   viaFinishedGoodsWarehouse: boolean
+  sourceAddressMode: "SUPPLIER_DEFAULT" | "MANUAL_OVERRIDE"
   factoryId: string
   factoryName: string
   finishedGoodsWarehouseId?: string
   finishedGoodsWarehouseName?: string
   finalDestinationId: string
-  finalDestinationType: "CUSTOMER" | "STORE" | "WAREHOUSE"
+  finalDestinationType: "US_WAREHOUSE" | "CUSTOMER" | "STORE" | "WAREHOUSE"
   finalDestinationName: string
+  autoCreateMasterReceipt: boolean
+  autoCreateVendorPO: boolean
+  autoCreateVendorSO: boolean
 }
+
+interface FactoryVendorAssignment {
+  id: string
+  supplierId: string
+  supplierCode: string
+  supplierName: string
+  contactPerson: string
+  contactPhone: string
+  contactEmail: string
+  address: typeof factorySupplierOptions[number]["address"]
+  shipFromWarehouseId: string
+  shipFromWarehouseName: string
+  shipFromAddress: typeof factorySupplierOptions[number]["address"]
+  useFinishedGoodsWarehouse: boolean
+  finishedGoodsWarehouseId: string
+  finishedGoodsWarehouseName: string
+  targetWarehouseId: string
+  targetWarehouseName: string
+  lineAllocations: FactoryVendorLineAllocation[]
+}
+
+interface FactoryVendorLineAllocation {
+  lineItemId: string
+  quantity: number
+}
+
+const factorySupplierOptions = [
+  {
+    id: "FAC-SUP-001",
+    code: "FAC001",
+    name: "Shenzhen Smart Factory",
+    contactPerson: "Linda Chen",
+    contactPhone: "+86 755 8888 0001",
+    contactEmail: "ops@sz-smart.example",
+    address: {
+      department: "Outbound Dock",
+      contactPerson: "Linda Chen",
+      contactPhone: "+86 755 8888 0001",
+      contactEmail: "ops@sz-smart.example",
+      country: "China",
+      state: "Guangdong",
+      city: "Shenzhen",
+      address1: "No. 18 Bao'an Industrial Road",
+      address2: "Dock A",
+      zipCode: "518000",
+    },
+  },
+  {
+    id: "FAC-SUP-002",
+    code: "FAC002",
+    name: "Dongguan Precision Works",
+    contactPerson: "Kevin Wu",
+    contactPhone: "+86 769 6666 1200",
+    contactEmail: "shipping@dg-precision.example",
+    address: {
+      department: "Shipping Office",
+      contactPerson: "Kevin Wu",
+      contactPhone: "+86 769 6666 1200",
+      contactEmail: "shipping@dg-precision.example",
+      country: "China",
+      state: "Guangdong",
+      city: "Dongguan",
+      address1: "88 Chang'an Manufacturing Ave",
+      address2: "Gate 3",
+      zipCode: "523000",
+    },
+  },
+  {
+    id: "FAC-SUP-003",
+    code: "FAC003",
+    name: "Vietnam Assembly Partner",
+    contactPerson: "Minh Tran",
+    contactPhone: "+84 28 7000 2211",
+    contactEmail: "fulfillment@vn-assembly.example",
+    address: {
+      department: "Export Warehouse",
+      contactPerson: "Minh Tran",
+      contactPhone: "+84 28 7000 2211",
+      contactEmail: "fulfillment@vn-assembly.example",
+      country: "Vietnam",
+      state: "Binh Duong",
+      city: "Thu Dau Mot",
+      address1: "Lot B7, VSIP Industrial Park",
+      address2: "",
+      zipCode: "820000",
+    },
+  },
+]
+
+const vendorShipFromWarehouseOptions = [
+  { vendorId: "FAC-SUP-001", id: "FAC001-SHIP-01", name: "Shenzhen Factory Dock A", address: factorySupplierOptions[0].address },
+  {
+    vendorId: "FAC-SUP-001",
+    id: "FAC001-SHIP-02",
+    name: "Shenzhen Factory Dock B",
+    address: { ...factorySupplierOptions[0].address, department: "Outbound Dock B", address2: "Dock B" },
+  },
+  { vendorId: "FAC-SUP-002", id: "FAC002-SHIP-01", name: "Dongguan Main Shipping Dock", address: factorySupplierOptions[1].address },
+  {
+    vendorId: "FAC-SUP-002",
+    id: "FAC002-SHIP-02",
+    name: "Dongguan Finished Goods Gate",
+    address: { ...factorySupplierOptions[1].address, department: "Finished Goods Gate", address2: "Gate 5" },
+  },
+  { vendorId: "FAC-SUP-003", id: "FAC003-SHIP-01", name: "Vietnam Export Warehouse", address: factorySupplierOptions[2].address },
+]
+
+const vendorFinishedGoodsWarehouseOptions = [
+  { vendorId: "FAC-SUP-001", id: "FAC001-FG-01", name: "Shenzhen Vendor FG Warehouse" },
+  { vendorId: "FAC-SUP-001", id: "FAC001-FG-02", name: "Bao'an Vendor FG Buffer" },
+  { vendorId: "FAC-SUP-002", id: "FAC002-FG-01", name: "Dongguan Vendor FG Warehouse" },
+  { vendorId: "FAC-SUP-003", id: "FAC003-FG-01", name: "Vietnam Vendor FG Warehouse" },
+]
+
+const targetWarehouseOptions = [
+  {
+    id: "WH001",
+    name: "Main Warehouse - Los Angeles",
+    department: "Inbound Receiving",
+    contactPerson: "LA Receiving Team",
+    contactPhone: "+1 213 555 0100",
+    contactEmail: "receiving.la@example.com",
+    country: "United States",
+    state: "CA",
+    city: "Los Angeles",
+    address1: "1234 Warehouse Street",
+    address2: "Dock 8",
+    zipCode: "90001",
+  },
+  {
+    id: "WH002",
+    name: "East Distribution Center - New York",
+    department: "Inbound Receiving",
+    contactPerson: "NY Receiving Team",
+    contactPhone: "+1 718 555 0188",
+    contactEmail: "receiving.ny@example.com",
+    country: "United States",
+    state: "NY",
+    city: "New York",
+    address1: "450 Distribution Avenue",
+    address2: "Gate B",
+    zipCode: "11201",
+  },
+  {
+    id: "WH003",
+    name: "West Fulfillment Center - Seattle",
+    department: "Fulfillment Inbound",
+    contactPerson: "Seattle Receiving Team",
+    contactPhone: "+1 206 555 0144",
+    contactEmail: "receiving.seattle@example.com",
+    country: "United States",
+    state: "WA",
+    city: "Seattle",
+    address1: "7800 Fulfillment Way",
+    address2: "Door 12",
+    zipCode: "98108",
+  },
+  {
+    id: "WH004",
+    name: "Central Warehouse - Chicago",
+    department: "Central Inbound",
+    contactPerson: "Chicago Receiving Team",
+    contactPhone: "+1 312 555 0199",
+    contactEmail: "receiving.chicago@example.com",
+    country: "United States",
+    state: "IL",
+    city: "Chicago",
+    address1: "2100 Central Warehouse Road",
+    address2: "Receiving Office",
+    zipCode: "60632",
+  },
+]
 
 // Batch Settings Dialog Component
 interface BatchSettingsDialogProps {
@@ -224,8 +400,9 @@ function BatchSettingsDialog({ open, onOpenChange, selectedCount, onBatchUpdate 
 }
 
 export default function CreatePOPage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const router = useRouter()
+  const tf = React.useCallback((en: string, zh: string) => language === "zh" ? zh : en, [language])
 
   // Basic Information State
   const [poNumber, setPoNumber] = React.useState(`PO${new Date().getFullYear()}${String(Date.now()).slice(-8)}`)
@@ -238,6 +415,7 @@ export default function CreatePOPage() {
 
   // Supplier & Delivery Information State
   const [supplierInfo, setSupplierInfo] = React.useState({
+    supplierId: "",
     supplierName: "",
     supplierCode: "",
     contactPerson: "",
@@ -248,14 +426,19 @@ export default function CreatePOPage() {
   // Factory Direct Configuration State
   const [factoryDirectConfig, setFactoryDirectConfig] = React.useState<FactoryDirectConfig>({
     viaFinishedGoodsWarehouse: true,
+    sourceAddressMode: "SUPPLIER_DEFAULT",
     factoryId: "",
     factoryName: "",
     finishedGoodsWarehouseId: "",
     finishedGoodsWarehouseName: "",
     finalDestinationId: "",
-    finalDestinationType: "CUSTOMER",
+    finalDestinationType: "US_WAREHOUSE",
     finalDestinationName: "",
+    autoCreateMasterReceipt: true,
+    autoCreateVendorPO: true,
+    autoCreateVendorSO: true,
   })
+  const [factoryVendors, setFactoryVendors] = React.useState<FactoryVendorAssignment[]>([])
 
   // Shipping Address Information (supplier contact info)
   const [shippingAddress, setShippingAddress] = React.useState({
@@ -324,6 +507,12 @@ export default function CreatePOPage() {
 
   // Batch Settings Dialog State
   const [showBatchSettingsDialog, setShowBatchSettingsDialog] = React.useState(false)
+  const [showFactoryFulfillmentDialog, setShowFactoryFulfillmentDialog] = React.useState(false)
+  const [factoryDirectPOSaved, setFactoryDirectPOSaved] = React.useState(false)
+  const [vendorPOGrouping, setVendorPOGrouping] = React.useState("PER_VENDOR")
+  const [vendorSendMode, setVendorSendMode] = React.useState("DRAFT_REVIEW")
+  const [activeVendorItemDialogId, setActiveVendorItemDialogId] = React.useState<string | null>(null)
+  const [vendorItemDraftAllocations, setVendorItemDraftAllocations] = React.useState<Record<string, number>>({})
 
   // SN/LOT Management Dialog State
   const [showSNLotDialog, setShowSNLotDialog] = React.useState(false)
@@ -356,10 +545,301 @@ export default function CreatePOPage() {
     receivingAddress,
     shippingAddress,
     factoryDirectConfig,
+    factoryVendors,
     priority,
     department,
     budgetProject
   ])
+
+  const buildFactoryVendorAssignment = (supplierId: string): FactoryVendorAssignment | null => {
+    const supplier = factorySupplierOptions.find(item => item.id === supplierId)
+    if (!supplier) return null
+    const defaultShipFrom = vendorShipFromWarehouseOptions.find(item => item.vendorId === supplierId)
+    const defaultTargetWarehouse = targetWarehouseOptions.find(item => item.id === deliveryInfo.warehouse)
+
+    return {
+      id: `${supplier.id}-${Date.now()}`,
+      supplierId: supplier.id,
+      supplierCode: supplier.code,
+      supplierName: supplier.name,
+      contactPerson: supplier.contactPerson,
+      contactPhone: supplier.contactPhone,
+      contactEmail: supplier.contactEmail,
+      address: supplier.address,
+      shipFromWarehouseId: defaultShipFrom?.id || "",
+      shipFromWarehouseName: defaultShipFrom?.name || supplier.name,
+      shipFromAddress: defaultShipFrom?.address || supplier.address,
+      useFinishedGoodsWarehouse: false,
+      finishedGoodsWarehouseId: "",
+      finishedGoodsWarehouseName: "",
+      targetWarehouseId: defaultTargetWarehouse?.id || deliveryInfo.warehouse,
+      targetWarehouseName: defaultTargetWarehouse?.name || factoryDirectConfig.finalDestinationName || deliveryInfo.warehouse,
+      lineAllocations: [],
+    }
+  }
+
+  const syncPrimaryFactoryVendor = (vendor: FactoryVendorAssignment) => {
+    setSupplierInfo({
+      supplierId: vendor.supplierId,
+      supplierName: vendor.supplierName,
+      supplierCode: vendor.supplierCode,
+      contactPerson: vendor.contactPerson,
+      contactPhone: vendor.contactPhone,
+      contactEmail: vendor.contactEmail,
+    })
+    setFactoryDirectConfig(prev => ({
+      ...prev,
+      factoryId: vendor.supplierId,
+      factoryName: vendor.supplierName,
+      sourceAddressMode: "SUPPLIER_DEFAULT",
+    }))
+    setShippingAddress(vendor.address)
+  }
+
+  const handleFactorySupplierSelect = (supplierId: string) => {
+    const vendor = buildFactoryVendorAssignment(supplierId)
+    if (!vendor) return
+
+    setFactoryVendors([vendor])
+    syncPrimaryFactoryVendor(vendor)
+  }
+
+  const handleAddFactoryVendor = () => {
+    const nextSupplier = factorySupplierOptions.find(
+      supplier => !factoryVendors.some(vendor => vendor.supplierId === supplier.id)
+    )
+
+    if (!nextSupplier) {
+      toast.error("可添加的供应商 / 工厂已全部添加")
+      return
+    }
+
+    const vendor = buildFactoryVendorAssignment(nextSupplier.id)
+    if (!vendor) return
+
+    setFactoryVendors(prev => {
+      const next = [...prev, vendor]
+      if (prev.length === 0) syncPrimaryFactoryVendor(vendor)
+      return next
+    })
+  }
+
+  const handleFactoryVendorChange = (assignmentId: string, supplierId: string) => {
+    const vendor = buildFactoryVendorAssignment(supplierId)
+    if (!vendor) return
+
+    setFactoryVendors(prev => {
+      const next = prev.map(item => item.id === assignmentId ? {
+        ...vendor,
+        id: assignmentId,
+        shipFromWarehouseId: vendor.shipFromWarehouseId,
+        shipFromWarehouseName: vendor.shipFromWarehouseName,
+        shipFromAddress: vendor.shipFromAddress,
+        useFinishedGoodsWarehouse: item.useFinishedGoodsWarehouse,
+        finishedGoodsWarehouseId: "",
+        finishedGoodsWarehouseName: "",
+        targetWarehouseId: item.targetWarehouseId,
+        targetWarehouseName: item.targetWarehouseName,
+        lineAllocations: item.lineAllocations,
+      } : item)
+      const primaryVendor = next[0]
+      if (primaryVendor) syncPrimaryFactoryVendor(primaryVendor)
+      return next
+    })
+  }
+
+  const updateFactoryVendor = (assignmentId: string, updates: Partial<FactoryVendorAssignment>) => {
+    setFactoryVendors(prev => prev.map(vendor =>
+      vendor.id === assignmentId ? { ...vendor, ...updates } : vendor
+    ))
+  }
+
+  const getVendorLineAllocatedQty = (vendor: FactoryVendorAssignment, lineItemId: string) =>
+    vendor.lineAllocations.find(allocation => allocation.lineItemId === lineItemId)?.quantity || 0
+
+  const getLineAllocatedQty = (lineItemId: string, excludingVendorId?: string) =>
+    factoryVendors.reduce((sum, vendor) => {
+      if (excludingVendorId && vendor.id === excludingVendorId) return sum
+      return sum + getVendorLineAllocatedQty(vendor, lineItemId)
+    }, 0)
+
+  const getLineRemainingQty = (lineItem: POLineItem, excludingVendorId?: string) =>
+    Math.max(0, lineItem.quantity - getLineAllocatedQty(lineItem.id, excludingVendorId))
+
+  const updateVendorLineAllocation = (vendorId: string, lineItemId: string, quantity: number) => {
+    const lineItem = lineItems.find(item => item.id === lineItemId)
+    if (!lineItem) return
+
+    const maxQty = getLineRemainingQty(lineItem, vendorId)
+    const nextQty = Math.min(Math.max(0, Number.isFinite(quantity) ? quantity : 0), maxQty)
+
+    setFactoryVendors(prev => prev.map(vendor => {
+      if (vendor.id !== vendorId) return vendor
+
+      const otherAllocations = vendor.lineAllocations.filter(allocation => allocation.lineItemId !== lineItemId)
+      return {
+        ...vendor,
+        lineAllocations: nextQty > 0
+          ? [...otherAllocations, { lineItemId, quantity: nextQty }]
+          : otherAllocations,
+      }
+    }))
+  }
+
+  const openVendorItemDialog = (vendorId: string) => {
+    const vendor = factoryVendors.find(item => item.id === vendorId)
+    if (!vendor) return
+
+    setVendorItemDraftAllocations(
+      Object.fromEntries(vendor.lineAllocations.map(allocation => [allocation.lineItemId, allocation.quantity]))
+    )
+    setActiveVendorItemDialogId(vendorId)
+  }
+
+  const closeVendorItemDialog = () => {
+    setActiveVendorItemDialogId(null)
+    setVendorItemDraftAllocations({})
+  }
+
+  const updateVendorItemDraftQty = (lineItemId: string, quantity: number) => {
+    if (!activeVendorItemDialogId) return
+
+    const lineItem = lineItems.find(item => item.id === lineItemId)
+    if (!lineItem) return
+
+    const maxQty = getLineRemainingQty(lineItem, activeVendorItemDialogId)
+    const nextQty = Math.min(Math.max(0, Number.isFinite(quantity) ? quantity : 0), maxQty)
+
+    setVendorItemDraftAllocations(prev => {
+      const next = { ...prev }
+      if (nextQty > 0) {
+        next[lineItemId] = nextQty
+      } else {
+        delete next[lineItemId]
+      }
+      return next
+    })
+  }
+
+  const confirmVendorItemDialog = () => {
+    if (!activeVendorItemDialogId) return
+
+    setFactoryVendors(prev => prev.map(vendor => {
+      if (vendor.id !== activeVendorItemDialogId) return vendor
+      return {
+        ...vendor,
+        lineAllocations: Object.entries(vendorItemDraftAllocations)
+          .map(([lineItemId, quantity]) => ({ lineItemId, quantity }))
+          .filter(allocation => allocation.quantity > 0),
+      }
+    }))
+    closeVendorItemDialog()
+  }
+
+  const handleVendorShipFromWarehouseChange = (assignmentId: string, warehouseId: string) => {
+    const vendor = factoryVendors.find(item => item.id === assignmentId)
+    const warehouse = vendorShipFromWarehouseOptions.find(item => item.vendorId === vendor?.supplierId && item.id === warehouseId)
+    if (!warehouse) return
+
+    updateFactoryVendor(assignmentId, {
+      shipFromWarehouseId: warehouse.id,
+      shipFromWarehouseName: warehouse.name,
+      shipFromAddress: warehouse.address,
+    })
+  }
+
+  const handleVendorFinishedGoodsWarehouseChange = (assignmentId: string, warehouseId: string) => {
+    const vendor = factoryVendors.find(item => item.id === assignmentId)
+    const warehouse = vendorFinishedGoodsWarehouseOptions.find(item => item.vendorId === vendor?.supplierId && item.id === warehouseId)
+    if (!warehouse) return
+
+    updateFactoryVendor(assignmentId, {
+      finishedGoodsWarehouseId: warehouse.id,
+      finishedGoodsWarehouseName: warehouse.name,
+    })
+  }
+
+  const handleVendorTargetWarehouseChange = (assignmentId: string, warehouseId: string) => {
+    const warehouse = targetWarehouseOptions.find(item => item.id === warehouseId)
+    updateFactoryVendor(assignmentId, {
+      targetWarehouseId: warehouseId,
+      targetWarehouseName: warehouse?.name || warehouseId,
+    })
+  }
+
+  const handleRemoveFactoryVendor = (assignmentId: string) => {
+    setFactoryVendors(prev => {
+      const next = prev.filter(item => item.id !== assignmentId)
+      setLineItems(current => current.map(item => {
+        const removedVendor = prev.find(vendor => vendor.id === assignmentId)
+        return removedVendor && item.supplierName === removedVendor.supplierName
+          ? { ...item, supplierName: "" }
+          : item
+      }))
+
+      if (next[0]) {
+        syncPrimaryFactoryVendor(next[0])
+      } else {
+        setSupplierInfo({
+          supplierId: "",
+          supplierName: "",
+          supplierCode: "",
+          contactPerson: "",
+          contactPhone: "",
+          contactEmail: "",
+        })
+        setFactoryDirectConfig(prevConfig => ({
+          ...prevConfig,
+          factoryId: "",
+          factoryName: "",
+        }))
+      }
+
+      return next
+    })
+  }
+
+  const handleFactoryDestinationWarehouseChange = (warehouseId: string) => {
+    const warehouse = targetWarehouseOptions.find(item => item.id === warehouseId)
+    const warehouseAddress = warehouse
+      ? `${warehouse.address1}, ${warehouse.city}, ${warehouse.state} ${warehouse.zipCode}`
+      : ""
+
+    setDeliveryInfo(prev => ({
+      ...prev,
+      warehouse: warehouseId,
+      warehouseAddress,
+    }))
+
+    if (warehouse) {
+      setReceivingAddress({
+        department: warehouse.department,
+        contactPerson: warehouse.contactPerson,
+        contactPhone: warehouse.contactPhone,
+        contactEmail: warehouse.contactEmail,
+        country: warehouse.country,
+        state: warehouse.state,
+        city: warehouse.city,
+        address1: warehouse.address1,
+        address2: warehouse.address2,
+        zipCode: warehouse.zipCode,
+      })
+    }
+
+    if (purchaseType === "FACTORY_DIRECT") {
+      setFactoryDirectConfig(prev => ({
+        ...prev,
+        finalDestinationType: "US_WAREHOUSE",
+        finalDestinationId: warehouseId,
+        finalDestinationName: warehouse?.name || warehouseId,
+      }))
+      setFactoryVendors(prev => prev.map(vendor => ({
+        ...vendor,
+        targetWarehouseId: warehouseId,
+        targetWarehouseName: warehouse?.name || warehouseId,
+      })))
+    }
+  }
 
 
   // Handle navigation back/cancel (trigger custom dialog)
@@ -564,14 +1044,26 @@ export default function CreatePOPage() {
 
   // Form validation
   const isFormValid = () => {
-    return purchaseType &&
-      supplierInfo.supplierName &&
+    const isFactoryDirect = purchaseType === "FACTORY_DIRECT"
+    const baseValid = purchaseType &&
+      (isFactoryDirect ? true : supplierInfo.supplierName) &&
       deliveryInfo.warehouse &&
       deliveryInfo.expectedDeliveryDate &&
+      deliveryInfo.latestShippingTime &&
       priority &&
       lineItems.length > 0 &&
-      lineItems.every(item => item.skuCode && item.quantity > 0 && item.unitPrice > 0)
+      lineItems.every(item =>
+        item.skuCode &&
+        item.quantity > 0 &&
+        item.unitPrice > 0
+      )
+
+    return Boolean(baseValid)
   }
+
+  const goToCreatedPODetail = React.useCallback(() => {
+    router.push("/purchase/po/1")
+  }, [router])
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -592,6 +1084,7 @@ export default function CreatePOPage() {
       status: "DRAFT",
       basic: { poNumber, originalPoNo, referenceNo, priority, department, budgetProject, purchaseType },
       supplier: supplierInfo,
+      factoryDirect: purchaseType === "FACTORY_DIRECT" ? factoryDirectConfig : undefined,
       shippingAddress,
       receivingAddress,
       delivery: deliveryInfo,
@@ -624,10 +1117,11 @@ export default function CreatePOPage() {
       return
     }
 
-    console.log("Submit PO:", {
-      status: "NEW", // Or PROCESSING depending on logic
+    const payload = {
+      status: purchaseType === "FACTORY_DIRECT" ? "PENDING_VENDOR_ALLOCATION" : "NEW",
       basic: { poNumber, originalPoNo, referenceNo, priority, department, budgetProject, purchaseType },
       supplier: supplierInfo,
+      factoryDirect: purchaseType === "FACTORY_DIRECT" ? factoryDirectConfig : undefined,
       shippingAddress,
       receivingAddress,
       delivery: deliveryInfo,
@@ -636,19 +1130,126 @@ export default function CreatePOPage() {
       attachments,
       notes,
       totals: { totalItems, totalQuantity, totalsByCurrency, grandTotal }
-    })
+    }
+
+    console.log("Submit PO:", payload)
 
     // Simulate successful submit
+    setIsDirty(false) // Clear dirty flag after submitting
+
+    if (purchaseType === "FACTORY_DIRECT") {
+      setFactoryDirectPOSaved(true)
+      toast.success(tf("Master PO saved", "主 PO 已保存"), {
+        description: tf(
+          `PO ${poNumber} is ready for factory fulfillment setup`,
+          `PO ${poNumber} 已保存，可以配置工厂履约`
+        )
+      })
+      setShowFactoryFulfillmentDialog(true)
+      return
+    }
+
     toast.success(t('poSubmittedSuccess' as any), {
       description: `PO ${poNumber} successfully submitted`
     })
 
-    setIsDirty(false) // Clear dirty flag after submitting
-
-    // Redirect to list page after delay
     setTimeout(() => {
       router.push('/purchase/po')
     }, 1000)
+  }
+
+  const vendorPOPreviews = React.useMemo(() => {
+    if (purchaseType !== "FACTORY_DIRECT") return []
+
+    return factoryVendors
+      .map(vendor => {
+        const lines = vendor.lineAllocations
+          .map(allocation => {
+            const lineItem = lineItems.find(item => item.id === allocation.lineItemId)
+            if (!lineItem || allocation.quantity <= 0) return null
+            const subtotal = allocation.quantity * lineItem.unitPrice
+            return {
+              ...lineItem,
+              quantity: allocation.quantity,
+              lineAmount: subtotal + (subtotal * (lineItem.taxRate / 100)),
+              sourceQuantity: lineItem.quantity,
+            }
+          })
+          .filter((line): line is POLineItem & { sourceQuantity: number } => Boolean(line))
+        return {
+          vendor,
+          vendorPoNo: `${poNumber}-${String(factoryVendors.indexOf(vendor) + 1).padStart(2, "0")}`,
+          lines,
+          totalQty: lines.reduce((sum, item) => sum + item.quantity, 0),
+          totalAmount: lines.reduce((sum, item) => sum + item.lineAmount, 0),
+        }
+      })
+      .filter(preview => preview.lines.length > 0)
+  }, [factoryVendors, lineItems, poNumber, purchaseType])
+
+  const unassignedFactoryLines = React.useMemo(() => {
+    if (purchaseType !== "FACTORY_DIRECT") return []
+    return lineItems
+      .map(item => {
+        const allocatedQuantity = factoryVendors.reduce((sum, vendor) =>
+          sum + (vendor.lineAllocations.find(allocation => allocation.lineItemId === item.id)?.quantity || 0), 0)
+        return {
+          ...item,
+          allocatedQuantity,
+          remainingQuantity: Math.max(0, item.quantity - allocatedQuantity),
+        }
+      })
+      .filter(item => item.remainingQuantity > 0)
+  }, [factoryVendors, lineItems, purchaseType])
+
+  const handleCreateVendorPOs = () => {
+    if (factoryVendors.length === 0) {
+      toast.error(tf("Add at least one vendor before generating vendor POs", "生成 vendor PO 前请至少添加一个 vendor"))
+      return
+    }
+
+    if (unassignedFactoryLines.length > 0) {
+      toast.error(tf("Assign every item line to a vendor first", "请先为每个商品行分配 vendor"))
+      return
+    }
+
+    const invalidVendor = vendorPOPreviews.find(({ vendor }) =>
+      !vendor.shipFromWarehouseId ||
+      !vendor.targetWarehouseId ||
+      (vendor.useFinishedGoodsWarehouse && !vendor.finishedGoodsWarehouseId)
+    )
+
+    if (invalidVendor) {
+      toast.error(tf("Complete vendor fulfillment settings first", "请先补全 vendor 履约设置"), {
+        description: tf(
+          `${invalidVendor.vendor.supplierName} is missing fulfillment settings.`,
+          `${invalidVendor.vendor.supplierName} 缺少发货仓、成品仓或目标入库配置。`
+        )
+      })
+      return
+    }
+
+    console.log("Create Vendor POs:", {
+      sourcePoNo: poNumber,
+      factoryDirect: factoryDirectConfig,
+      vendorPOGrouping,
+      vendorSendMode,
+      masterReceipt: {
+        autoCreate: true,
+        warehouseId: factoryDirectConfig.finalDestinationId || deliveryInfo.warehouse,
+        warehouseName: factoryDirectConfig.finalDestinationName,
+      },
+      vendorPOs: vendorPOPreviews,
+    })
+
+    toast.success(tf("Vendor POs prepared", "Vendor PO 已生成"), {
+      description: tf(
+        `${vendorPOPreviews.length} vendor PO(s) generated as ${vendorSendMode === "SEND_NOW" ? "ready to send" : "drafts"}`,
+        `已生成 ${vendorPOPreviews.length} 张 vendor PO，状态为${vendorSendMode === "SEND_NOW" ? "待发送" : "草稿"}`
+      )
+    })
+    setShowFactoryFulfillmentDialog(false)
+    goToCreatedPODetail()
   }
 
   // ─── Import Feature State ───────────────────────────────────────────────────
@@ -865,7 +1466,7 @@ export default function CreatePOPage() {
             </Button>
             <Button size="sm" onClick={handleSubmitPO} disabled={!isFormValid()}>
               <Send className="mr-2 h-4 w-4" />
-              {t('submitPO' as any)}
+              {purchaseType === "FACTORY_DIRECT" ? tf("Create PO", "创建 PO") : t('submitPO' as any)}
             </Button>
           </div>
         </div>
@@ -887,16 +1488,18 @@ export default function CreatePOPage() {
               onClick={() => document.getElementById('supplier-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="whitespace-nowrap"
             >
-              供应商信息
+              {purchaseType === "FACTORY_DIRECT" ? tf("Factory Direct", "工厂直发") : t('supplierInfo')}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => document.getElementById('shipping-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="whitespace-nowrap"
-            >
-              发货地址
-            </Button>
+            {purchaseType !== "FACTORY_DIRECT" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => document.getElementById('shipping-address')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="whitespace-nowrap"
+              >
+                {tf("Ship-from Address", "发货地址")}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -1037,279 +1640,167 @@ export default function CreatePOPage() {
           </CardContent>
         </Card>
 
-        {/* Supplier Information (供应商信息) */}
-        <Card id="supplier-info">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              供应商信息
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="supplierName">
-                  {t('supplierName')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="supplierName"
-                  value={supplierInfo.supplierName}
-                  onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierName: e.target.value })}
-                  placeholder={t('enterSupplierName')}
-                />
+        {/* Supplier Information / Factory Direct Setup Notice */}
+        {purchaseType === "FACTORY_DIRECT" ? (
+          <Card id="supplier-info">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                {tf("Factory Direct", "工厂直发")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-100">
+                {tf(
+                  "This step only saves the master PO demand. Ship-from address, vendors, routing strategy, vendor PO grouping, and release mode will be configured in the next step.",
+                  "当前步骤只保存主 PO 采购需求。发货地址、vendor、入库路径、vendor PO 生成方式和发送方式将在下一步配置。"
+                )}
               </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <Card id="supplier-info">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  {tf("Supplier Information", "供应商信息")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierName">
+                      {t('supplierName')} <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="supplierName"
+                      value={supplierInfo.supplierName}
+                      onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierName: e.target.value })}
+                      placeholder={t('enterSupplierName')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="supplierCode">{tf("Supplier Code", "供应商编码")}</Label>
+                    <Input
+                      id="supplierCode"
+                      value={supplierInfo.supplierCode || ""}
+                      onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierCode: e.target.value })}
+                    placeholder={tf("Enter supplier code", "输入供应商编码")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="contactPerson">{tf("Contact", "联系人")}</Label>
+                    <Input
+                      id="contactPerson"
+                      value={supplierInfo.contactPerson}
+                      onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPerson: e.target.value })}
+                      placeholder={t('enterContactPerson')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="contactPhone">{tf("Phone", "联系电话")}</Label>
+                    <Input
+                      id="contactPhone"
+                      value={supplierInfo.contactPhone}
+                      onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPhone: e.target.value })}
+                      placeholder={t('enterContactPhone')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                  <Label htmlFor="contactEmail">{tf("Email", "联系邮箱")}</Label>
+                    <Input
+                      id="contactEmail"
+                      type="email"
+                      value={supplierInfo.contactEmail}
+                      onChange={(e) => setSupplierInfo({ ...supplierInfo, contactEmail: e.target.value })}
+                      placeholder={t('enterContactEmail')}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="supplierCode">供应商编码</Label>
-                <Input
-                  id="supplierCode"
-                  value={supplierInfo.supplierCode || ""}
-                  onChange={(e) => setSupplierInfo({ ...supplierInfo, supplierCode: e.target.value })}
-                  placeholder="输入供应商编码"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactPerson">联系人</Label>
-                <Input
-                  id="contactPerson"
-                  value={supplierInfo.contactPerson}
-                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPerson: e.target.value })}
-                  placeholder={t('enterContactPerson')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">联系电话</Label>
-                <Input
-                  id="contactPhone"
-                  value={supplierInfo.contactPhone}
-                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactPhone: e.target.value })}
-                  placeholder={t('enterContactPhone')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactEmail">联系邮箱</Label>
-                <Input
-                  id="contactEmail"
-                  type="email"
-                  value={supplierInfo.contactEmail}
-                  onChange={(e) => setSupplierInfo({ ...supplierInfo, contactEmail: e.target.value })}
-                  placeholder={t('enterContactEmail')}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-
-        {/* Shipping Address (发货地址) */}
-        <Card id="shipping-address">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              发货地址
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Factory Direct Options - Show only when purchase type is FACTORY_DIRECT */}
-            {purchaseType === "FACTORY_DIRECT" && (
-              <div className="space-y-4 pb-4 border-b">
-                <div className="space-y-2">
-                  <Label>
-                    物流路径 <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={factoryDirectConfig.viaFinishedGoodsWarehouse ? "VIA_FG" : "DIRECT"}
-                    onValueChange={(value) => setFactoryDirectConfig({
-                      ...factoryDirectConfig,
-                      viaFinishedGoodsWarehouse: value === "VIA_FG"
-                    })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择物流路径" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VIA_FG">经成品库（先入库再出库）</SelectItem>
-                      <SelectItem value="DIRECT">直接发货（工厂直发目的地）</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <Card id="shipping-address">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  {tf("Ship-from Address", "发货地址")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingContactPerson">{t('contactPerson')}</Label>
+                    <Input id="shippingContactPerson" value={shippingAddress.contactPerson} onChange={(e) => setShippingAddress({ ...shippingAddress, contactPerson: e.target.value })} placeholder={t('enterContactPerson')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingDepartment">{t('department')}</Label>
+                    <Input id="shippingDepartment" value={shippingAddress.department} onChange={(e) => setShippingAddress({ ...shippingAddress, department: e.target.value })} placeholder={t('enterDepartment')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingContactPhone">{t('contactPhone')}</Label>
+                    <Input id="shippingContactPhone" value={shippingAddress.contactPhone} onChange={(e) => setShippingAddress({ ...shippingAddress, contactPhone: e.target.value })} placeholder={t('enterContactPhone')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingContactEmail">{t('contactEmail')}</Label>
+                    <Input id="shippingContactEmail" type="email" value={shippingAddress.contactEmail} onChange={(e) => setShippingAddress({ ...shippingAddress, contactEmail: e.target.value })} placeholder={t('enterContactEmail')} />
+                  </div>
                 </div>
 
-                {factoryDirectConfig.viaFinishedGoodsWarehouse && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fgWarehouseSelect">
-                      成品库 <span className="text-destructive">*</span>
-                    </Label>
-                    <Select
-                      value={factoryDirectConfig.finishedGoodsWarehouseId || ""}
-                      onValueChange={(value) => {
-                        const warehouse = [
-                          { id: "FG001", name: "深圳成品库" },
-                          { id: "FG002", name: "广州成品库" },
-                          { id: "FG003", name: "东莞成品库" },
-                        ].find(w => w.id === value)
-                        if (warehouse) {
-                          setFactoryDirectConfig({
-                            ...factoryDirectConfig,
-                            finishedGoodsWarehouseId: warehouse.id,
-                            finishedGoodsWarehouseName: warehouse.name
-                          })
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择成品库" />
-                      </SelectTrigger>
+                    <Label htmlFor="shippingCountry">{t('country')} <span className="text-destructive">*</span></Label>
+                    <Select value={shippingAddress.country} onValueChange={(value) => setShippingAddress({ ...shippingAddress, country: value })}>
+                      <SelectTrigger><SelectValue placeholder={t('selectCountry')} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="FG001">深圳成品库</SelectItem>
-                        <SelectItem value="FG002">广州成品库</SelectItem>
-                        <SelectItem value="FG003">东莞成品库</SelectItem>
+                        <SelectItem value="United States">United States</SelectItem>
+                        <SelectItem value="China">China</SelectItem>
+                        <SelectItem value="Canada">Canada</SelectItem>
+                        <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                        <SelectItem value="Germany">Germany</SelectItem>
+                        <SelectItem value="Japan">Japan</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingState">{t('stateProvince')} <span className="text-destructive">*</span></Label>
+                    <Select value={shippingAddress.state} onValueChange={(value) => setShippingAddress({ ...shippingAddress, state: value })}>
+                      <SelectTrigger><SelectValue placeholder={t('selectState')} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CA">California</SelectItem>
+                        <SelectItem value="NY">New York</SelectItem>
+                        <SelectItem value="TX">Texas</SelectItem>
+                        <SelectItem value="FL">Florida</SelectItem>
+                        <SelectItem value="IL">Illinois</SelectItem>
+                        <SelectItem value="WA">Washington</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingCity">{t('cityField')} <span className="text-destructive">*</span></Label>
+                    <Input id="shippingCity" value={shippingAddress.city} onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })} placeholder={t('enterCityName')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingZipCode">{t('zipCodeField')}</Label>
+                    <Input id="shippingZipCode" value={shippingAddress.zipCode} onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })} placeholder={t('postalCode')} />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shippingContactPerson">{t('contactPerson')}</Label>
-                <Input
-                  id="shippingContactPerson"
-                  value={shippingAddress.contactPerson}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactPerson: e.target.value })}
-                  placeholder={t('enterContactPerson')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingDepartment">{t('department')}</Label>
-                <Input
-                  id="shippingDepartment"
-                  value={shippingAddress.department}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, department: e.target.value })}
-                  placeholder={t('enterDepartment')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingContactPhone">{t('contactPhone')}</Label>
-                <Input
-                  id="shippingContactPhone"
-                  value={shippingAddress.contactPhone}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactPhone: e.target.value })}
-                  placeholder={t('enterContactPhone')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingContactEmail">{t('contactEmail')}</Label>
-                <Input
-                  id="shippingContactEmail"
-                  type="email"
-                  value={shippingAddress.contactEmail}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, contactEmail: e.target.value })}
-                  placeholder={t('enterContactEmail')}
-                />
-              </div>
-            </div>
-
-            {/* Address fields in specific layout */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shippingCountry">
-                  {t('country')} <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={shippingAddress.country}
-                  onValueChange={(value) => setShippingAddress({ ...shippingAddress, country: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectCountry')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="United States">United States</SelectItem>
-                    <SelectItem value="China">China</SelectItem>
-                    <SelectItem value="Canada">Canada</SelectItem>
-                    <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                    <SelectItem value="Germany">Germany</SelectItem>
-                    <SelectItem value="Japan">Japan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingState">
-                  {t('stateProvince')} <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={shippingAddress.state}
-                  onValueChange={(value) => setShippingAddress({ ...shippingAddress, state: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('selectState')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CA">California</SelectItem>
-                    <SelectItem value="NY">New York</SelectItem>
-                    <SelectItem value="TX">Texas</SelectItem>
-                    <SelectItem value="FL">Florida</SelectItem>
-                    <SelectItem value="IL">Illinois</SelectItem>
-                    <SelectItem value="WA">Washington</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingCity">
-                  {t('cityField')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="shippingCity"
-                  value={shippingAddress.city}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
-                  placeholder={t('enterCityName')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingZipCode">{t('zipCodeField')}</Label>
-                <Input
-                  id="shippingZipCode"
-                  value={shippingAddress.zipCode}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
-                  placeholder={t('postalCode')}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shippingAddress1">
-                  {t('address1Field')} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="shippingAddress1"
-                  value={shippingAddress.address1}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, address1: e.target.value })}
-                  placeholder={t('streetAddress')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shippingAddress2">{t('address2Optional')}</Label>
-                <Input
-                  id="shippingAddress2"
-                  value={shippingAddress.address2}
-                  onChange={(e) => setShippingAddress({ ...shippingAddress, address2: e.target.value })}
-                  placeholder={t('apartmentFloorInfo')}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingAddress1">{t('address1Field')} <span className="text-destructive">*</span></Label>
+                    <Input id="shippingAddress1" value={shippingAddress.address1} onChange={(e) => setShippingAddress({ ...shippingAddress, address1: e.target.value })} placeholder={t('streetAddress')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingAddress2">{t('address2Optional')}</Label>
+                    <Input id="shippingAddress2" value={shippingAddress.address2} onChange={(e) => setShippingAddress({ ...shippingAddress, address2: e.target.value })} placeholder={t('apartmentFloorInfo')} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* Delivery Address (收货地址) */}
         <Card id="receiving-address">
@@ -1327,16 +1818,17 @@ export default function CreatePOPage() {
                 </Label>
                 <Select
                   value={deliveryInfo.warehouse}
-                  onValueChange={(value) => setDeliveryInfo({ ...deliveryInfo, warehouse: value })}
+                  onValueChange={handleFactoryDestinationWarehouseChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectTargetWarehouse')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="WH001">Main Warehouse - Los Angeles</SelectItem>
-                    <SelectItem value="WH002">East Distribution Center - New York</SelectItem>
-                    <SelectItem value="WH003">West Fulfillment Center - Seattle</SelectItem>
-                    <SelectItem value="WH004">Central Warehouse - Chicago</SelectItem>
+                    {targetWarehouseOptions.map(warehouse => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1482,7 +1974,9 @@ export default function CreatePOPage() {
         <Card id="product-lines">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{t('productLines')}</CardTitle>
+              <CardTitle>
+                {t('productLines')} <span className="text-destructive">*</span>
+              </CardTitle>
               <div className="flex gap-2">
                 {selectedLineItems.length > 0 && (
                   <div className="flex gap-2">
@@ -1540,6 +2034,9 @@ export default function CreatePOPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
                 <p>{t('noProductLines')}</p>
+                <p className="mt-1 text-xs">
+                  {tf("At least one item line is required before submitting the PO.", "提交 PO 前至少需要添加一条商品明细。")}
+                </p>
               </div>
             ) : (
               <div className="border rounded-md">
@@ -2061,7 +2558,7 @@ export default function CreatePOPage() {
           </Button>
           <Button size="sm" onClick={handleSubmitPO} disabled={!isFormValid()}>
             <Send className="mr-2 h-4 w-4" />
-            {t('submitPO' as any)}
+            {purchaseType === "FACTORY_DIRECT" ? tf("Create PO", "创建 PO") : t('submitPO' as any)}
           </Button>
         </div>
 
@@ -2223,6 +2720,430 @@ export default function CreatePOPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={showFactoryFulfillmentDialog} onOpenChange={(open) => {
+          setShowFactoryFulfillmentDialog(open)
+          if (!open && factoryDirectPOSaved) {
+            goToCreatedPODetail()
+          }
+        }}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                {tf("Factory Fulfillment Setup", "工厂履约配置")}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {tf(
+                  `Master PO ${poNumber} is saved. Configure each vendor's ship-from warehouse, inbound route, target warehouse, and assigned item lines.`,
+                  `主 PO ${poNumber} 已保存。请按 vendor 配置发货仓、入库路径、目标入库仓，并选择该 vendor 承接的商品。`
+                )}
+              </p>
+            </DialogHeader>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{tf("Master PO", "主 PO")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">{tf("PO No.", "PO 编号")}</span>
+                    <span className="font-mono">{poNumber}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">{tf("Lines", "行数")}</span>
+                    <span>{lineItems.length}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">{tf("Qty", "数量")}</span>
+                    <span>{totalQuantity}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{tf("Default Target Inbound", "默认目标入库")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="font-medium">{factoryDirectConfig.finalDestinationName || deliveryInfo.warehouse || "-"}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {tf(
+                      "Each vendor can keep this target warehouse or override it in its own fulfillment card.",
+                      "每个 vendor 默认使用主 PO 收货仓，也可以在自己的履约卡片中单独调整。"
+                    )}
+                  </p>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">{tf("Master RN", "主入库单")}</span>
+                    <span>{tf("Auto create", "自动生成")}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{tf("Allocation Progress", "分配进度")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">{tf("Vendors", "Vendor 数")}</span><span>{factoryVendors.length}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{tf("Vendor POs", "Vendor PO 数")}</span><span>{vendorPOPreviews.length}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{tf("Unassigned lines", "未分配行")}</span><span className={unassignedFactoryLines.length ? "text-destructive font-medium" : ""}>{unassignedFactoryLines.length}</span></div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold">{tf("Vendor fulfillment", "Vendor 履约设置")}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {tf(
+                      "A vendor PO is generated from one vendor card and only contains the item lines assigned to that vendor.",
+                      "一张 vendor PO 来源于一张 vendor 履约卡，只包含分配给该 vendor 的商品行。"
+                    )}
+                  </p>
+                </div>
+                <Button type="button" size="sm" onClick={handleAddFactoryVendor}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {tf("Add Vendor", "添加 Vendor")}
+                </Button>
+              </div>
+
+              {factoryVendors.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  {tf("Add a vendor to configure ship-from, target inbound, and assigned items.", "请先添加 vendor，再配置发货仓、目标入库和承接商品。")}
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {factoryVendors.map((vendor) => {
+                    const shipFromOptions = vendorShipFromWarehouseOptions.filter(item => item.vendorId === vendor.supplierId)
+                    const fgOptions = vendorFinishedGoodsWarehouseOptions.filter(item => item.vendorId === vendor.supplierId)
+                    const assignedLines = vendor.lineAllocations
+                      .map(allocation => {
+                        const lineItem = lineItems.find(item => item.id === allocation.lineItemId)
+                        return lineItem ? { ...lineItem, allocatedQuantity: allocation.quantity } : null
+                      })
+                      .filter((item): item is POLineItem & { allocatedQuantity: number } => Boolean(item))
+
+                    return (
+                      <Card key={vendor.id} className="border-muted-foreground/20">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <CardTitle className="text-base">{vendor.supplierName}</CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                {vendor.supplierCode} · {vendor.contactPerson} · {vendor.contactPhone}
+                              </p>
+                            </div>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveFactoryVendor(vendor.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <div className="space-y-2">
+                              <Label>{tf("Vendor", "Vendor")}</Label>
+                              <Select value={vendor.supplierId} onValueChange={(value) => handleFactoryVendorChange(vendor.id, value)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {factorySupplierOptions.map(supplier => (
+                                    <SelectItem
+                                      key={supplier.id}
+                                      value={supplier.id}
+                                      disabled={factoryVendors.some(item => item.supplierId === supplier.id && item.id !== vendor.id)}
+                                    >
+                                      {supplier.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{tf("Ship-from warehouse", "发货仓库")}</Label>
+                              <Select value={vendor.shipFromWarehouseId} onValueChange={(value) => handleVendorShipFromWarehouseChange(vendor.id, value)}>
+                                <SelectTrigger><SelectValue placeholder={tf("Select ship-from", "选择发货仓")} /></SelectTrigger>
+                                <SelectContent>
+                                  {shipFromOptions.map(option => (
+                                    <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{tf("Inbound route", "入库路径")}</Label>
+                              <Select
+                                value={vendor.useFinishedGoodsWarehouse ? "VIA_FG" : "DIRECT"}
+                                onValueChange={(value) => updateFactoryVendor(vendor.id, {
+                                  useFinishedGoodsWarehouse: value === "VIA_FG",
+                                  finishedGoodsWarehouseId: value === "VIA_FG" ? vendor.finishedGoodsWarehouseId : "",
+                                  finishedGoodsWarehouseName: value === "VIA_FG" ? vendor.finishedGoodsWarehouseName : "",
+                                })}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="DIRECT">{tf("Direct to target warehouse", "直发目标仓")}</SelectItem>
+                                  <SelectItem value="VIA_FG">{tf("Via vendor finished goods warehouse", "经 vendor 成品仓")}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{tf("Target inbound warehouse", "目标入库仓")}</Label>
+                              <Select value={vendor.targetWarehouseId} onValueChange={(value) => handleVendorTargetWarehouseChange(vendor.id, value)}>
+                                <SelectTrigger><SelectValue placeholder={tf("Select target warehouse", "选择目标仓")} /></SelectTrigger>
+                                <SelectContent>
+                                  {targetWarehouseOptions.map(option => (
+                                    <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {vendor.useFinishedGoodsWarehouse && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label>{tf("Vendor finished goods warehouse", "Vendor 成品仓")}</Label>
+                                <Select value={vendor.finishedGoodsWarehouseId} onValueChange={(value) => handleVendorFinishedGoodsWarehouseChange(vendor.id, value)}>
+                                  <SelectTrigger><SelectValue placeholder={tf("Select finished goods warehouse", "选择成品仓")} /></SelectTrigger>
+                                  <SelectContent>
+                                    {fgOptions.length === 0 ? (
+                                      <SelectItem value="NO_FG" disabled>{tf("No finished goods warehouse configured", "该 vendor 未配置成品仓")}</SelectItem>
+                                    ) : fgOptions.map(option => (
+                                      <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                                {tf(
+                                  "If this vendor has no finished goods warehouse, switch the route to direct shipment.",
+                                  "如果该 vendor 没有成品仓，请将入库路径切换为直发目标仓。"
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
+                            <div className="mb-1 font-medium text-foreground">{tf("Ship-from address", "发货地址")}</div>
+                            <div>{vendor.shipFromAddress.address1}{vendor.shipFromAddress.address2 ? `, ${vendor.shipFromAddress.address2}` : ""}</div>
+                            <div>{vendor.shipFromAddress.city}, {vendor.shipFromAddress.state} {vendor.shipFromAddress.zipCode}, {vendor.shipFromAddress.country}</div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label>{tf("Items handled by this vendor", "该 vendor 承接商品")}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                  {tf("Add items from the master PO and set the quantity this vendor will fulfill.", "从主 PO 添加商品，并设置该 vendor 承接数量。")}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{assignedLines.length} line(s)</Badge>
+                                <Button type="button" size="sm" variant="outline" onClick={() => openVendorItemDialog(vendor.id)}>
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  {tf("Add Items", "添加商品")}
+                                </Button>
+                              </div>
+                            </div>
+                            {assignedLines.length === 0 ? (
+                              <div className="rounded-md border border-dashed p-5 text-center text-sm text-muted-foreground">
+                                {tf("No items assigned yet. Click Add Items to choose from the master PO.", "还没有承接商品。点击添加商品，从主 PO 中选择。")}
+                              </div>
+                            ) : (
+                              <div className="rounded-md border overflow-hidden">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[72px]">{tf("Line", "行号")}</TableHead>
+                                      <TableHead>SKU</TableHead>
+                                      <TableHead>{tf("Product", "商品")}</TableHead>
+                                      <TableHead className="text-right">{tf("PO Qty", "PO 数量")}</TableHead>
+                                      <TableHead className="text-right">{tf("Vendor Qty", "Vendor 数量")}</TableHead>
+                                      <TableHead className="w-[72px] text-right">{tf("Action", "操作")}</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {assignedLines.map(item => (
+                                      <TableRow key={item.id}>
+                                        <TableCell>{item.lineNo}</TableCell>
+                                        <TableCell className="font-mono text-xs">{item.skuCode}</TableCell>
+                                        <TableCell>{item.productName}</TableCell>
+                                        <TableCell className="text-right">{item.quantity}</TableCell>
+                                        <TableCell className="text-right font-medium">{item.allocatedQuantity}</TableCell>
+                                        <TableCell className="text-right">
+                                          <Button type="button" size="sm" variant="ghost" onClick={() => updateVendorLineAllocation(vendor.id, item.id, 0)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{tf("Vendor PO grouping", "Vendor PO 生成方式")}</Label>
+                <Select value={vendorPOGrouping} onValueChange={setVendorPOGrouping}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PER_VENDOR">{tf("One PO per vendor", "每个 vendor 一张 PO")}</SelectItem>
+                    <SelectItem value="PER_VENDOR_ADDRESS">{tf("One PO per vendor + ship-from address", "按 vendor + 发货地址生成 PO")}</SelectItem>
+                    <SelectItem value="CONSOLIDATED">{tf("Consolidated execution PO", "合并为一张执行 PO")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{tf("Release mode", "生成/发送方式")}</Label>
+                <Select value={vendorSendMode} onValueChange={setVendorSendMode}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT_REVIEW">{tf("Create drafts for review", "生成草稿，等待审核")}</SelectItem>
+                    <SelectItem value="READY_TO_SEND">{tf("Create and mark ready to send", "生成并标记待发送")}</SelectItem>
+                    <SelectItem value="SEND_NOW">{tf("Create and send now", "生成并立即发送")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">{tf("Vendor PO preview", "Vendor PO 预览")}</h3>
+              {vendorPOPreviews.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  {tf("Assign items inside vendor cards to preview generated vendor POs.", "在 vendor 卡片中选择承接商品后，可预览将生成的 vendor PO。")}
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {vendorPOPreviews.map(preview => (
+                    <div key={preview.vendor.id} className="rounded-lg border p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="font-mono text-sm font-medium">{preview.vendorPoNo}</div>
+                        <Badge variant="outline">{preview.lines.length} line(s)</Badge>
+                      </div>
+                      <div className="text-sm font-medium">{preview.vendor.supplierName}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {preview.vendor.shipFromWarehouseName} → {preview.vendor.useFinishedGoodsWarehouse ? `${preview.vendor.finishedGoodsWarehouseName || tf("Unselected FG warehouse", "未选择成品仓")} → ` : ""}{preview.vendor.targetWarehouseName || "-"}
+                      </div>
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {preview.lines.map(line => (
+                          <div key={line.id} className="flex justify-between gap-3">
+                            <span>{line.skuCode}</span>
+                            <span>{tf("Qty", "数量")} {line.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={goToCreatedPODetail}>
+                {tf("Configure later", "稍后配置")}
+              </Button>
+              <Button onClick={handleCreateVendorPOs}>
+                {tf("Generate Vendor POs", "生成 Vendor PO")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={Boolean(activeVendorItemDialogId)} onOpenChange={(open) => !open && closeVendorItemDialog()}>
+          <DialogContent className="max-w-4xl max-h-[86vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>{tf("Add Items to Vendor", "添加 vendor 承接商品")}</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                {tf(
+                  "Select item lines from the master PO and set the quantity this vendor will fulfill.",
+                  "从主 PO 商品中多选，并设置该 vendor 承接数量。"
+                )}
+              </p>
+            </DialogHeader>
+
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[72px]">{tf("Select", "选择")}</TableHead>
+                    <TableHead className="w-[72px]">{tf("Line", "行号")}</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>{tf("Product", "商品")}</TableHead>
+                    <TableHead className="text-right">{tf("PO Qty", "PO 数量")}</TableHead>
+                    <TableHead className="text-right">{tf("Other vendors", "其他 vendor")}</TableHead>
+                    <TableHead className="w-[160px] text-right">{tf("This vendor qty", "本 vendor 数量")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineItems.map(item => {
+                    const currentQty = vendorItemDraftAllocations[item.id] || 0
+                    const allocatedByOthers = getLineAllocatedQty(item.id, activeVendorItemDialogId || undefined)
+                    const maxQty = Math.max(0, item.quantity - allocatedByOthers)
+                    const checked = currentQty > 0
+
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            className="rounded"
+                            checked={checked}
+                            disabled={maxQty === 0 && !checked}
+                            onChange={(event) => updateVendorItemDraftQty(item.id, event.target.checked ? Math.max(1, maxQty) : 0)}
+                          />
+                        </TableCell>
+                        <TableCell>{item.lineNo}</TableCell>
+                        <TableCell className="font-mono text-xs">{item.skuCode}</TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{allocatedByOthers}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={maxQty}
+                            value={currentQty || ""}
+                            disabled={maxQty === 0 && !checked}
+                            onChange={(event) => updateVendorItemDraftQty(item.id, Number(event.target.value))}
+                            placeholder={`0 / ${maxQty}`}
+                            className="h-8 text-right"
+                          />
+                          <div className="mt-1 text-right text-[11px] text-muted-foreground">
+                            {tf("Available", "可分配")} {maxQty}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={closeVendorItemDialog}>
+                {tf("Cancel", "取消")}
+              </Button>
+              <Button onClick={confirmVendorItemDialog}>
+                {tf("Confirm Items", "确认添加")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <LeaveConfirmDialog
           open={showLeaveConfirm}
           onOpenChange={setShowLeaveConfirm}

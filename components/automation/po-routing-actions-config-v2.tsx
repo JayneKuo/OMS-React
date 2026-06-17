@@ -566,7 +566,7 @@ function WorkflowActionPanel({ action, onChange, locale }: { action: WorkflowAct
             {action.workflow === "STANDARD" && (
                 <>
                     <Separator />
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         <ToggleOption
                             label={t("Auto Create Receipt", "自动创建收货单")}
                             description={t("Create receipt when PO status changes", "PO状态变更时自动创建收货单")}
@@ -579,6 +579,159 @@ function WorkflowActionPanel({ action, onChange, locale }: { action: WorkflowAct
                             checked={config.pushToWMS || false}
                             onCheckedChange={(checked) => updateConfig('pushToWMS', checked)}
                         />
+
+                        <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
+                            <div className="space-y-1">
+                                <Label className="text-sm font-semibold">{t("Vendor Resolution", "Vendor 自动指定")}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {t(
+                                        "Let the system resolve vendors when upstream PO data does not specify one.",
+                                        "当上游采购单未指定 vendor 时，由系统根据规则自动选定。"
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">{t("Resolution Mode", "指定模式")}</Label>
+                                    <Select
+                                        value={config.vendorResolutionMode || "KEEP_UPSTREAM"}
+                                        onValueChange={(value: any) => updateConfig("vendorResolutionMode", value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="KEEP_UPSTREAM">{t("Keep Upstream Vendor", "沿用上游 vendor")}</SelectItem>
+                                            <SelectItem value="AUTO_ASSIGN_SINGLE">{t("Auto Assign Single Vendor", "自动指定单个 vendor")}</SelectItem>
+                                            <SelectItem value="AUTO_ASSIGN_MULTIPLE">{t("Auto Assign Multiple Vendors", "自动指定多个 vendor")}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">{t("Selection Basis", "选择依据")}</Label>
+                                    <Select
+                                        value={config.vendorSelectionBasis || "RULE_MATCH"}
+                                        onValueChange={(value: any) => updateConfig("vendorSelectionBasis", value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="RULE_MATCH">{t("Rule Match", "规则命中")}</SelectItem>
+                                            <SelectItem value="SKU_VENDOR_MAPPING">{t("SKU-Vendor Mapping", "SKU Vendor 映射")}</SelectItem>
+                                            <SelectItem value="LOWEST_COST">{t("Lowest Cost", "最低成本")}</SelectItem>
+                                            <SelectItem value="FASTEST_LEAD_TIME">{t("Fastest Lead Time", "最短交期")}</SelectItem>
+                                            <SelectItem value="PREFERRED_VENDOR">{t("Preferred Vendor", "优先 vendor")}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <ToggleOption
+                                label={t("Allow Vendor Split", "允许按 vendor 拆分")}
+                                description={t("Split one upstream PO into multiple vendor-specific execution units", "将一个上游采购单拆成多个 vendor 执行单元")}
+                                checked={config.allowVendorSplit || false}
+                                onCheckedChange={(checked) => updateConfig("allowVendorSplit", checked)}
+                            />
+
+                            <ToggleOption
+                                label={t("Create Vendor POs", "生成 vendor PO")}
+                                description={t("Create downstream POs for each resolved vendor when split is required", "在需要拆分时，为每个选中的 vendor 生成下游采购单")}
+                                checked={config.createVendorPOs || false}
+                                onCheckedChange={(checked) => updateConfig("createVendorPOs", checked)}
+                            />
+                        </div>
+
+                        <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
+                            <div className="space-y-1">
+                                <Label className="text-sm font-semibold">{t("Receipt Generation & Push", "RN 生成与推送")}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {t(
+                                        "Control how receiving requests are created and pushed after routing finishes.",
+                                        "控制路由完成后如何创建并推送入库单。"
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">{t("Receipt Grouping", "RN 分组方式")}</Label>
+                                    <Select
+                                        value={config.receiptGenerationMode || "PER_PO"}
+                                        onValueChange={(value: any) => updateConfig("receiptGenerationMode", value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="NONE">{t("Do Not Auto Create", "不自动创建")}</SelectItem>
+                                            <SelectItem value="PER_PO">{t("Per PO", "按 PO")}</SelectItem>
+                                            <SelectItem value="PER_VENDOR">{t("Per Vendor", "按 vendor")}</SelectItem>
+                                            <SelectItem value="PER_VENDOR_AND_WAREHOUSE">{t("Per Vendor + Warehouse", "按 vendor + 仓库")}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">{t("Push Target", "推送目标")}</Label>
+                                    <Select
+                                        value={config.receiptPushTarget || "WAREHOUSE"}
+                                        onValueChange={(value: any) => updateConfig("receiptPushTarget", value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="WAREHOUSE">{t("Warehouse", "仓库")}</SelectItem>
+                                            <SelectItem value="DELIVERY_ADDRESS">{t("Delivery Address", "收货地址")}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <ToggleOption
+                                label={t("Auto Push Receipt", "自动推送 RN")}
+                                description={t("Push receiving requests immediately after they are generated", "入库单生成后自动推送到目标仓或地址")}
+                                checked={config.autoPushReceipt || false}
+                                onCheckedChange={(checked) => updateConfig("autoPushReceipt", checked)}
+                            />
+
+                            <ToggleOption
+                                label={t("Allow Warehouse Change After Push", "允许推送后换仓")}
+                                description={t("Allow users to switch target warehouse on an already pushed receipt", "允许用户在已推送的入库单上改目标仓")}
+                                checked={config.allowWarehouseChangeAfterPush || false}
+                                onCheckedChange={(checked) => updateConfig("allowWarehouseChangeAfterPush", checked)}
+                            />
+
+                            {config.allowWarehouseChangeAfterPush && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-medium">{t("Warehouse Change Policy", "换仓策略")}</Label>
+                                        <Select
+                                            value={config.warehouseChangePolicy || "CANCEL_AND_RECREATE_RN"}
+                                            onValueChange={(value: any) => updateConfig("warehouseChangePolicy", value)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="MANUAL_REVIEW">{t("Manual Review", "人工审核")}</SelectItem>
+                                                <SelectItem value="CANCEL_AND_RECREATE_RN">{t("Cancel and Recreate RN", "取消旧 RN 并重建")}</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <ToggleOption
+                                        label={t("Cancel Previous RN First", "先取消旧 RN")}
+                                        description={t("Before moving to a new warehouse, cancel the original RN and generate a new receipt number", "切换到新仓前，先取消原 RN 并生成新的入库单号")}
+                                        checked={config.cancelPreviousReceiptOnWarehouseChange ?? true}
+                                        onCheckedChange={(checked) => updateConfig("cancelPreviousReceiptOnWarehouseChange", checked)}
+                                    />
+                                </>
+                            )}
+                        </div>
                     </div>
                 </>
             )}
@@ -1275,7 +1428,14 @@ function createDefaultAction(type: RuleAction["type"]): RuleAction | null {
             return {
                 type: "SET_WORKFLOW",
                 workflow: "STANDARD",
-                config: {}
+                config: {
+                    vendorResolutionMode: "KEEP_UPSTREAM",
+                    vendorSelectionBasis: "RULE_MATCH",
+                    receiptGenerationMode: "PER_PO",
+                    receiptPushTarget: "WAREHOUSE",
+                    warehouseChangePolicy: "CANCEL_AND_RECREATE_RN",
+                    cancelPreviousReceiptOnWarehouseChange: true
+                }
             }
         case "ASSIGN_WAREHOUSE":
             return {
@@ -1368,6 +1528,26 @@ function getActionSummary(action: RuleAction, locale: "en" | "zh"): string {
                 "JIT": t("Just-in-Time", "即时采购")
             }
             const wf = workflowLabels[action.workflow] || action.workflow
+            if (action.workflow === "STANDARD") {
+                const config = action.config || {}
+                const mode = config.vendorResolutionMode || "KEEP_UPSTREAM"
+                const receiptMode = config.receiptGenerationMode || "PER_PO"
+                const modeLabels: Record<string, string> = {
+                    KEEP_UPSTREAM: t("Keep Upstream Vendor", "沿用上游 vendor"),
+                    AUTO_ASSIGN_SINGLE: t("Single Vendor", "单 vendor"),
+                    AUTO_ASSIGN_MULTIPLE: t("Multi Vendor", "多 vendor")
+                }
+                const receiptLabels: Record<string, string> = {
+                    NONE: t("No RN", "不生成 RN"),
+                    PER_PO: t("RN per PO", "按 PO 生成 RN"),
+                    PER_VENDOR: t("RN per Vendor", "按 vendor 生成 RN"),
+                    PER_VENDOR_AND_WAREHOUSE: t("RN per Vendor + Warehouse", "按 vendor + 仓库生成 RN")
+                }
+                return t(
+                    `Workflow: ${wf} · ${modeLabels[mode]} · ${receiptLabels[receiptMode]}`,
+                    `工作流: ${wf} · ${modeLabels[mode]} · ${receiptLabels[receiptMode]}`
+                )
+            }
             return t(`Workflow: ${wf}`, `工作流: ${wf}`)
         case "ASSIGN_WAREHOUSE":
             return action.warehouseName ? t(`To: ${action.warehouseName}`, `分配至: ${action.warehouseName}`) : t("No warehouse selected", "未选择仓库")

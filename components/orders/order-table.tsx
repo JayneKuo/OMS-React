@@ -1,12 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { CheckCircle, ChevronDown, ChevronRight, Eye, MoreHorizontal, Pencil, Send, Truck, XCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { OrderExpandedRow } from "@/components/orders/order-expanded-row"
 import { OrderNumberCell } from "@/components/ui/order-number-cell"
 import type { LineItemIssue, Order, OrderStatus } from "@/lib/orders/types"
@@ -325,9 +333,24 @@ interface OrderTableProps {
   orders: Order[]
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
+  onOrderOpen?: (order: Order) => void
+  onResolveOrder?: (order: Order) => void
+  onReleaseOrder?: (order: Order) => void
+  onShipOrder?: (order: Order) => void
+  onCancelOrder?: (order: Order) => void
 }
 
-export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTableProps) {
+export function OrderTable({
+  orders,
+  selectedIds,
+  onSelectionChange,
+  onOrderOpen,
+  onResolveOrder,
+  onReleaseOrder,
+  onShipOrder,
+  onCancelOrder,
+}: OrderTableProps) {
+  const router = useRouter()
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
 
   const allSelected = orders.length > 0 && selectedIds.length === orders.length
@@ -369,6 +392,7 @@ export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTabl
             <TableHead className="min-w-[170px]">Issues</TableHead>
             <TableHead className="min-w-[170px]">Fulfillment</TableHead>
             <TableHead className="min-w-[140px]">Date / Amount</TableHead>
+            <TableHead className="sticky right-0 z-10 w-[120px] bg-background text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -387,7 +411,7 @@ export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTabl
                     order.status === "on_hold" && !isSelected && "bg-yellow-50/30",
                     order.status === "exception" && !isSelected && "bg-red-50/20"
                   )}
-                  onClick={() => setExpandedId((current) => (current === order.id ? null : order.id))}
+                  onClick={() => onOrderOpen?.(order) ?? router.push(`/orders/${order.id}`)}
                 >
                   <TableCell className="sticky left-0 z-10 w-10 bg-inherit" onClick={(event) => event.stopPropagation()}>
                     <Checkbox
@@ -403,7 +427,7 @@ export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTabl
                   </TableCell>
                   <TableCell className="sticky left-10 z-10 bg-inherit" onClick={(event) => event.stopPropagation()}>
                     <div className="space-y-1">
-                      <OrderNumberCell orderNumber={order.id} />
+                      <OrderNumberCell orderNumber={order.id} onClick={() => router.push(`/orders/${order.id}`)} />
                       <div className="font-mono text-xs text-muted-foreground">{order.channelOrderNo}</div>
                     </div>
                   </TableCell>
@@ -444,10 +468,46 @@ export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTabl
                       <div>${order.grandTotal.toFixed(2)} · {order.totalQty} qty</div>
                     </div>
                   </TableCell>
+                  <TableCell className="sticky right-0 z-10 bg-inherit text-right" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/orders/${order.id}`)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => router.push(`/orders/${order.id}/edit`)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onResolveOrder?.(order)}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Resolve Issues
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onReleaseOrder?.(order)}>
+                            <Send className="mr-2 h-4 w-4" />
+                            Release to Warehouse
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onShipOrder?.(order)}>
+                            <Truck className="mr-2 h-4 w-4" />
+                            Create Shipment
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onCancelOrder?.(order)}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Cancel Order
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
                 </TableRow>
                 {isExpanded && (
                   <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={10} className="p-0">
+                    <TableCell colSpan={11} className="p-0">
                       <OrderExpandedRow order={order} />
                     </TableCell>
                   </TableRow>
@@ -457,7 +517,7 @@ export function OrderTable({ orders, selectedIds, onSelectionChange }: OrderTabl
           })}
           {orders.length === 0 && (
             <TableRow>
-              <TableCell colSpan={10} className="h-24 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={11} className="h-24 text-center text-sm text-muted-foreground">
                 No orders found.
               </TableCell>
             </TableRow>

@@ -15,6 +15,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { POSendDialog } from "@/components/purchase/po-send-dialog"
 import { ProductSelectionDialog } from "@/components/purchase/product-selection-dialog"
+import { TransferOrderDetail, type TransferOrder } from "@/components/purchase/transfer-order-detail"
+import { CreateTransferOrderDialog } from "@/components/purchase/create-transfer-order-dialog"
+import { type TransferOrderDraft, type SupplyDemandLine, WAREHOUSE_OPTIONS } from "@/components/purchase/transfer-order-types"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -62,6 +65,19 @@ type SupplyLineDraft = {
   uom: string
 }
 
+type TransferOrderDraft = {
+  id: string
+  fromWarehouseCode: string
+  fromWarehouseName: string
+  viaWarehouseCode?: string
+  viaWarehouseName?: string
+  toWarehouseCode: string
+  toWarehouseName: string
+  lineQtys: Record<string, number>
+  isOriginal?: boolean
+}
+
+/** @deprecated Kept for backward compat during migration */
 type VendorAllocationDraft = {
   id: string
   sourceName: string
@@ -437,7 +453,7 @@ const mockPODetail = {
       expectedQty: 110,
       receivedBy: "Factory Dock Team",
       receiptStatus: "CLOSED",
-      notes: "Vendor warehouse receipt generated from Supply Allocation Order SAO202403150001-02.",
+      notes: "Vendor warehouse receipt generated from Transfer Order SAO202403150001-02.",
       relatedShipment: "Internal factory transfer",
       warehouseLocation: "VFG-SZ01 / FG-A-01",
       qualityStatus: "PASSED",
@@ -1191,6 +1207,7 @@ export default function PODetailPage() {
   const [showCloseLineDialog, setShowCloseLineDialog] = React.useState(false)
   const [showProductSelectionDialog, setShowProductSelectionDialog] = React.useState(false)
   const [showSupplyAllocationDialog, setShowSupplyAllocationDialog] = React.useState(false)
+  const [showCreateTransferDialog, setShowCreateTransferDialog] = React.useState(false)
   const [showChangeVendorDialog, setShowChangeVendorDialog] = React.useState(false)
   const [selectedSupplyAllocation, setSelectedSupplyAllocation] = React.useState<typeof mockPODetail.supplyAllocationOrders[0] | null>(null)
   const [showAllocationItemDialog, setShowAllocationItemDialog] = React.useState(false)
@@ -1660,6 +1677,16 @@ export default function PODetailPage() {
     FULLY_RECEIVED: { label: "收货完成", color: "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400" },
   }
 
+  // ─── Available warehouses for selection (from system) ────────────────────
+  const availableWarehouses = React.useMemo(() => [
+    { code: "FAC-WH-DG01", name: "Dongguan Factory Warehouse", owner: "Dongguan Precision Works" },
+    { code: "FAC-WH-SZ01", name: "Shenzhen Smart Factory Warehouse", owner: "Shenzhen Smart Factory" },
+    { code: "WH001", name: "Main Warehouse - Los Angeles", owner: "Self" },
+    { code: "WH002", name: "East Coast Warehouse - New York", owner: "Self" },
+    { code: "VFG-DG01", name: "Dongguan Vendor FG Warehouse", owner: "Dongguan Precision Works" },
+    { code: "VFG-SZ01", name: "Shenzhen Vendor FG Warehouse", owner: "Shenzhen Smart Factory" },
+  ], [])
+
   const renderDraftCards = (mode: "allocate" | "revise") => {
     const drafts = mode === "allocate" ? allocationDrafts : revisionDrafts
     const lines = mode === "allocate" ? poData.unallocatedSupplyDemand.lines : (selectedSupplyAllocation?.lines || [])
@@ -1667,7 +1694,6 @@ export default function PODetailPage() {
     return (
       <div className="space-y-3">
         {drafts.map((draft) => {
-          const assignedLines = lines.filter((line) => (draft.lineQtys[line.skuCode] || 0) > 0)
           const assignedQty = getDraftTotal(draft)
 
           return (
@@ -1675,13 +1701,15 @@ export default function PODetailPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-base">{draft.sourceName}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{draft.sourceCode} / {draft.sourceWarehouseName}</p>
+                    <CardTitle className="text-base">
+                      {draft.sourceName || draft.sourceWarehouseName || tf("New Transfer Source", "新调拨来源")}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      {draft.sourceWarehouseCode ? `${draft.sourceWarehouseCode} → ${draft.destinationWarehouseCode || poData.warehouseCode}` : tf("Select source warehouse below", "请在下方选择源仓库")}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {draft.isOriginal ? tf("Original vendor", "原 vendor") : tf("New vendor", "新 vendor")}
-                    </Badge>
+                    {draft.isOriginal && <Badge variant="outline">{tf("Original", "原始")}</Badge>}
                     <Badge variant="secondary">{assignedQty} PCS</Badge>
                     {!draft.isOriginal && (
                       <Button
@@ -1691,14 +1719,15 @@ export default function PODetailPage() {
                         onClick={() => removeVendorDraft(mode, draft.id)}
                       >
                         <XCircle className="mr-1 h-4 w-4" />
-                        {tf("Delete vendor", "删除 vendor")}
+                        {tf("Remove", "移除")}
                       </Button>
                     )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-4">
+                {/* Row 1: Vendor + Vendor Warehouse + Target Warehouse */}
+                <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label>{tf("Vendor", "Vendor")}</Label>
                     <Select
@@ -1712,7 +1741,7 @@ export default function PODetailPage() {
                         setter((items) => items.map((item) => item.id === draft.id ? next : item))
                       }}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={tf("Select vendor", "选择 Vendor")} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="FAC-DG01">Dongguan Precision Works</SelectItem>
                         <SelectItem value="FAC-SZ01">Shenzhen Smart Factory</SelectItem>
@@ -1720,79 +1749,178 @@ export default function PODetailPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>{tf("Ship-from", "发货仓")}</Label>
-                    <Input value={draft.sourceWarehouseName} readOnly />
+                    <Label>{tf("Vendor Warehouse", "Vendor 仓库")}</Label>
+                    <Select
+                      value={draft.sourceWarehouseCode}
+                      onValueChange={(value) => {
+                        const wh = availableWarehouses.find(w => w.code === value)
+                        const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                        setter((items) => items.map((item) => item.id === draft.id ? {
+                          ...item,
+                          sourceWarehouseCode: value,
+                          sourceWarehouseName: wh?.name || value,
+                        } : item))
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder={tf("Select warehouse", "选择仓库")} /></SelectTrigger>
+                      <SelectContent>
+                        {availableWarehouses
+                          .filter(w => w.code !== (draft.destinationWarehouseCode || poData.warehouseCode))
+                          .map(wh => (
+                            <SelectItem key={wh.code} value={wh.code}>{wh.name}</SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>{tf("Route", "路径")}</Label>
+                    <Label>{tf("Target Warehouse", "目标仓库")}</Label>
                     <Select
-                      value={draft.routeType}
-                      onValueChange={(value: "DIRECT" | "VIA_FG") => {
+                      value={draft.destinationWarehouseCode || poData.warehouseCode}
+                      onValueChange={(value) => {
+                        const wh = availableWarehouses.find(w => w.code === value)
                         const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
-                        setter((items) => items.map((item) => item.id === draft.id ? { ...item, routeType: value } : item))
+                        setter((items) => items.map((item) => item.id === draft.id ? {
+                          ...item,
+                          destinationWarehouseCode: value,
+                          destinationWarehouseName: wh?.name || value,
+                        } : item))
                       }}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="VIA_FG">{tf("Via vendor FG warehouse", "经 vendor 成品仓")}</SelectItem>
-                        <SelectItem value="DIRECT">{tf("Direct", "直发")}</SelectItem>
+                        {availableWarehouses
+                          .filter(w => w.code !== draft.sourceWarehouseCode)
+                          .map(wh => (
+                            <SelectItem key={wh.code} value={wh.code}>{wh.name}</SelectItem>
+                          ))
+                        }
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>{tf("Assigned items", "分配商品")}</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {assignedLines.length ? tf("Click Add Items to adjust item quantities.", "点击添加商品调整 item 和数量。") : tf("No item assigned yet.", "还没有分配商品。")}
-                    </p>
+                {/* Row 2: Via FG toggle */}
+                <div className="rounded-lg border bg-muted/10 p-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id={`via-fg-${draft.id}`}
+                      className="rounded border-gray-300 h-4 w-4"
+                      checked={draft.routeType === "VIA_FG"}
+                      onChange={(e) => {
+                        const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                        setter((items) => items.map((item) => item.id === draft.id ? {
+                          ...item,
+                          routeType: e.target.checked ? "VIA_FG" as const : "DIRECT" as const,
+                          intermediateWarehouseName: e.target.checked ? item.intermediateWarehouseName : "",
+                        } : item))
+                      }}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`via-fg-${draft.id}`} className="cursor-pointer text-sm font-medium">
+                        {tf("Via FG Inbound", "经成品仓入库")}
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {tf("Create inbound receipt at FG warehouse before shipping to target.", "出库前先给成品仓创建入库单。")}
+                      </p>
+                    </div>
+                    {draft.routeType === "VIA_FG" && (
+                      <div className="w-[240px]">
+                        <Select
+                          value={draft.intermediateWarehouseName ? availableWarehouses.find(w => w.name === draft.intermediateWarehouseName)?.code || "VFG-SZ01" : "VFG-SZ01"}
+                          onValueChange={(value) => {
+                            const wh = availableWarehouses.find(w => w.code === value)
+                            const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                            setter((items) => items.map((item) => item.id === draft.id ? {
+                              ...item,
+                              intermediateWarehouseName: wh?.name || "",
+                            } : item))
+                          }}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {availableWarehouses
+                              .filter(w => w.code.startsWith("VFG"))
+                              .map(wh => (
+                                <SelectItem key={wh.code} value={wh.code}>{wh.name}</SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => openItemPicker(mode, draft.id)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {tf("Add Items", "添加商品")}
-                  </Button>
                 </div>
 
+                {/* Inline items table with editable quantities */}
                 <div className="rounded-md border overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead>{tf("Line", "行号")}</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>{tf("Product", "商品")}</TableHead>
-                        <TableHead className="text-right">{tf("Demand Qty", "需求数量")}</TableHead>
-                        <TableHead className="text-right">{tf("Vendor Qty", "Vendor 数量")}</TableHead>
-                        <TableHead className="text-right">{tf("Actions", "操作")}</TableHead>
+                        <TableHead className="w-[40px] text-center">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300"
+                            checked={lines.every(line => (draft.lineQtys[line.skuCode] || 0) > 0)}
+                            onChange={(e) => {
+                              const setter = mode === "allocate" ? setAllocationDrafts : setRevisionDrafts
+                              setter((items) => items.map((item) => {
+                                if (item.id !== draft.id) return item
+                                if (e.target.checked) {
+                                  const nextQtys: Record<string, number> = {}
+                                  lines.forEach(line => { nextQtys[line.skuCode] = line.quantity })
+                                  return { ...item, lineQtys: nextQtys }
+                                }
+                                return { ...item, lineQtys: {} }
+                              }))
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="text-xs">{tf("Line", "行号")}</TableHead>
+                        <TableHead className="text-xs">SKU</TableHead>
+                        <TableHead className="text-xs">{tf("Product", "商品")}</TableHead>
+                        <TableHead className="text-xs text-right">{tf("Demand", "需求")}</TableHead>
+                        <TableHead className="text-xs text-right w-[120px]">{tf("Transfer Qty", "调拨数量")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assignedLines.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="h-20 text-center text-sm text-muted-foreground">
-                            {tf("Use Add Items to assign PO lines to this vendor.", "点击添加商品，将 PO 行分配给这个 vendor。")}
-                          </TableCell>
-                        </TableRow>
-                      ) : assignedLines.map((line) => (
-                        <TableRow key={`${draft.id}-${line.skuCode}`}>
-                          <TableCell>{line.sourceLineNo}</TableCell>
-                          <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
-                          <TableCell>{line.productName}</TableCell>
-                          <TableCell className="text-right">{line.quantity} {line.uom}</TableCell>
-                          <TableCell className="text-right font-medium">{draft.lineQtys[line.skuCode]} {line.uom}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                              onClick={() => updateDraftLineQty(draft.id, line.skuCode, 0, mode)}
-                            >
-                              <XCircle className="mr-1 h-4 w-4" />
-                              {tf("Delete", "删除")}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {lines.map((line) => {
+                        const qty = draft.lineQtys[line.skuCode] || 0
+                        const isChecked = qty > 0
+                        return (
+                          <TableRow key={`${draft.id}-${line.skuCode}`} className={isChecked ? "bg-primary/5" : ""}>
+                            <TableCell className="text-center">
+                              <input
+                                type="checkbox"
+                                className="rounded border-gray-300"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  updateDraftLineQty(draft.id, line.skuCode, e.target.checked ? line.quantity : 0, mode)
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="text-xs">{line.sourceLineNo}</TableCell>
+                            <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
+                            <TableCell className="text-xs">{line.productName}</TableCell>
+                            <TableCell className="text-xs text-right">{line.quantity} {line.uom}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={line.quantity}
+                                className="h-7 w-[80px] text-xs text-right ml-auto"
+                                value={qty || ""}
+                                disabled={!isChecked}
+                                onChange={(e) => {
+                                  const val = Math.min(Math.max(0, parseInt(e.target.value) || 0), line.quantity)
+                                  updateDraftLineQty(draft.id, line.skuCode, val, mode)
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -1834,7 +1962,7 @@ export default function PODetailPage() {
                       )}
                       {missingFgWarehouse && (
                         <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                          {tf("Pending Vendor Assignment", "待分配 Vendor")}
+                          {tf("Pending Transfer Setup", "待配置调拨")}
                         </Badge>
                       )}
                     </div>
@@ -1851,9 +1979,9 @@ export default function PODetailPage() {
 
               <div className="flex gap-2">
                 {missingFgWarehouse && (
-                  <Button size="sm" onClick={openAllocateSupplyDialog}>
+                  <Button size="sm" onClick={() => setShowCreateTransferDialog(true)}>
                     <FilePlus className="h-4 w-4" />
-                    <span className="ml-2">{tf("Allocate Vendor", "分配 Vendor")}</span>
+                    <span className="ml-2">{tf("Create Transfer Order", "创建调拨单")}</span>
                   </Button>
                 )}
                 <Tooltip>
@@ -1922,28 +2050,28 @@ export default function PODetailPage() {
                     <div>
                       <div className="text-sm font-medium text-blue-900 dark:text-blue-200">
                         {missingFgWarehouse
-                          ? tf("Vendor FG warehouse is required", "\u9700\u8981\u6307\u5b9a Vendor \u6210\u54c1\u4ed3")
-                          : tf("Factory direct supply is not fully allocated", "\u5de5\u5382\u76f4\u53d1\u4f9b\u5e94\u5c1a\u672a\u5b8c\u6210\u5206\u914d")}
+                          ? tf("Transfer source warehouse is required", "\u9700\u8981\u5148\u6307\u5b9a\u8c03\u62e8\u6765\u6e90\u4ed3")
+                          : tf("Factory direct transfer execution is not fully configured", "\u5de5\u5382\u76f4\u53d1\u8c03\u62e8\u6267\u884c\u5c1a\u672a\u914d\u7f6e\u5b8c\u6210")}
                       </div>
                       <div className="mt-1 text-xs text-blue-700 dark:text-blue-300">
                         {missingFgWarehouse
                           ? tf(
-                              "Destination RN has been created first. Via FG route requires a Vendor FG warehouse before vendor fulfillment can continue.",
-                              "\u76ee\u7684\u5730 RN \u5df2\u4f18\u5148\u521b\u5efa\u3002\u7ecf\u6210\u54c1\u4ed3\u8def\u5f84\u9700\u8981\u5148\u6307\u5b9a Vendor \u6210\u54c1\u4ed3\uff0c\u624d\u80fd\u7ee7\u7eed vendor \u5c65\u7ea6\u3002"
+                              "Destination RN has been created first. The transfer route still needs a source-side warehouse before execution can continue.",
+                              "\u76ee\u6807\u4ed3 RN \u5df2\u4f18\u5148\u521b\u5efa\u3002\u5f53\u524d\u8c03\u62e8\u8def\u5f84\u8fd8\u9700\u8981\u5148\u6307\u5b9a\u6765\u6e90\u4fa7\u4ed3\u5e93\uff0c\u4e4b\u540e\u624d\u80fd\u7ee7\u7eed\u6267\u884c\u3002"
                             )
                           : tf(
-                              `${unallocatedSupplyQty} PCS still need vendor / warehouse allocation. Allocation orders will appear in the Supply Allocation Order tab after saving.`,
-                              `${unallocatedSupplyQty} PCS \u8fd8\u9700\u8981\u5206\u914d vendor / \u6765\u6e90\u4ed3\u3002\u4fdd\u5b58\u540e\u624d\u4f1a\u51fa\u73b0\u5728 Supply Allocation Order tab \u91cc\u3002`
+                              `${unallocatedSupplyQty} PCS still need source / destination transfer setup. Transfer orders will appear in the Transfer Order tab after saving.`,
+                              `${unallocatedSupplyQty} PCS \u8fd8\u9700\u8981\u8865\u9f50\u6765\u6e90\u4ed3 / \u76ee\u6807\u4ed3\u7684\u8c03\u62e8\u914d\u7f6e\u3002\u4fdd\u5b58\u540e\u4f1a\u5728 Transfer Order tab \u91cc\u751f\u6210\u8c03\u62e8\u5355\u3002`
                             )}
                       </div>
                     </div>
                   </div>
                   <Button
                     size="sm"
-                    onClick={openAllocateSupplyDialog}
+                    onClick={() => setShowCreateTransferDialog(true)}
                   >
                     <FilePlus className="mr-2 h-4 w-4" />
-                    {tf("Allocate Supply", "\u5206\u914d\u4f9b\u5e94")}
+                    {tf("Create Transfer Order", "\u521b\u5efa\u8c03\u62e8\u5355")}
                   </Button>
                 </div>
               </CardContent>
@@ -2048,23 +2176,23 @@ export default function PODetailPage() {
                 </Card>
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2"><Building className="h-4 w-4 text-cyan-600" />{tf("Vendor Fulfillment", "Vendor 履约摘要")}</CardTitle>
+                    <CardTitle className="text-sm flex items-center gap-2"><Building className="h-4 w-4 text-cyan-600" />{tf("Transfer Summary", "调拨摘要")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-xs">
-                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor Count", "Vendor 数量")}:</span><span className="font-medium text-right">{poData.purchaseType === "FACTORY_DIRECT" ? Math.max(poData.supplyAllocationOrders.length, missingFgWarehouse ? 0 : 1) : 1}</span></div>
-                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Current Stage", "当前阶段")}:</span><span className="text-right">{missingFgWarehouse ? tf("Pending Vendor", "待分配 Vendor") : tf("In Fulfillment", "履约中")}</span></div>
-                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Allocation Status", "分配状态")}:</span><span className="text-right">{poData.supplyAllocationOrders.length > 0 ? tf("Allocated", "已分配") : tf("Pending", "待分配")}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Transfer Orders", "调拨单数")}:</span><span className="font-medium text-right">{poData.purchaseType === "FACTORY_DIRECT" ? Math.max(poData.supplyAllocationOrders.length, missingFgWarehouse ? 0 : 1) : 1}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Current Stage", "当前阶段")}:</span><span className="text-right">{missingFgWarehouse ? tf("Pending Setup", "待配置") : tf("In Fulfillment", "履约中")}</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Status", "状态")}:</span><span className="text-right">{poData.supplyAllocationOrders.length > 0 ? tf("Confirmed", "已确认") : tf("Pending", "待创建")}</span></div>
                     <div className="space-y-1 pt-1">
-                      <div className="text-muted-foreground">{tf("Vendor Preview", "Vendor 预览")}</div>
+                      <div className="text-muted-foreground">{tf("Source Warehouses", "源仓库预览")}</div>
                       <div className="rounded-md border bg-muted/20 p-2 text-foreground">
                         {poData.supplyAllocationOrders.length > 0
                           ? (() => {
-                              const vendorNames = Array.from(new Set(poData.supplyAllocationOrders.map((order) => order.sourceName)))
-                              const preview = vendorNames.slice(0, 2).join(", ")
-                              const moreCount = vendorNames.length - 2
+                              const whNames = Array.from(new Set(poData.supplyAllocationOrders.map((order) => order.sourceWarehouseName || order.sourceName)))
+                              const preview = whNames.slice(0, 2).join(", ")
+                              const moreCount = whNames.length - 2
                               return moreCount > 0 ? `${preview} +${moreCount}` : preview
                             })()
-                          : tf("No vendors assigned yet", "当前还没有分配 Vendor")}
+                          : tf("No sources configured", "尚未配置来源仓库")}
                       </div>
                     </div>
                   </CardContent>
@@ -2099,7 +2227,7 @@ export default function PODetailPage() {
                 <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="items">Items</TabsTrigger>
                   {poData.purchaseType === "FACTORY_DIRECT" && (
-                    <TabsTrigger value="supply-allocation">Supply Allocation Order</TabsTrigger>
+                    <TabsTrigger value="supply-allocation">Transfer Order</TabsTrigger>
                   )}
                   <TabsTrigger value="receipts">Warehouse Receipts</TabsTrigger>
                   <TabsTrigger value="confirmation">Receipt Confirmation</TabsTrigger>
@@ -2265,55 +2393,51 @@ export default function PODetailPage() {
                   <TabsContent value="supply-allocation" className="mt-4">
                     <Card>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Supply Allocation Order</CardTitle>
+                        <CardTitle className="text-lg">{tf("Transfer Orders", "调拨单")}</CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-0 border-t">
                           <div className="md:col-span-1 border-r">
                             <div className="p-3 bg-muted/50 border-b">
-                              <input type="text" placeholder="Search allocation no, vendor, warehouse" className="w-full h-8 px-3 text-xs border border-input rounded-md bg-background" />
+                              <input type="text" placeholder="Search transfer no, source, destination" className="w-full h-8 px-3 text-xs border border-input rounded-md bg-background" />
                             </div>
                             <div className="divide-y max-h-[600px] overflow-y-auto">
                               {poData.supplyAllocationOrders.length === 0 && missingFgWarehouse && (
                                 <div className="p-4 text-xs text-muted-foreground">
-                                  {tf("No allocation orders yet.", "暂无分配单。")}
+                                  {tf("No transfer orders yet.", "暂无调拨单。")}
                                 </div>
                               )}
                               {poData.supplyAllocationOrders.map((order) => {
-                                const demandQty = order.lines.reduce((sum, line) => sum + line.quantity, 0)
-                                const allocatedQty = order.lines.reduce((sum, line) => sum + line.allocatedQty, 0)
+                                const totalQty = order.lines.reduce((sum, line) => sum + line.quantity, 0)
+                                const transferredQty = order.lines.reduce((sum, line) => sum + line.allocatedQty, 0)
                                 const statusMeta = {
-                                  PENDING_ALLOCATION: { label: tf("Pending Allocation", "\u5f85\u5206\u914d"), className: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" },
-                                  ALLOCATED: { label: tf("Allocated", "\u5df2\u5206\u914d"), className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
-                                  RELEASED: { label: tf("Released", "\u5df2\u53d1\u9001"), className: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
+                                  PENDING_ALLOCATION: { label: tf("Draft", "\u8349\u7a3f"), className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
+                                  ALLOCATED: { label: tf("Confirmed", "\u5df2\u786e\u8ba4"), className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
+                                  RELEASED: { label: tf("In Transit", "\u5728\u9014"), className: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
                                   VOIDED: { label: tf("Voided", "\u5df2\u4f5c\u5e9f"), className: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" },
                                 }[order.status as "PENDING_ALLOCATION" | "ALLOCATED" | "RELEASED" | "VOIDED"] || { label: order.status, className: "bg-gray-100 text-gray-800" }
-                                const vendorRnStatusMeta = {
-                                  NO_RN: { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700" },
-                                  RN_CREATED: { label: tf("RN Created", "RN \u5df2\u521b\u5efa"), className: "border-blue-200 bg-blue-50 text-blue-700" },
-                                  PUSH_FAILED: { label: tf("Kafka Failed", "Kafka \u5931\u8d25"), className: "border-red-200 bg-red-50 text-red-700" },
-                                  WAITING_ACCEPT: { label: tf("Waiting Accept", "\u7b49\u5f85\u63a5\u6536"), className: "border-amber-200 bg-amber-50 text-amber-700" },
-                                  REJECTED: { label: tf("Rejected", "\u5df2\u62d2\u6536"), className: "border-red-200 bg-red-50 text-red-700" },
-                                  ACCEPTED: { label: tf("Accepted", "\u5df2\u63a5\u6536"), className: "border-green-200 bg-green-50 text-green-700" },
-                                  RN_CANCELLED: { label: tf("RN Cancelled", "RN \u5df2\u53d6\u6d88"), className: "border-gray-300 bg-gray-100 text-gray-700" },
-                                }[order.vendorRnStatus as VendorRnStatus] || { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700" }
 
                                 return (
                                   <div key={order.id} onClick={() => setSelectedAllocationOrder(order.id)} className={cn("p-3 cursor-pointer transition-colors border-l-4", selectedAllocationOrder === order.id ? "bg-primary/10 border-l-primary" : "hover:bg-muted/50 border-l-transparent")}>
                                     <div className="flex items-start justify-between mb-2 gap-2">
                                       <div>
-                                        <div className="font-mono text-sm font-medium">{order.allocationNo || tf("PO Demand", "PO \u9700\u6c42")}</div>
-                                        <div className="mt-1 text-xs text-muted-foreground">{order.lines.length} line(s)</div>
+                                        <div className="font-mono text-sm font-medium">{order.allocationNo || "-"}</div>
+                                        <div className="mt-1 text-xs text-muted-foreground">{order.lines.length} {tf("items", "商品行")}</div>
                                       </div>
-                                      <div className="flex flex-col items-end gap-1">
-                                        <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
-                                        <Badge variant="outline" className={cn("text-[10px]", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge>
-                                      </div>
+                                      <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
                                     </div>
                                     <div className="text-xs text-muted-foreground space-y-1">
-                                      <div>{order.sourceName}</div>
-                                      <div>{tf("Qty", "\u6570\u91cf")}: {demandQty} / {allocatedQty} PCS</div>
-                                      <div>{tf("To", "\u5230")}: {order.destinationWarehouseName}</div>
+                                      <div className="flex items-center gap-1">
+                                        <Building className="h-3 w-3" />
+                                        <span>{order.sourceWarehouseName || order.sourceName}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        <span>{order.destinationWarehouseName}</span>
+                                      </div>
+                                      <div className="text-xs">
+                                        {tf("Qty", "\u6570\u91cf")}: {transferredQty}/{totalQty} PCS
+                                      </div>
                                     </div>
                                   </div>
                                 )
@@ -2325,11 +2449,11 @@ export default function PODetailPage() {
                             {!selectedAllocationOrder && missingFgWarehouse && (
                               <div className="flex min-h-[320px] items-center justify-center p-6">
                                 <div className="max-w-md text-center space-y-2">
-                                  <div className="text-sm font-medium">{tf("No allocation orders yet", "暂无分配单")}</div>
+                                  <div className="text-sm font-medium">{tf("No transfer orders yet", "暂无调拨单")}</div>
                                   <div className="text-sm text-muted-foreground">
                                     {tf(
-                                      "No supply allocation orders yet. They will appear here after vendor allocation is completed.",
-                                      "当前尚未分配 Vendor，完成分配后会在这里生成 Supply Allocation Order。"
+                                      "No transfer orders yet. They will appear here after the transfer setup is completed.",
+                                      "当前还没有生成调拨单，完成来源/目标配置后会在这里显示。"
                                     )}
                                   </div>
                                 </div>
@@ -2338,185 +2462,66 @@ export default function PODetailPage() {
                             {selectedAllocationOrder && (() => {
                               const order = poData.supplyAllocationOrders.find(item => item.id === selectedAllocationOrder)
                               if (!order) return null
-                              const demandQty = order.lines.reduce((sum, line) => sum + line.quantity, 0)
-                              const allocatedQty = order.lines.reduce((sum, line) => sum + line.allocatedQty, 0)
-                              const remainingQty = demandQty - allocatedQty
-                              const allocationRate = demandQty > 0 ? allocatedQty / demandQty : 0
-                              const relatedReceipts = poData.receiptRecords.filter((receipt) => receipt.sourceAllocationNo === order.allocationNo)
-                              const routeTypeLabel = order.routeType === "VIA_FG" ? tf("Via FG warehouse", "经成品仓") : tf("Direct", "直发")
-                              const routePath = order.routeType === "VIA_FG"
-                                ? [order.sourceWarehouseName, order.intermediateWarehouseName, order.destinationWarehouseName].filter(Boolean).join(" -> ")
-                                : [order.sourceWarehouseName, order.destinationWarehouseName].filter(Boolean).join(" -> ")
-                              const isAllocated = order.status === "ALLOCATED"
+
+                              const pushStatusMap: Record<VendorRnStatus, TransferOrder["pushStatus"]> = {
+                                NO_RN: "NONE",
+                                RN_CREATED: "CREATED",
+                                PUSH_FAILED: "PUSH_FAILED",
+                                WAITING_ACCEPT: "WAITING_ACCEPT",
+                                REJECTED: "REJECTED",
+                                ACCEPTED: "ACCEPTED",
+                                RN_CANCELLED: "CANCELLED",
+                              }
+
+                              const transferStatusMap: Record<string, TransferOrder["status"]> = {
+                                PENDING_ALLOCATION: "DRAFT",
+                                ALLOCATED: "ALLOCATED",
+                                RELEASED: "IN_TRANSIT",
+                                VOIDED: "VOIDED",
+                              }
+
                               const vendorRnStatus = (order.vendorRnStatus || (order.vendorReceiptNo ? "RN_CREATED" : "NO_RN")) as VendorRnStatus
-                              const canRetryVendorRn = ["PUSH_FAILED", "WAITING_ACCEPT", "REJECTED", "RN_CREATED"].includes(vendorRnStatus)
-                              const canCancelVendorRn = ["PUSH_FAILED", "WAITING_ACCEPT", "REJECTED", "RN_CREATED"].includes(vendorRnStatus)
-                              const canCreateVendorRn = ["NO_RN", "RN_CANCELLED"].includes(vendorRnStatus)
-                              const vendorRnStatusMeta = {
-                                NO_RN: { label: tf("No RN", "\u672a\u521b\u5efa RN"), className: "border-gray-200 bg-gray-50 text-gray-700", tone: "idle" },
-                                RN_CREATED: { label: tf("RN Created", "RN \u5df2\u521b\u5efa"), className: "border-blue-200 bg-blue-50 text-blue-700", tone: "ready" },
-                                PUSH_FAILED: { label: tf("Kafka Failed", "Kafka \u5931\u8d25"), className: "border-red-200 bg-red-50 text-red-700", tone: "error" },
-                                WAITING_ACCEPT: { label: tf("Waiting Accept", "\u7b49\u5f85\u63a5\u6536"), className: "border-amber-200 bg-amber-50 text-amber-700", tone: "waiting" },
-                                REJECTED: { label: tf("Rejected", "\u5df2\u62d2\u6536"), className: "border-red-200 bg-red-50 text-red-700", tone: "error" },
-                                ACCEPTED: { label: tf("Accepted", "\u5df2\u63a5\u6536"), className: "border-green-200 bg-green-50 text-green-700", tone: "success" },
-                                RN_CANCELLED: { label: tf("RN Cancelled", "RN \u5df2\u53d6\u6d88"), className: "border-gray-300 bg-gray-100 text-gray-700", tone: "cancelled" },
-                              }[vendorRnStatus]
-                              const vendorRnNodeDone = ["RN_CREATED", "WAITING_ACCEPT", "ACCEPTED"].includes(vendorRnStatus)
-                              const vendorRnNodeError = ["PUSH_FAILED", "REJECTED"].includes(vendorRnStatus)
-                              const statusMeta = {
-                                PENDING_ALLOCATION: { label: tf("Pending Allocation", "\u5f85\u5206\u914d"), className: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" },
-                                ALLOCATED: { label: tf("Allocated", "\u5df2\u5206\u914d"), className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
-                                RELEASED: { label: tf("Released", "\u5df2\u53d1\u9001"), className: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
-                                VOIDED: { label: tf("Voided", "\u5df2\u4f5c\u5e9f"), className: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400" },
-                              }[order.status as "PENDING_ALLOCATION" | "ALLOCATED" | "RELEASED" | "VOIDED"] || { label: order.status, className: "bg-gray-100 text-gray-800" }
+                              const transferOrder: TransferOrder = {
+                                id: order.id,
+                                transferNo: order.allocationNo || tf("PO Demand", "PO 需求"),
+                                status: transferStatusMap[order.status] || "DRAFT",
+                                fromWarehouseName: order.sourceWarehouseName || order.sourceName,
+                                fromWarehouseCode: order.sourceWarehouseCode || order.sourceCode,
+                                viaWarehouseName: order.intermediateWarehouseName,
+                                viaWarehouseCode: order.routeType === "VIA_FG" ? `VFG-${order.sourceCode.replace("FAC-", "")}` : undefined,
+                                toWarehouseName: order.destinationWarehouseName,
+                                toWarehouseCode: order.destinationWarehouseCode,
+                                sourceName: order.sourceName,
+                                sourceCode: order.sourceCode,
+                                lines: order.lines.map((line) => ({
+                                  lineNo: line.sourceLineNo,
+                                  skuCode: line.skuCode,
+                                  productName: line.productName,
+                                  plannedQty: line.quantity,
+                                  transferredQty: line.allocatedQty,
+                                  uom: line.uom,
+                                })),
+                                sourceInboundNo: order.vendorReceiptNo,
+                                outboundOrderNo: order.outboundOrderNo,
+                                targetInboundNo: order.finalReceiptNo,
+                                pushStatus: pushStatusMap[vendorRnStatus],
+                                pushError: order.vendorRnError,
+                                pushMessageId: order.vendorRnMessageId,
+                                lastPushedAt: order.vendorRnLastPushedAt,
+                                retryCount: order.vendorRnRetryCount,
+                                createdAt: poData.created,
+                                canRevise: order.canChangeVendor,
+                              }
 
                               return (
-                                <div className="p-6 space-y-6">
-                                  <div className="flex items-start justify-between pb-4 border-b">
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-3">
-                                        <h3 className="text-xl font-semibold font-mono">{order.allocationNo || tf("PO Demand", "PO \u9700\u6c42")}</h3>
-                                        <Badge className={statusMeta.className}>{statusMeta.label}</Badge>
-                                        <Badge variant="outline" className={cn("text-xs", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge>
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">{order.allocationName}</div>
-                                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                        <span>{tf("Source", "\u6765\u6e90")}: <span className="font-medium text-foreground">{order.sourceName}</span></span>
-                                        <span>{tf("Destination", "\u76ee\u6807\u4ed3")}: <span className="font-medium text-foreground">{order.destinationWarehouseName}</span></span>
-                                        <span>{tf("Route", "\u8def\u5f84")}: <span className="font-medium text-foreground">{routeTypeLabel}</span></span>
-                                        {order.outboundOrderNo && (
-                                          <span>{tf("Outbound / SO", "\u51fa\u5e93\u5355 / SO")}: <span className="font-mono text-foreground">{order.outboundOrderNo}</span></span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      {order.canChangeVendor && (
-                                        <Button variant="outline" size="sm" onClick={() => openReviseAllocationDialog(order)}>
-                                          <RefreshCw className="h-4 w-4 mr-2" />
-                                          {tf("Revise Allocation", "\u4fee\u8ba2\u5206\u914d")}
-                                        </Button>
-                                      )}
-                                      {canCreateVendorRn && (
-                                        <Button size="sm" onClick={() => handleCreateVendorRn(order)}>
-                                          <FilePlus className="h-4 w-4 mr-2" />
-                                          {tf("Create Vendor RN", "\u521b\u5efa Vendor RN")}
-                                        </Button>
-                                      )}
-                                      {canRetryVendorRn && (
-                                        <Button size="sm" onClick={() => handleRetryVendorRnPush(order)}>
-                                          <Send className="h-4 w-4 mr-2" />
-                                          {tf("Retry Push", "\u91cd\u63a8")}
-                                        </Button>
-                                      )}
-                                      {canCancelVendorRn && (
-                                        <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleCancelVendorRn(order)}>
-                                          <Ban className="h-4 w-4 mr-2" />
-                                          {tf("Cancel RN", "\u53d6\u6d88 RN")}
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-
-
-                                  <div className="rounded-lg border bg-muted/30 p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex flex-col items-center flex-1">
-                                        <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center"><CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /></div>
-                                        <div className="mt-2 text-center"><div className="text-sm font-medium">{tf("Target RN Created", "目标仓 RN 已创建")}</div><div className="text-xs text-muted-foreground">{order.finalReceiptNo || tf("Pending", "待处理")}</div></div>
-                                      </div>
-                                      <div className="flex-1 h-0.5 mx-2 bg-green-300 dark:bg-green-700" />
-                                      <div className="flex flex-col items-center flex-1">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/20"><CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /></div>
-                                        <div className="mt-2 text-center"><div className="text-sm font-medium">{tf("Vendor Assigned", "Vendor 已指派")}</div><div className="text-xs text-muted-foreground">{allocatedQty} PCS</div></div>
-                                      </div>
-                                      {order.routeType === "VIA_FG" && (
-                                        <>
-                                          <div className={cn("flex-1 h-0.5 mx-2", vendorRnNodeDone ? "bg-green-300 dark:bg-green-700" : vendorRnNodeError ? "bg-red-300 dark:bg-red-700" : "bg-gray-200 dark:bg-gray-700")} />
-                                          <div className="flex flex-col items-center flex-1">
-                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", vendorRnNodeDone ? "bg-green-100 dark:bg-green-900/20" : vendorRnNodeError ? "bg-red-100 dark:bg-red-900/20" : "bg-gray-100 dark:bg-gray-800")}>{vendorRnNodeDone ? <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /> : vendorRnNodeError ? <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" /> : <Package className="h-4 w-4 text-gray-400" />}</div>
-                                            <div className="mt-2 text-center"><div className={cn("text-sm font-medium", !vendorRnNodeDone && "text-muted-foreground")}>{tf("Vendor RN / FG Receipt", "Vendor RN / 成品仓入库")}</div><div className="text-xs text-muted-foreground">{order.vendorReceiptNo || vendorRnStatusMeta.label}</div></div>
-                                          </div>
-                                          <div className={cn("flex-1 h-0.5 mx-2", order.outboundOrderNo ? "bg-green-300 dark:bg-green-700" : "bg-gray-200 dark:bg-gray-700")} />
-                                          <div className="flex flex-col items-center flex-1">
-                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", order.outboundOrderNo ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800")}>{order.outboundOrderNo ? <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" /> : <Truck className="h-4 w-4 text-gray-400" />}</div>
-                                            <div className="mt-2 text-center"><div className={cn("text-sm font-medium", !order.outboundOrderNo && "text-muted-foreground")}>{tf("Outbound / SO", "出库单 / SO")}</div><div className="text-xs text-muted-foreground">{order.outboundOrderNo || tf("Pending", "待处理")}</div></div>
-                                          </div>
-                                        </>
-                                      )}
-                                      <div className="flex-1 h-0.5 mx-2 bg-gray-200 dark:bg-gray-700" />
-                                      <div className="flex flex-col items-center flex-1">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800"><MapPin className="h-4 w-4 text-gray-400" /></div>
-                                        <div className="mt-2 text-center"><div className="text-sm font-medium text-muted-foreground">{tf("Target Fulfillment", "目标仓履约")}</div><div className="text-xs text-muted-foreground">{remainingQty > 0 ? `${remainingQty} PCS ${tf("remaining", "剩余")}` : tf("Ready", "就绪")}</div></div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="rounded-md border overflow-hidden">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                          <TableHead>{tf("Line", "\u884c\u53f7")}</TableHead>
-                                          <TableHead>SKU</TableHead>
-                                          <TableHead>{tf("Product", "\u5546\u54c1")}</TableHead>
-                                          <TableHead className="text-right">{tf("PO Demand", "PO \u9700\u6c42")}</TableHead>
-                                          <TableHead className="text-right">{tf("Allocated Qty", "\u5df2\u5206\u914d\u6570")}</TableHead>
-                                          <TableHead className="text-right">{tf("Remaining Qty", "\u5269\u4f59\u6570\u91cf")}</TableHead>
-                                          <TableHead>{tf("UOM", "\u5355\u4f4d")}</TableHead>
-                                          <TableHead className="text-right">{tf("Allocation %", "\u5206\u914d\u6bd4\u4f8b")}</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>{order.lines.map((line) => {
-                                        const lineRemainingQty = line.quantity - line.allocatedQty
-                                        const lineAllocationPct = line.quantity > 0 ? line.allocatedQty / line.quantity : 0
-                                        return (
-                                          <TableRow key={line.sourceLineNo + '-' + line.skuCode}>
-                                            <TableCell>{line.sourceLineNo}</TableCell>
-                                            <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
-                                            <TableCell>{line.productName}</TableCell>
-                                            <TableCell className="text-right">{line.quantity}</TableCell>
-                                            <TableCell className="text-right font-medium">{line.allocatedQty}</TableCell>
-                                            <TableCell className={cn("text-right font-medium", lineRemainingQty > 0 && "text-orange-600")}>{lineRemainingQty}</TableCell>
-                                            <TableCell>{line.uom}</TableCell>
-                                            <TableCell className="text-right font-medium">{Math.round(lineAllocationPct * 100)}%</TableCell>
-                                          </TableRow>
-                                        )
-                                      })}</TableBody>
-                                    </Table>
-                                  </div>
-
-                                  <div className="grid gap-4 lg:grid-cols-2">
-                                    <Card>
-                                      <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Building className="h-4 w-4 text-cyan-600" />{tf("Vendor-side", "Vendor \u4fa7")}</CardTitle></CardHeader>
-                                      <CardContent className="space-y-2 text-xs">
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor", "Vendor")}:</span><span className="font-medium text-right">{order.sourceName}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Source Warehouse", "\u6765\u6e90\u4ed3")}:</span><span className="text-right">{order.sourceWarehouseName || "-"}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor FG Warehouse", "Vendor \u6210\u54c1\u4ed3")}:</span><span className="text-right">{order.intermediateWarehouseName || "-"}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Vendor RN", "Vendor RN")}:</span><span className="font-mono text-right">{order.vendorReceiptNo || "-"}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Push Status", "\u63a8\u9001\u72b6\u6001")}:</span><Badge variant="outline" className={cn("text-[10px]", vendorRnStatusMeta.className)}>{vendorRnStatusMeta.label}</Badge></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Last Push", "\u6700\u540e\u63a8\u9001")}:</span><span className="text-right">{order.vendorRnLastPushedAt ? new Date(order.vendorRnLastPushedAt).toLocaleString() : "-"}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Retry Count", "\u91cd\u8bd5\u6b21\u6570")}:</span><span className="font-medium text-right">{order.vendorRnRetryCount || 0}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Message ID", "\u6d88\u606f ID")}:</span><span className="font-mono text-right break-all">{order.vendorRnMessageId || "-"}</span></div>
-                                        {order.vendorRnError && (
-                                          <div className="rounded-md border border-red-200 bg-red-50 p-2 text-red-800">
-                                            <div className="font-medium">{tf("Push exception", "\u63a8\u9001\u5f02\u5e38")}</div>
-                                            <div className="mt-1">{order.vendorRnError}</div>
-                                          </div>
-                                        )}
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Outbound / SO", "\u51fa\u5e93\u5355 / SO")}:</span><span className="font-mono text-right">{order.outboundOrderNo || "-"}</span></div>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><MapPin className="h-4 w-4 text-green-600" />{tf("Target-side", "\u76ee\u6807\u4ed3\u4fa7")}</CardTitle></CardHeader>
-                                      <CardContent className="space-y-2 text-xs">
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Target RN", "\u76ee\u6807\u4ed3 RN")}:</span><span className="font-mono text-right">{order.finalReceiptNo || "-"}</span></div>
-                                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">{tf("Target Warehouse", "\u76ee\u6807\u4ed3")}:</span><span className="font-medium text-right">{order.destinationWarehouseName}</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Demand Qty", "\u9700\u6c42\u6570\u91cf")}:</span><span className="font-medium">{demandQty} PCS</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Allocated Qty", "\u5df2\u5206\u914d\u6570\u91cf")}:</span><span className="font-medium text-green-600">{allocatedQty} PCS</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">{tf("Remaining Qty", "\u5269\u4f59\u6570\u91cf")}:</span><span className={cn("font-medium", remainingQty > 0 && "text-orange-600")}>{remainingQty} PCS</span></div>
-                                      </CardContent>
-                                    </Card>
-                                  </div>
-                                </div>
+                                <TransferOrderDetail
+                                  order={transferOrder}
+                                  tf={tf}
+                                  onRevise={() => openReviseAllocationDialog(order)}
+                                  onCreateInbound={() => handleCreateVendorRn(order)}
+                                  onRetryPush={() => handleRetryVendorRnPush(order)}
+                                  onCancelInbound={() => handleCancelVendorRn(order)}
+                                />
                               )
                             })()}
                           </div>
@@ -3885,78 +3890,93 @@ export default function PODetailPage() {
           onSend={handleSendPO}
         />
 
+        {/* ─── Generic Create Transfer Order Dialog (通用调拨单创建弹窗) ─── */}
+        <CreateTransferOrderDialog
+          open={showCreateTransferDialog}
+          onOpenChange={setShowCreateTransferDialog}
+          mode="po"
+          tf={tf}
+          defaultTransferType="PURCHASE_INBOUND"
+          defaultTargetWarehouse={{
+            code: poData.warehouseCode,
+            name: poData.warehouseName || "Main Warehouse - Los Angeles",
+            type: "OWN",
+          }}
+          sourceDocument={{ type: "PO", no: poData.orderNo }}
+          demandLines={poData.unallocatedSupplyDemand.lines.map((line) => ({
+            sourceLineNo: line.sourceLineNo,
+            skuCode: line.skuCode,
+            productName: line.productName,
+            quantity: line.quantity,
+            allocatedQty: line.allocatedQty,
+            uom: line.uom,
+          }))}
+          onSubmit={(drafts) => {
+            // Bridge: convert generic drafts into the existing page logic
+            if (drafts.length === 0) return
+            // Trigger the existing allocation generation flow
+            openAllocateSupplyDialog()
+            toast.success(tf("Transfer order created", "调拨单已创建"), {
+              description: tf(`${drafts.length} transfer order(s) generated.`, `已生成 ${drafts.length} 张调拨单。`),
+            })
+          }}
+        />
+
         <Dialog open={showSupplyAllocationDialog} onOpenChange={setShowSupplyAllocationDialog}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
             <DialogHeader>
-              <DialogTitle>{tf("Allocate Supply", "\u5206\u914d\u4f9b\u5e94")}</DialogTitle>
+              <DialogTitle>{tf("Create Transfer Order", "\u521b\u5efa\u8c03\u62e8\u5355")}</DialogTitle>
               <DialogDescription>
-                {tf("Create vendor fulfillment from the PO demand. Keep the original allocation logic while editing in a cleaner single-column layout.", "\u4ece PO \u9700\u6c42\u521b\u5efa vendor \u5c65\u7ea6\uff0c\u5728\u66f4\u6e05\u6670\u7684\u5355\u5217\u5e03\u5c40\u4e2d\u4fdd\u7559\u539f\u6709\u5206\u914d\u903b\u8f91\u3002")}
+                {tf("Configure source warehouses and assign items to create transfer orders from PO demand.", "\u914d\u7f6e\u6e90\u4ed3\u5e93\u5e76\u5206\u914d\u5546\u54c1\uff0c\u4ece PO \u9700\u6c42\u521b\u5efa\u8c03\u62e8\u5355\u3002")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
+              {/* Summary bar */}
               <div className="grid gap-3 md:grid-cols-4">
                 <div className="rounded-lg border bg-muted/20 p-3">
                   <div className="text-xs text-muted-foreground">PO</div>
                   <div className="mt-1 font-mono font-medium">{poData.orderNo}</div>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
-                  <div className="text-xs text-muted-foreground">{tf("Unallocated qty", "\u672a\u5206\u914d\u6570\u91cf")}</div>
+                  <div className="text-xs text-muted-foreground">{tf("Pending transfer qty", "\u5f85\u8c03\u62e8\u6570\u91cf")}</div>
                   <div className="mt-1 font-medium">{unallocatedSupplyQty} PCS</div>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
-                  <div className="text-xs text-muted-foreground">{tf("Target", "\u76ee\u6807\u4ed3")}</div>
-                  <div className="mt-1 font-medium">{poData.unallocatedSupplyDemand.destinationWarehouseCode}</div>
+                  <div className="text-xs text-muted-foreground">{tf("Target Warehouse", "\u76ee\u6807\u4ed3")}</div>
+                  <div className="mt-1 font-medium">{poData.warehouseCode}</div>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
-                  <div className="text-xs text-muted-foreground">{tf("Assigned total", "\u5f53\u524d\u5df2\u5206\u914d")}</div>
+                  <div className="text-xs text-muted-foreground">{tf("Configured qty", "\u5df2\u914d\u7f6e\u6570\u91cf")}</div>
                   <div className="mt-1 font-medium">{getActiveTotal(allocationDrafts)} PCS</div>
                 </div>
               </div>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">{tf("Generation strategy", "\u751f\u6210\u7b56\u7565")}</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>{tf("Vendor PO", "Vendor PO")}</Label>
-                    <Select defaultValue="PER_VENDOR"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PER_VENDOR">{tf("One vendor PO per vendor", "\u6bcf\u4e2a vendor \u4e00\u5f20 PO")}</SelectItem><SelectItem value="CONSOLIDATED">{tf("One execution PO", "\u5408\u5e76\u4e00\u5f20\u6267\u884c PO")}</SelectItem></SelectContent></Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{tf("Sales Order", "SO")}</Label>
-                    <Select defaultValue="BY_VENDOR_PO"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="BY_VENDOR_PO">{tf("Create SO by vendor PO", "\u6309 vendor PO \u521b\u5efa SO")}</SelectItem><SelectItem value="BY_MASTER_PO">{tf("Create one SO by master PO", "\u6309\u6574\u5f20\u4e3b PO \u521b\u5efa\u4e00\u5f20 SO")}</SelectItem></SelectContent></Select>
-                  </div>
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 md:col-span-2">
-                    {tf("The SO strategy is global for the whole allocation result. Every vendor follows the same strategy.", "SO \u7b56\u7565\u662f\u6574\u6b21\u5206\u914d\u7684\u5168\u5c40\u7b56\u7565\uff0c\u6240\u6709 vendor \u5fc5\u987b\u9075\u4ece\u540c\u4e00\u5957\u89c4\u5219\u3002")}
-                  </div>
-                </CardContent>
-              </Card>
-
+              {/* Transfer source cards */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold">{tf("Allocate vendors", "\u5206\u914d\u4f9b\u5e94\u5546")}</h3>
-                    <p className="text-xs text-muted-foreground">{tf("Add a vendor draft first, then use Add Items to assign lines and quantities.", "\u5148\u65b0\u589e vendor draft\uff0c\u518d\u901a\u8fc7\u201c\u6dfb\u52a0\u5546\u54c1\u201d\u5206\u914d\u5546\u54c1\u884c\u548c\u6570\u91cf\u3002")}</p>
+                    <h3 className="text-sm font-semibold">{tf("Transfer Sources", "\u8c03\u62e8\u6765\u6e90")}</h3>
+                    <p className="text-xs text-muted-foreground">{tf("Each source creates one transfer order. Select warehouse and assign items with quantities.", "\u6bcf\u4e2a\u6765\u6e90\u751f\u6210\u4e00\u5f20\u8c03\u62e8\u5355\u3002\u9009\u62e9\u4ed3\u5e93\u5e76\u5206\u914d\u5546\u54c1\u6570\u91cf\u3002")}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => addVendorDraft("allocate")}><Plus className="mr-2 h-4 w-4" />{tf("Add Vendor", "\u6dfb\u52a0 Vendor")}</Button>
+                  <Button size="sm" variant="outline" onClick={() => addVendorDraft("allocate")}><Plus className="mr-2 h-4 w-4" />{tf("Add Source", "\u6dfb\u52a0\u6765\u6e90")}</Button>
                 </div>
 
                 {renderDraftCards("allocate")}
               </div>
             </div>
-            <DialogFooter><Button variant="outline" onClick={() => setShowSupplyAllocationDialog(false)}>{tf("Cancel", "\u53d6\u6d88")}</Button><Button onClick={handleGenerateAllocation}>{tf("Generate Vendor PO / SO", "\u751f\u6210 Vendor PO / SO")}</Button></DialogFooter>
+            <DialogFooter><Button variant="outline" onClick={() => setShowSupplyAllocationDialog(false)}>{tf("Cancel", "\u53d6\u6d88")}</Button><Button onClick={handleGenerateAllocation}>{tf("Generate Transfer Order", "\u751f\u6210\u8c03\u62e8\u5355")}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showChangeVendorDialog} onOpenChange={setShowChangeVendorDialog}>
           <DialogContent className="max-h-[90vh] max-w-6xl overflow-auto">
             <DialogHeader>
-              <DialogTitle>{tf("Revise Allocation", "修订分配")}</DialogTitle>
+              <DialogTitle>{tf("Revise Transfer", "调整调拨")}</DialogTitle>
               <DialogDescription>
                 {tf(
-                  "Review affected documents first, then rebuild the vendor fulfillment plan.",
-                  "先检查受影响单据，再重建 vendor 履约方案。"
+                  "Review affected documents first, then rebuild the transfer execution plan.",
+                  "先检查受影响单据，再重建调拨执行方案。"
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -3967,7 +3987,7 @@ export default function PODetailPage() {
                   <div>
                     <div className="text-sm font-semibold">{tf("Affected documents", "受影响单据")}</div>
                     <div className="mt-2 grid gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-                      <span>{tf("Vendor PO", "Vendor PO")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.allocationNo?.replace("SAO", "VPO") || "-"}</span></span>
+                      <span>{tf("Transfer Order", "调拨单")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.allocationNo || "-"}</span></span>
                       <span>{tf("Vendor RN", "Vendor RN")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.vendorReceiptNo || "-"}</span></span>
                       <span>{tf("Outbound / SO", "出库单 / SO")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.outboundOrderNo || "-"}</span></span>
                       <span>{tf("Target RN", "目标仓 RN")}: <span className="font-mono text-foreground">{selectedSupplyAllocation?.finalReceiptNo || "-"}</span></span>
@@ -3977,8 +3997,8 @@ export default function PODetailPage() {
                 </div>
                 <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
                   {tf(
-                    "Saving will cancel the old vendor document chain first, then generate the revised vendor PO / SO chain.",
-                    "保存时会先取消旧 vendor 单据链路，再生成修订后的 vendor PO / SO 链路。"
+                    "Saving will cancel the old execution chain first, then generate the revised transfer execution chain.",
+                    "保存时会先取消旧执行链路，再生成修订后的调拨执行链路。"
                   )}
                 </div>
               </div>
@@ -3987,17 +4007,17 @@ export default function PODetailPage() {
                 <CardHeader className="border-b bg-muted/20">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <CardTitle className="text-base">{tf("Vendor fulfillment plans", "Vendor 履约方案")}</CardTitle>
+                      <CardTitle className="text-base">{tf("Transfer execution plans", "调拨执行方案")}</CardTitle>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {tf(
-                          "Add vendors first, configure each fulfillment route, then assign items and quantities inside each vendor block.",
-                          "先添加 vendor，再配置每个 vendor 的履约路径，最后在对应 vendor block 内分配商品和数量。"
+                          "Add source parties first, configure each transfer route, then assign items and quantities inside each source block.",
+                          "先添加发货方，再配置每条调拨路径，最后在对应 block 内分配商品和数量。"
                         )}
                       </p>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => addVendorDraft("revise")}>
                       <Plus className="mr-2 h-4 w-4" />
-                      {tf("Add Vendor", "添加 Vendor")}
+                      {tf("Add Source", "添加发货方")}
                     </Button>
                   </div>
                 </CardHeader>
@@ -4008,7 +4028,7 @@ export default function PODetailPage() {
                     </>
                   ) : (
                     <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                      {tf("Add a vendor to start rebuilding the fulfillment plan.", "添加一个 vendor，开始重建履约方案。")}
+                      {tf("Add a source party to start rebuilding the transfer execution plan.", "添加一个发货方，开始重建调拨执行方案。")}
                     </div>
                   )}
                 </CardContent>
@@ -4019,15 +4039,15 @@ export default function PODetailPage() {
               <Button variant="outline" onClick={() => setShowChangeVendorDialog(false)}>{tf("Cancel", "取消")}</Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button>{tf("Save changes", "保存修改")}</Button>
+                  <Button>{tf("Save transfer changes", "保存调拨调整")}</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{tf("Confirm vendor replacement", "确认替换 vendor")}</AlertDialogTitle>
+                    <AlertDialogTitle>{tf("Confirm source change", "确认切换发货方")}</AlertDialogTitle>
                     <AlertDialogDescription>
                       {revisionDrafts[0]?.sourceCode !== selectedSupplyAllocation?.sourceCode
-                        ? tf("Changing vendor will cancel the old documents first, then generate the new vendor PO / SO. Continue?", "替换 vendor 后，会先取消原单据，再生成新的 vendor PO / SO。是否继续？")
-                        : tf("This will save the updated quantities for the current vendor plan. Continue?", "将保存当前 vendor 方案中的数量变更。是否继续？")}
+                        ? tf("Changing the source party will cancel the old execution chain first, then generate the new transfer execution chain. Continue?", "切换发货方后，会先取消原执行链路，再生成新的调拨执行链路。是否继续？")
+                        : tf("This will save the updated quantities for the current transfer plan. Continue?", "将保存当前调拨方案中的数量变更。是否继续？")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -4043,11 +4063,11 @@ export default function PODetailPage() {
         <Dialog open={showAllocationItemDialog} onOpenChange={setShowAllocationItemDialog}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>{tf("Assign Items", "分配商品")}</DialogTitle>
+              <DialogTitle>{tf("Assign Transfer Lines", "分配调拨明细")}</DialogTitle>
               <DialogDescription>
                 {activeEditingDraft
-                  ? tf("Select PO lines and enter the quantity this vendor will fulfill.", "选择 PO 行，并输入当前 vendor 要承接的数量。")
-                  : tf("Choose a vendor first.", "请先选择一个 vendor。")}
+                  ? tf("Select PO lines and enter the quantity this source party will execute.", "选择 PO 行，并输入当前发货方要执行的调拨数量。")
+                  : tf("Choose a source party first.", "请先选择一个发货方。")}
               </DialogDescription>
             </DialogHeader>
 
@@ -4071,8 +4091,8 @@ export default function PODetailPage() {
                         <TableHead>SKU</TableHead>
                         <TableHead>{tf("Product", "商品")}</TableHead>
                         <TableHead className="text-right">{tf("Demand Qty", "需求数量")}</TableHead>
-                        <TableHead className="text-right">{tf("Allocated by all vendors", "全部 vendor 已分配")}</TableHead>
-                        <TableHead className="w-36 text-right">{tf("This vendor", "当前 vendor")}</TableHead>
+                        <TableHead className="text-right">{tf("Allocated by all sources", "全部发货方已分配")}</TableHead>
+                        <TableHead className="w-36 text-right">{tf("This source", "当前发货方")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

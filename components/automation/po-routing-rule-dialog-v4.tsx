@@ -324,6 +324,25 @@ export function PORoutingRuleDialogV4({ open, onOpenChange, rule, onSave, locale
                                 </div>
                             )}
 
+                            {ruleType === "PO_ROUTING" && (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+                                        <div className="text-sm">
+                                            <p className="font-medium text-amber-900">
+                                                {t("Rule-first PO orchestration", "采购路由采用规则优先模式")}
+                                            </p>
+                                            <p className="mt-1 leading-6 text-amber-800/90">
+                                                {t(
+                                                    "Vendor resolution, RN grouping, push target, and warehouse-change behavior should be configured inside rules. Global settings are kept only for true fallback defaults.",
+                                                    "Vendor 指定、RN 分组、推送目标、换仓策略都应配置在规则中；全局设置只保留真正的兜底默认项。"
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* IF-THEN Layout */}
                             <div className="space-y-6">
                                 {/* IF: Conditions */}

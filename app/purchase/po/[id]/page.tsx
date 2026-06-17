@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { POSendDialog } from "@/components/purchase/po-send-dialog"
+import { POEditDialog, type VendorOption, type VendorPOData } from "@/components/purchase/po-edit-dialog"
 import { FileText, ShoppingCart, Truck, Package, CheckCircle, ArrowLeft, Edit, Send, Download, Eye, Copy, AlertCircle, Calendar, Building, User, MapPin, Clock, TrendingUp, RefreshCw, ExternalLink, Phone, Mail } from "lucide-react"
 import { useI18n } from "@/components/i18n-provider"
 import { useRouter } from "next/navigation"
@@ -26,6 +27,8 @@ const mockPODetail = {
   shippingStatus: "SHIPMENT_CREATED",
   receivingStatus: "PARTIALLY_RECEIVED",
   dataSource: "PR_CONVERSION",
+  purchaseType: "FACTORY_DIRECT",
+  factoryFulfillmentStatus: "PARTIALLY_RELEASED",
   
   // Basic Info
   supplierName: "ABC Suppliers Inc.",
@@ -57,6 +60,50 @@ const mockPODetail = {
   
   // Related PRs
   relatedPRs: ["PR202401100001", "PR202401100002"],
+
+  childVendorPOs: [
+    {
+      id: "vpo-1",
+      vendorPoNo: "VPO202403150001-01",
+      vendorName: "Shenzhen Smart Factory",
+      vendorCode: "FAC001",
+      status: "SENT",
+      sendStatus: "SENT",
+      routeType: "VIA_FG",
+      shipFromWarehouseName: "Shenzhen Factory Dock A",
+      finishedGoodsWarehouseName: "Shenzhen Vendor FG Warehouse",
+      targetWarehouseName: "Main Warehouse - Los Angeles",
+      masterReceiptNo: "RN-PO202403150001",
+      canReconfigure: false,
+      shipFromAddress: "No. 18 Bao'an Industrial Road, Shenzhen, Guangdong",
+      shipToAddress: "1234 Warehouse St, Los Angeles, CA 90001",
+      expectedShipDate: "2024-01-18",
+      lines: [
+        { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", quantity: 60, uom: "PCS" },
+        { sourceLineNo: 2, skuCode: "SKU002", productName: "MacBook Pro", quantity: 50, uom: "PCS" },
+      ],
+    },
+    {
+      id: "vpo-2",
+      vendorPoNo: "VPO202403150001-02",
+      vendorName: "Dongguan Precision Works",
+      vendorCode: "FAC002",
+      status: "DRAFT",
+      sendStatus: "DRAFT",
+      routeType: "DIRECT",
+      shipFromWarehouseName: "Dongguan Main Shipping Dock",
+      finishedGoodsWarehouseName: "",
+      targetWarehouseName: "Main Warehouse - Los Angeles",
+      masterReceiptNo: "RN-PO202403150001",
+      canReconfigure: true,
+      shipFromAddress: "88 Chang'an Manufacturing Ave, Dongguan, Guangdong",
+      shipToAddress: "1234 Warehouse St, Los Angeles, CA 90001",
+      expectedShipDate: "2024-01-20",
+      lines: [
+        { sourceLineNo: 1, skuCode: "SKU001", productName: "iPhone 15 Pro", quantity: 40, uom: "PCS" },
+      ],
+    },
+  ],
   
   // Email tracking
   sentToSupplier: true,
@@ -272,6 +319,50 @@ export default function PODetailPage({ params }: PODetailPageProps) {
   const [isLoading, setIsLoading] = React.useState(false)
   const [refreshKey, setRefreshKey] = React.useState(0)
   const [showSendDialog, setShowSendDialog] = React.useState(false)
+  const [childVendorPOs, setChildVendorPOs] = React.useState(mockPODetail.childVendorPOs)
+  const [editingVendorPO, setEditingVendorPO] = React.useState<VendorPOData | null>(null)
+
+  const vendorOptions = React.useMemo<VendorOption[]>(() => {
+    const currentVendors = childVendorPOs.map((childPO) => ({
+      code: childPO.vendorCode,
+      name: childPO.vendorName,
+    }))
+
+    return [
+      ...currentVendors,
+      { code: "FAC003", name: "Guangzhou Prime Manufacturing" },
+      { code: "FAC004", name: "Ningbo Global Components" },
+    ].filter((vendor, index, array) => array.findIndex((item) => item.code === vendor.code) === index)
+  }, [])
+
+  const handleOpenVendorEdit = React.useCallback((childPO: typeof mockPODetail.childVendorPOs[number]) => {
+    setEditingVendorPO({
+      id: childPO.id,
+      vendorPoNo: childPO.vendorPoNo,
+      vendorName: childPO.vendorName,
+      vendorCode: childPO.vendorCode,
+      status: childPO.status,
+      routeType: childPO.routeType,
+      shipFromWarehouseName: childPO.shipFromWarehouseName,
+      targetWarehouseName: childPO.targetWarehouseName,
+      masterReceiptNo: childPO.masterReceiptNo,
+      lines: childPO.lines.map((line) => ({ ...line })),
+    })
+  }, [])
+
+  const handleSaveVendorPO = React.useCallback((updatedVendorPO: VendorPOData) => {
+    setChildVendorPOs((prev) => prev.map((childPO) => (
+      childPO.id === updatedVendorPO.id
+        ? {
+            ...childPO,
+            vendorCode: updatedVendorPO.vendorCode,
+            vendorName: updatedVendorPO.vendorName,
+            lines: updatedVendorPO.lines.map((line) => ({ ...line })),
+          }
+        : childPO
+    )))
+    setEditingVendorPO(null)
+  }, [])
 
   // 刷新数据
   const handleRefresh = React.useCallback(() => {
@@ -296,6 +387,10 @@ export default function PODetailPage({ params }: PODetailPageProps) {
     const completedLines = mockPODetail.lineItems.filter(item => item.receivedQty >= item.quantity).length
     const receivingProgress = mockPODetail.totalOrderQty > 0 ? (mockPODetail.receivedQty / mockPODetail.totalOrderQty) * 100 : 0
     const shippingProgress = mockPODetail.totalOrderQty > 0 ? (mockPODetail.shippedQty / mockPODetail.totalOrderQty) * 100 : 0
+    const vendorPOQty = childVendorPOs.reduce((sum, childPO) =>
+      sum + childPO.lines.reduce((lineSum, line) => lineSum + line.quantity, 0), 0)
+    const sentVendorPOs = childVendorPOs.filter(childPO => childPO.status === "SENT").length
+    const pendingVendorPOs = childVendorPOs.filter(childPO => childPO.status !== "SENT").length
     
     return {
       totalLines,
@@ -303,7 +398,11 @@ export default function PODetailPage({ params }: PODetailPageProps) {
       receivingProgress,
       shippingProgress,
       pendingQty: mockPODetail.totalOrderQty - mockPODetail.receivedQty,
-      averageUnitPrice: mockPODetail.totalAmount / mockPODetail.totalOrderQty
+      averageUnitPrice: mockPODetail.totalAmount / mockPODetail.totalOrderQty,
+      vendorPOQty,
+      vendorRemainingQty: Math.max(0, mockPODetail.totalOrderQty - vendorPOQty),
+      pendingVendorPOs,
+      sentVendorPOs,
     }
   }, [refreshKey])
 
@@ -391,6 +490,11 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                         <Badge className={statusConfig[mockPODetail.status as keyof typeof statusConfig].color}>
                           {statusConfig[mockPODetail.status as keyof typeof statusConfig].label}
                         </Badge>
+                        {mockPODetail.purchaseType === "FACTORY_DIRECT" && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            工厂直发
+                          </Badge>
+                        )}
                         
                         {/* 发货状态 - 只有当有值时才显示 */}
                         {mockPODetail.shippingStatus && (
@@ -742,8 +846,14 @@ export default function PODetailPage({ params }: PODetailPageProps) {
           <div className="space-y-4">
             {/* 标签页 */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="lines">商品明细</TabsTrigger>
+                  <TabsTrigger value="child-pos">
+                    工厂履约
+                    <Badge variant="secondary" className="ml-2">
+                      {childVendorPOs.length}
+                    </Badge>
+                  </TabsTrigger>
                   <TabsTrigger value="shipments">发货记录</TabsTrigger>
                   <TabsTrigger value="receipts">收货记录</TabsTrigger>
                   <TabsTrigger value="rtv">退货记录</TabsTrigger>
@@ -976,6 +1086,93 @@ export default function PODetailPage({ params }: PODetailPageProps) {
                 </TabsContent>
 
                 {/* 发货记录 */}
+                <TabsContent value="child-pos" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <CardTitle className="text-lg">{"\u5de5\u5382\u76f4\u53d1\u5c65\u7ea6 / Vendor PO"}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{"\u4e3b PO \u8d1f\u8d23\u7f8e\u56fd\u4ed3\u603b\u5165\u5e93\uff0cVendor PO \u6309 vendor \u7ba1\u7406\u53d1\u9001\u3001\u4f5c\u5e9f\u3001\u91cd\u914d\u548c\u4fee\u8ba2\u3002"}</p>
+                        </div>
+                        <Button size="sm"><Send className="mr-2 h-4 w-4" />{"\u53d1\u9001\u5f85\u5904\u7406 Vendor PO"}</Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-3 md:grid-cols-4">
+                        <div className="rounded-md border bg-muted/30 p-3"><div className="text-xs text-muted-foreground">Vendor PO</div><div className="mt-1 text-lg font-semibold">{childVendorPOs.length}</div></div>
+                        <div className="rounded-md border bg-muted/30 p-3"><div className="text-xs text-muted-foreground">{"\u5df2\u53d1\u9001"}</div><div className="mt-1 text-lg font-semibold text-green-600">{summaryData.sentVendorPOs}</div></div>
+                        <div className="rounded-md border bg-muted/30 p-3"><div className="text-xs text-muted-foreground">{"\u5f85\u5904\u7406"}</div><div className="mt-1 text-lg font-semibold text-blue-600">{summaryData.pendingVendorPOs}</div></div>
+                        <div className="rounded-md border bg-muted/30 p-3"><div className="text-xs text-muted-foreground">{"\u672a\u5206\u914d\u6570\u91cf"}</div><div className="mt-1 text-lg font-semibold">{summaryData.vendorRemainingQty}</div></div>
+                      </div>
+
+                      <div className="rounded-md border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead>Vendor PO</TableHead>
+                              <TableHead>Vendor</TableHead>
+                              <TableHead>{"\u72b6\u6001"}</TableHead>
+                              <TableHead>{"\u5c65\u7ea6\u8def\u5f84"}</TableHead>
+                              <TableHead>{"\u53d1\u8d27\u4ed3"}</TableHead>
+                              <TableHead>{"\u76ee\u6807\u5165\u5e93\u4ed3"}</TableHead>
+                              <TableHead className="text-right">{"\u6570\u91cf"}</TableHead>
+                              <TableHead>{"\u4e3b\u5165\u5e93\u5355"}</TableHead>
+                              <TableHead className="text-right">{"\u64cd\u4f5c"}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {childVendorPOs.map((childPO) => {
+                              const totalQty = childPO.lines.reduce((sum, line) => sum + line.quantity, 0)
+                              const statusConfig = {
+                                SENT: { label: "\u5df2\u53d1\u9001", className: "bg-green-50 text-green-700 border-green-200" },
+                                DRAFT: { label: "\u5f85\u914d\u7f6e", className: "bg-blue-50 text-blue-700 border-blue-200" },
+                                READY_TO_SEND: { label: "\u5f85\u53d1\u9001", className: "bg-blue-50 text-blue-700 border-blue-200" },
+                                VOIDED: { label: "\u5df2\u4f5c\u5e9f", className: "bg-red-50 text-red-700 border-red-200" },
+                              }
+                              const currentStatus = statusConfig[childPO.status as keyof typeof statusConfig] || { label: childPO.status, className: "" }
+                              const canReconfigure = childPO.status === "DRAFT" || childPO.status === "READY_TO_SEND"
+                              const canVoid = childPO.status === "DRAFT" || childPO.status === "READY_TO_SEND"
+                              const canSend = childPO.status !== "SENT" && childPO.status !== "VOIDED"
+
+                              return (
+                                <TableRow key={childPO.id}>
+                                  <TableCell>
+                                    <div className="font-mono text-sm font-medium">{childPO.vendorPoNo}</div>
+                                    <div className="mt-1 text-xs text-muted-foreground">{childPO.lines.length} {"\u884c"}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-sm font-medium">{childPO.vendorName}</div>
+                                    <div className="text-xs text-muted-foreground">{childPO.vendorCode}</div>
+                                  </TableCell>
+                                  <TableCell><Badge variant="outline" className={currentStatus.className}>{currentStatus.label}</Badge></TableCell>
+                                  <TableCell><Badge variant="secondary">{childPO.routeType === "VIA_FG" ? "\u7ecf\u6210\u54c1\u4ed3" : "\u76f4\u53d1\u76ee\u6807\u4ed3"}</Badge></TableCell>
+                                  <TableCell><div className="text-sm">{childPO.shipFromWarehouseName}</div><div className="text-xs text-muted-foreground line-clamp-1">{childPO.shipFromAddress}</div></TableCell>
+                                  <TableCell><div className="text-sm">{childPO.targetWarehouseName}</div><div className="text-xs text-muted-foreground line-clamp-1">{childPO.shipToAddress}</div></TableCell>
+                                  <TableCell className="text-right"><div className="font-medium">{totalQty}</div><div className="text-xs text-muted-foreground">PCS</div></TableCell>
+                                  <TableCell className="font-mono text-xs">{childPO.masterReceiptNo}</TableCell>
+                                  <TableCell>
+                                    <div className="flex justify-end gap-1">
+                                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                                      {canReconfigure && (
+                                        <Button variant="ghost" size="sm" onClick={() => handleOpenVendorEdit(childPO)}>
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {canVoid && <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700"><AlertCircle className="h-4 w-4" /></Button>}
+                                      {canSend && <Button variant="ghost" size="sm"><Send className="h-4 w-4" /></Button>}
+                                      {childPO.status === "SENT" && <Button variant="ghost" size="sm"><RefreshCw className="h-4 w-4" /></Button>}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
                 <TabsContent value="shipments" className="mt-4">
                   <Card>
                     <CardHeader>
@@ -1423,6 +1620,20 @@ export default function PODetailPage({ params }: PODetailPageProps) {
           }}
           onSend={handleSendPO}
         />
+
+        {editingVendorPO && (
+          <POEditDialog
+            open={!!editingVendorPO}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditingVendorPO(null)
+              }
+            }}
+            poData={editingVendorPO}
+            vendorOptions={vendorOptions}
+            onSave={handleSaveVendorPO}
+          />
+        )}
       </MainLayout>
     </TooltipProvider>
   )

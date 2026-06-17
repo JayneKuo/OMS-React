@@ -74,6 +74,7 @@ export const translations = {
     // 采购子模块
     purchaseRequest: '采购申请',
     purchaseOrder: '采购订单',
+    transferOrder: '调拨单',
     advanceShipNotice: '运单跟踪',
     receipts: '仓库收货',
     receiptConfirm: '收货确认',
@@ -1842,6 +1843,7 @@ export const translations = {
     // Purchase sub-modules
     purchaseRequest: 'Purchase Request',
     purchaseOrder: 'Purchase Order',
+    transferOrder: 'Transfer Order',
     advanceShipNotice: 'Shipment Tracking',
     receipts: 'Warehouse Receipt',
     receiptConfirm: 'Receipt Confirmation',

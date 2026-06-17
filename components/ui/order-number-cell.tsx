@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Copy, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Check, Copy } from "lucide-react"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface OrderNumberCellProps {
@@ -15,22 +15,27 @@ interface OrderNumberCellProps {
 export function OrderNumberCell({ orderNumber, onClick, className }: OrderNumberCellProps) {
   const [copied, setCopied] = React.useState(false)
 
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleCopy = async (event: React.MouseEvent) => {
+    event.stopPropagation()
     try {
       await navigator.clipboard.writeText(orderNumber)
       setCopied(true)
-      toast.success("已复制", { description: `${orderNumber} 已复制到剪贴板` })
+      toast.success("Copied", { description: `${orderNumber} copied to clipboard` })
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      toast.error("复制失败", { description: "无法复制到剪贴板" })
+    } catch {
+      toast.error("Copy failed", { description: "Unable to copy to clipboard" })
     }
   }
 
   return (
-    <div className={cn("flex items-center gap-2 group", className)}>
-      <span 
-        className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
+    <div className={cn("group flex items-center gap-2", className)}>
+      <span
+        className={cn(
+          "font-medium transition-colors",
+          onClick
+            ? "cursor-pointer text-primary hover:text-primary/80 hover:underline"
+            : "text-foreground"
+        )}
         onClick={onClick}
       >
         {orderNumber}
@@ -38,14 +43,11 @@ export function OrderNumberCell({ orderNumber, onClick, className }: OrderNumber
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
         onClick={handleCopy}
+        aria-label={`Copy ${orderNumber}`}
       >
-        {copied ? (
-          <Check className="h-3 w-3 text-success" />
-        ) : (
-          <Copy className="h-3 w-3 text-muted-foreground hover:text-primary" />
-        )}
+        {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
       </Button>
     </div>
   )

@@ -161,13 +161,13 @@ export function OrderExpandedRow({ order }: OrderExpandedRowProps) {
                       </TooltipProvider>
                     </TableCell>
                     <TableCell className="py-2 font-mono">
-                      {item.omsSku ? item.omsSku : <span className="italic text-red-500">— Unmatched</span>}
+                      {item.omsSku ? item.omsSku : <span className="italic text-red-500">- Unmatched</span>}
                     </TableCell>
                     <TableCell className="py-2">
                       {item.omsProductName ? (
                         <span className="line-clamp-1">{item.omsProductName}</span>
                       ) : (
-                        <span className="italic text-muted-foreground">—</span>
+                        <span className="italic text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="py-2">
@@ -176,11 +176,11 @@ export function OrderExpandedRow({ order }: OrderExpandedRowProps) {
                           {item.warehouseName}
                         </Badge>
                       ) : (
-                        <span className="italic text-red-500">— Unassigned</span>
+                        <span className="italic text-red-500">- Unassigned</span>
                       )}
                     </TableCell>
                     <TableCell className="py-2 font-mono text-muted-foreground">
-                      {item.warehouseSku ?? <span className="italic">—</span>}
+                      {item.warehouseSku ?? <span className="italic">-</span>}
                     </TableCell>
                     <TableCell className="py-2 text-right font-medium">{item.qty}</TableCell>
                     <TableCell className="py-2">

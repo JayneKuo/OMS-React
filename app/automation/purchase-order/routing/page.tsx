@@ -3,71 +3,53 @@
 import * as React from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { PORoutingRuleDialogV4 } from "@/components/automation/po-routing-rule-dialog-v4"
 import { cn } from "@/lib/utils"
-import type { RoutingRule, FactoryDirectActions } from "@/lib/types/routing-rule"
+import type { RoutingRule } from "@/lib/types/routing-rule"
 import {
+  ArrowLeftRight,
+  Box,
+  Copy,
+  Download,
+  Filter,
+  Globe,
+  Mail,
+  MoreHorizontal,
   Network,
   Package,
-  Warehouse,
   PauseCircle,
-  Filter,
-  Settings,
-  ArrowLeftRight,
-  Mail,
-  Webhook,
-  Store,
-  Truck,
-  Box,
-  Route,
-  ShoppingCart,
-  CheckCircle,
-  Save,
-  AlertCircle,
-  Globe,
   Plus,
-  GripVertical,
-  Edit,
+  Route,
+  Search,
+  Settings,
+  ShoppingCart,
+  Store,
   Trash2,
-  Copy,
-  MoreVertical,
-  ChevronRight,
-  Archive,
-  Zap,
+  Truck,
+  Warehouse,
+  Webhook,
+  Edit,
+  Save,
 } from "lucide-react"
 import { toast } from "sonner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
-// Global default settings
-interface GlobalSettings {
-  // Automation
+interface GlobalDefaultSettings {
   autoCreateReceipt: boolean
   receiptTrigger: string
   pushToWMS: boolean
-  wmsTrigger?: "RECEIPT_CREATED"
   autoClosePO: boolean
-
-  // Receiving
-  autoCompleteReceipt: boolean
-  autoCreateProduct: boolean
   allowOverReceipt: boolean
   allowPartialReceipt: boolean
   requiresInspection: boolean
-  receivingTolerance: number
 }
 
 const sidebarItems = [
@@ -83,7 +65,7 @@ const sidebarItems = [
       { title: "Filter Orders by SKU", href: "/automation/sales-order/filter-by-sku", icon: <Filter className="h-4 w-4" /> },
       { title: "Order Update Settings", href: "/automation/sales-order/update-settings", icon: <Settings className="h-4 w-4" /> },
       { title: "Mapping", href: "/automation/sales-order/mapping", icon: <ArrowLeftRight className="h-4 w-4" /> },
-    ]
+    ],
   },
   {
     title: "Purchase Order",
@@ -91,7 +73,7 @@ const sidebarItems = [
     icon: <ShoppingCart className="h-4 w-4" />,
     children: [
       { title: "PO Order Routing", href: "/automation/purchase-order/routing", icon: <Route className="h-4 w-4" /> },
-    ]
+    ],
   },
   {
     title: "Inventory",
@@ -99,7 +81,7 @@ const sidebarItems = [
     icon: <Box className="h-4 w-4" />,
     children: [
       { title: "Inventory Sync Rules", href: "/automation/inventory/sync-rules", icon: <Box className="h-4 w-4" /> },
-    ]
+    ],
   },
   {
     title: "Logistics",
@@ -109,473 +91,495 @@ const sidebarItems = [
       { title: "Carrier Account", href: "/automation/logistics/carrier-account", icon: <Store className="h-4 w-4" /> },
       { title: "Carrier & Delivery Service", href: "/automation/logistics/carrier-delivery-service", icon: <Truck className="h-4 w-4" /> },
       { title: "Delivery Order Routing", href: "/automation/logistics/delivery-order-routing", icon: <Route className="h-4 w-4" /> },
-    ]
+    ],
+  },
+  { title: "Email Notification", href: "/automation/email-notification", icon: <Mail className="h-4 w-4" /> },
+  { title: "Webhook", href: "/automation/webhook", icon: <Webhook className="h-4 w-4" /> },
+]
+
+const createEmptyRule = (): RoutingRule => ({
+  id: `rule-${Date.now()}`,
+  name: "",
+  description: "",
+  type: "PO_ROUTING",
+  enabled: true,
+  priority: 1,
+  executionMode: "FIRST_MATCH",
+  conditions: [],
+  conditionLogic: "AND",
+  actions: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+})
+
+const initialRules: RoutingRule[] = [
+  {
+    id: "rule-1",
+    name: "Missing vendor -> auto assign vendors",
+    description: "When upstream PO has no vendor, resolve vendors automatically and create downstream execution flow.",
+    type: "PO_ROUTING",
+    enabled: true,
+    priority: 1,
+    executionMode: "FIRST_MATCH",
+    conditionLogic: "AND",
+    conditions: [{ id: "cond-1", field: "supplier", operator: "isEmpty", value: "" }],
+    actions: [
+      {
+        type: "SET_WORKFLOW",
+        workflow: "STANDARD",
+        config: {
+          vendorResolutionMode: "AUTO_ASSIGN_MULTIPLE",
+          vendorSelectionBasis: "RULE_MATCH",
+          allowVendorSplit: true,
+          createVendorPOs: true,
+        },
+      },
+    ],
+    createdAt: "2026-06-04T09:00:00Z",
+    updatedAt: "2026-06-05T09:20:00Z",
   },
   {
-    title: "Email Notification",
-    href: "/automation/email-notification",
-    icon: <Mail className="h-4 w-4" />
+    id: "rule-2",
+    name: "Generate RN by vendor + warehouse",
+    description: "Split receipt creation by vendor and warehouse, then auto push to warehouse.",
+    type: "PO_ROUTING",
+    enabled: true,
+    priority: 2,
+    executionMode: "FIRST_MATCH",
+    conditionLogic: "AND",
+    conditions: [{ id: "cond-2", field: "poType", operator: "equals", value: "STANDARD" }],
+    actions: [
+      {
+        type: "SET_WORKFLOW",
+        workflow: "STANDARD",
+        config: {
+          receiptGenerationMode: "PER_VENDOR_AND_WAREHOUSE",
+          autoPushReceipt: true,
+          receiptPushTarget: "WAREHOUSE",
+        },
+      },
+    ],
+    createdAt: "2026-06-04T10:00:00Z",
+    updatedAt: "2026-06-05T08:10:00Z",
   },
   {
-    title: "Webhook",
-    href: "/automation/webhook",
-    icon: <Webhook className="h-4 w-4" />
+    id: "rule-3",
+    name: "Warehouse change -> cancel and recreate RN",
+    description: "If user changes warehouse after push, cancel old RN and create new RN number.",
+    type: "PO_ROUTING",
+    enabled: false,
+    priority: 3,
+    executionMode: "FIRST_MATCH",
+    conditionLogic: "AND",
+    conditions: [{ id: "cond-3", field: "warehouseType", operator: "equals", value: "3PL" }],
+    actions: [
+      {
+        type: "SET_WORKFLOW",
+        workflow: "STANDARD",
+        config: {
+          allowWarehouseChangeAfterPush: true,
+          warehouseChangePolicy: "CANCEL_AND_RECREATE_RN",
+          cancelPreviousReceiptOnWarehouseChange: true,
+        },
+      },
+    ],
+    createdAt: "2026-06-04T11:00:00Z",
+    updatedAt: "2026-06-04T11:30:00Z",
   },
 ]
 
 export default function POOrderRoutingPage() {
-  const [isSaving, setIsSaving] = React.useState(false)
+  const [locale, setLocale] = React.useState<"zh" | "en">("zh")
+  const [mainTab, setMainTab] = React.useState("rules")
+  const [statusTab, setStatusTab] = React.useState("all")
+  const [searchValue, setSearchValue] = React.useState("")
   const [selectedRule, setSelectedRule] = React.useState<RoutingRule | null>(null)
-  const [isRuleDialogOpen, setIsRuleDialogOpen] = React.useState(false)
-  const [locale, setLocale] = React.useState<"en" | "zh">("en")
-
-  // Auto-detect system language
-  React.useEffect(() => {
-    const browserLang = navigator.language.toLowerCase()
-    if (browserLang.includes("zh")) {
-      setLocale("zh")
-    }
-  }, [])
-
-  // Global default settings
-  const [globalSettings, setGlobalSettings] = React.useState<GlobalSettings>({
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+  const [rules, setRules] = React.useState<RoutingRule[]>(initialRules)
+  const [isSavingDefaults, setIsSavingDefaults] = React.useState(false)
+  const [globalDefaults, setGlobalDefaults] = React.useState<GlobalDefaultSettings>({
     autoCreateReceipt: true,
     receiptTrigger: "IN_TRANSIT",
     pushToWMS: false,
-    wmsTrigger: "RECEIPT_CREATED",
     autoClosePO: true,
-
-    autoCompleteReceipt: false,
-    autoCreateProduct: false,
     allowOverReceipt: true,
     allowPartialReceipt: true,
     requiresInspection: false,
-    receivingTolerance: 10
   })
 
-  // Routing Rules
-  const [routingRules, setRoutingRules] = React.useState<RoutingRule[]>([
-    {
-      id: "rule-1",
-      name: "Factory Direct Fulfillment",
-      description: "Route factory-direct POs through FG staging warehouse",
-      type: "PO_ROUTING",
-      enabled: true,
-      priority: 1,
-      executionMode: "FIRST_MATCH",
-      conditionLogic: "AND",
-      conditions: [
-        {
-          id: "cond-1",
-          field: "purchaseType",
-          operator: "equals",
-          value: "FACTORY_DIRECT",
-          logic: "AND"
-        }
-      ],
-      actions: [
-        {
-          type: "SET_WORKFLOW",
-          workflow: "FACTORY_DIRECT",
-          config: {
-            enableFGStaging: true,
-            generateFGReceipt: true,
-            generateSaleOrder: true,
-            waitForFGReceipt: false,
-            autoCreateFinalReceipt: true
-          }
-        }
-      ],
-      createdAt: "2024-01-15T10:00:00Z",
-      updatedAt: "2024-01-15T10:00:00Z"
-    }
-  ])
+  React.useEffect(() => {
+    const browserLang = navigator.language.toLowerCase()
+    if (!browserLang.includes("zh")) setLocale("en")
+  }, [])
 
-  const handleSaveGlobal = async () => {
-    setIsSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    toast.success("Settings saved successfully")
+  const filteredRules = React.useMemo(() => {
+    let current = [...rules]
+
+    if (statusTab === "enabled") current = current.filter((rule) => rule.enabled)
+    if (statusTab === "disabled") current = current.filter((rule) => !rule.enabled)
+    if (statusTab === "vendor") {
+      current = current.filter((rule) =>
+        rule.actions.some(
+          (action) =>
+            action.type === "SET_WORKFLOW" &&
+            action.workflow === "STANDARD" &&
+            action.config.vendorResolutionMode &&
+            action.config.vendorResolutionMode !== "KEEP_UPSTREAM"
+        )
+      )
+    }
+    if (statusTab === "rn") {
+      current = current.filter((rule) =>
+        rule.actions.some(
+          (action) =>
+            action.type === "SET_WORKFLOW" &&
+            action.workflow === "STANDARD" &&
+            (action.config.receiptGenerationMode || action.config.allowWarehouseChangeAfterPush)
+        )
+      )
+    }
+
+    const query = searchValue.trim().toLowerCase()
+    if (query) {
+      current = current.filter((rule) => `${rule.name} ${rule.description}`.toLowerCase().includes(query))
+    }
+
+    return current.sort((a, b) => a.priority - b.priority)
+  }, [rules, searchValue, statusTab])
+
+  const saveRule = (rule: RoutingRule) => {
+    setRules((current) => {
+      const index = current.findIndex((item) => item.id === rule.id)
+      if (index >= 0) {
+        const next = [...current]
+        next[index] = rule
+        return next
+      }
+      return [...current, { ...rule, priority: current.length + 1 }]
+    })
+    toast.success("Rule saved")
   }
 
-  const handleSaveRule = (rule: RoutingRule) => {
-    const existingIndex = routingRules.findIndex(r => r.id === rule.id)
-    if (existingIndex >= 0) {
-      const newRules = [...routingRules]
-      newRules[existingIndex] = rule
-      setRoutingRules(newRules)
-      toast.success("Rule updated successfully")
-    } else {
-      setRoutingRules([...routingRules, { ...rule, priority: routingRules.length + 1 }])
-      toast.success("Rule created successfully")
-    }
+  const openCreate = () => {
+    setSelectedRule(createEmptyRule())
+    setIsDialogOpen(true)
   }
 
-  const handleAddRule = () => {
-    const newRule: RoutingRule = {
-      id: `rule-${Date.now()}`,
-      name: "",
-      description: "",
-      type: "CUSTOM",
-      enabled: true,
-      priority: routingRules.length + 1,
-      executionMode: "FIRST_MATCH",
-      conditions: [],
-      conditionLogic: "AND",
-      actions: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    setSelectedRule(newRule)
-    setIsRuleDialogOpen(true)
+  const openEdit = (rule: RoutingRule) => {
+    setSelectedRule(rule)
+    setIsDialogOpen(true)
   }
 
+  const toggleRule = (ruleId: string) => {
+    setRules((current) => current.map((rule) => (rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule)))
+  }
+
+  const duplicateRule = (rule: RoutingRule) => {
+    setRules((current) => [
+      ...current,
+      {
+        ...rule,
+        id: `rule-${Date.now()}`,
+        name: `${rule.name} (Copy)`,
+        priority: current.length + 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ])
+    toast.success("Rule duplicated")
+  }
+
+  const deleteRule = (ruleId: string) => {
+    setRules((current) => current.filter((rule) => rule.id !== ruleId))
+    toast.success("Rule deleted")
+  }
+
+  const saveGlobalDefaults = async () => {
+    setIsSavingDefaults(true)
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    setIsSavingDefaults(false)
+    toast.success("Global defaults saved")
+  }
+
+  const actionSummary = (rule: RoutingRule) => {
+    const workflow = rule.actions.find((action) => action.type === "SET_WORKFLOW")
+    if (workflow?.type === "SET_WORKFLOW") {
+      const labels: string[] = []
+      if (workflow.config.vendorResolutionMode === "AUTO_ASSIGN_MULTIPLE") labels.push("多个 Vendor")
+      if (workflow.config.vendorResolutionMode === "AUTO_ASSIGN_SINGLE") labels.push("单个 Vendor")
+      if (workflow.config.receiptGenerationMode === "PER_VENDOR") labels.push("按 Vendor 生成 RN")
+      if (workflow.config.receiptGenerationMode === "PER_VENDOR_AND_WAREHOUSE") labels.push("按 Vendor + 仓库生成 RN")
+      if (workflow.config.allowWarehouseChangeAfterPush) labels.push("换仓重建 RN")
+      return labels.join(" / ") || "工作流已配置"
+    }
+    return `${rule.actions.length} 个动作`
+  }
 
   return (
     <MainLayout sidebarItems={sidebarItems} moduleName="Automation">
       <div className="space-y-6">
-        {/* Page Header */}
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Order Routing Rules</h1>
-            <p className="text-muted-foreground">
-              Configure how purchase orders are fulfilled, routed, and automated.
-            </p>
+          <div>
+            <h1 className="text-2xl font-bold">PO Order Routing</h1>
+            <p className="mt-1 text-sm text-muted-foreground">管理采购路由规则与全局默认设置。</p>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={locale} onValueChange={(v: "en" | "zh") => setLocale(v)}>
+            <Select value={locale} onValueChange={(value: "zh" | "en") => setLocale(value)}>
               <SelectTrigger className="w-[120px]">
                 <Globe className="mr-2 h-4 w-4" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
                 <SelectItem value="zh">中文</SelectItem>
+                <SelectItem value="en">English</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="outline" className="h-8 px-3 text-sm">
-              {routingRules.filter(r => r.enabled).length} Active Rules
-            </Badge>
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              导出
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              新建规则
+            </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="rules" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <TabsList className="grid w-full max-w-[400px] grid-cols-2">
-              <TabsTrigger value="rules">Routing Rules (路由规则)</TabsTrigger>
-              <TabsTrigger value="settings">Global Settings (全局设置)</TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs value={mainTab} onValueChange={setMainTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="rules">规则列表</TabsTrigger>
+            <TabsTrigger value="global">全局默认设置</TabsTrigger>
+          </TabsList>
 
-          {/* ==================== TAB 1: ROUTING RULES ==================== */}
-          <TabsContent value="rules" className="space-y-4">
-
-            {/* Rules Header & Actions */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full text-xs font-medium">
-                <AlertCircle className="h-3.5 w-3.5" />
-                Rules are evaluated top-to-bottom. First match wins.
+          <TabsContent value="rules" className="space-y-6">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="搜索规则名称或描述..."
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  className="pl-9"
+                />
               </div>
-              <Button onClick={handleAddRule} className="shadow-lg hover:shadow-xl transition-all">
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Rule
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                筛选
               </Button>
+              <Button variant="outline" size="sm">优先级</Button>
+              <Button variant="outline" size="sm">最近修改</Button>
             </div>
 
-            {/* Empty State */}
-            {routingRules.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl bg-muted/10">
-                <div className="bg-background p-4 rounded-full shadow-sm mb-4">
-                  <Route className="h-10 w-10 text-muted-foreground/50" />
+            <Tabs value={statusTab} onValueChange={setStatusTab}>
+              <TabsList>
+                <TabsTrigger value="all">全部 ({rules.length})</TabsTrigger>
+                <TabsTrigger value="enabled">启用中 ({rules.filter((rule) => rule.enabled).length})</TabsTrigger>
+                <TabsTrigger value="disabled">已停用 ({rules.filter((rule) => !rule.enabled).length})</TabsTrigger>
+                <TabsTrigger value="vendor">Vendor 规则</TabsTrigger>
+                <TabsTrigger value="rn">RN 规则</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <Card>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between border-b px-4 py-3">
+                  <div className="text-sm text-muted-foreground">共 {filteredRules.length} 条规则</div>
+                  <div className="text-sm text-muted-foreground">点击状态可快速启停</div>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No Routing Rules Yet</h3>
-                <p className="text-sm text-muted-foreground mb-6 max-w-sm text-center">
-                  Create rules to automatically route orders to specific warehouses or workflows based on criteria.
-                </p>
-                <Button onClick={handleAddRule}>Create First Rule</Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {routingRules
-                  .sort((a, b) => a.priority - b.priority)
-                  .map((rule, index) => (
-                    <div
-                      key={rule.id}
-                      className={cn(
-                        "group relative flex items-stretch border rounded-xl overflow-hidden transition-all hover:shadow-md bg-card",
-                        !rule.enabled && "opacity-60 bg-muted/30"
-                      )}
-                    >
-                      {/* Priority Strip */}
-                      <div className={cn(
-                        "w-1.5 flex-shrink-0",
-                        rule.enabled ? "bg-primary" : "bg-muted-foreground/30"
-                      )} />
 
-                      {/* Drag Handle Area */}
-                      <div className="w-10 flex items-center justify-center border-r bg-muted/5 group-hover:bg-muted/10 cursor-grab">
-                        <span className="text-sm font-bold text-muted-foreground">{index + 1}</span>
-                      </div>
-
-                      {/* Main Content */}
-                      <div className="flex-1 p-4 flex items-center gap-4">
-
-                        {/* Icon */}
-                        <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                          rule.type === "PO_ROUTING" ? "bg-purple-100 text-purple-600" :
-                            rule.type === "SPLIT_PO" ? "bg-blue-100 text-blue-600" :
-                              rule.type === "SPLIT_PR" ? "bg-green-100 text-green-600" :
-                                "bg-gray-100 text-gray-600"
-                        )}>
-                          {rule.type === "PO_ROUTING" ? <Truck className="h-5 w-5" /> : <Route className="h-5 w-5" />}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold truncate">{rule.name}</h4>
-                            {!rule.enabled && <Badge variant="secondary" className="h-5 text-[10px] px-1.5">Disabled</Badge>}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            {/* Conditions Summary */}
-                            <div className="flex items-center gap-1.5">
-                              <Filter className="h-3 w-3" />
-                              <span>
-                                {rule.conditions.length > 0
-                                  ? `${rule.conditions.length} Condition${rule.conditions.length > 1 ? "s" : ""}`
-                                  : "No conditions (Always)"}
-                              </span>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">规则名称</TableHead>
+                      <TableHead className="font-semibold">适用条件</TableHead>
+                      <TableHead className="font-semibold">系统动作</TableHead>
+                      <TableHead className="font-semibold">状态</TableHead>
+                      <TableHead className="font-semibold">更新时间</TableHead>
+                      <TableHead className="text-right font-semibold">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRules.map((rule) => (
+                      <TableRow key={rule.id}>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{rule.name}</span>
+                              <Badge variant="outline">#{rule.priority}</Badge>
                             </div>
-
-                            {/* Arrow */}
-                            <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-
-                            {/* Actions Summary */}
-                            <div className="flex items-center gap-1.5 text-foreground font-medium">
-                              <Zap className="h-3 w-3 text-amber-500" />
-                              <span>
-                                {rule.actions.length} Action{rule.actions.length > 1 ? "s" : ""}
-                              </span>
-                            </div>
+                            <p className="max-w-[360px] text-sm text-muted-foreground">{rule.description}</p>
                           </div>
-                        </div>
-
-                        {/* Quick Actions (Hover) */}
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                                  setSelectedRule(rule)
-                                  setIsRuleDialogOpen(true)
-                                }}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Edit Rule</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {rule.conditions.length > 0 ? `${rule.conditions.length} 个条件 / ${rule.conditionLogic}` : "始终匹配"}
+                        </TableCell>
+                        <TableCell className="text-sm">{actionSummary(rule)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                              "h-auto px-0 font-normal hover:bg-transparent",
+                              rule.enabled ? "text-green-700" : "text-muted-foreground"
+                            )}
+                            onClick={() => toggleRule(rule.id)}
+                          >
+                            {rule.enabled ? "启用中" : "已停用"}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(rule.updatedAt).toLocaleDateString("zh-CN")}
+                        </TableCell>
+                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                const newRule = { ...rule, id: `rule-${Date.now()}`, name: `${rule.name} (Copy)` }
-                                setRoutingRules([...routingRules, newRule])
-                              }}>
-                                <Copy className="h-4 w-4 mr-2" /> Duplicate
+                              <DropdownMenuItem onClick={() => openEdit(rule)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                编辑
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => duplicateRule(rule)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                复制
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => {
-                                setRoutingRules(routingRules.filter(r => r.id !== rule.id))
-                              }}>
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              <DropdownMenuItem className="text-red-600" onClick={() => deleteRule(rule.id)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                删除
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-
-            {/* V4 Dialog Component - With Rule Type Support */}
-            <PORoutingRuleDialogV4
-              open={isRuleDialogOpen}
-              onOpenChange={setIsRuleDialogOpen}
-              rule={selectedRule}
-              onSave={handleSaveRule}
-              locale={locale}
-            />
+                <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+                  <div>显示 1-{filteredRules.length} 条，共 {filteredRules.length} 条记录</div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" disabled>上一页</Button>
+                    <Button variant="outline" size="sm" className="bg-primary text-primary-foreground">1</Button>
+                    <Button variant="outline" size="sm" disabled>下一页</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          {/* ==================== TAB 2: GLOBAL SETTINGS ==================== */}
-          <TabsContent value="settings" className="space-y-6">
+          <TabsContent value="global" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>全局默认设置</CardTitle>
+                <CardDescription>仅在没有规则命中时生效。</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <SettingRow
+                      label="自动创建收货单"
+                      description="未命中规则时，按默认流程创建 RN。"
+                      checked={globalDefaults.autoCreateReceipt}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, autoCreateReceipt: checked })}
+                    />
+                    <SettingRow
+                      label="推送到 WMS"
+                      description="未命中规则时，是否自动推送到 WMS。"
+                      checked={globalDefaults.pushToWMS}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, pushToWMS: checked })}
+                    />
+                    <SettingRow
+                      label="自动关单"
+                      description="默认收货完成后自动关闭 PO。"
+                      checked={globalDefaults.autoClosePO}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, autoClosePO: checked })}
+                    />
+                  </div>
 
-            <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-2 rounded-md">
-                  <Settings className="h-5 w-5 text-primary" />
+                  <div className="space-y-4">
+                    <SettingRow
+                      label="允许超收"
+                      description="默认允许入库数量大于订单数量。"
+                      checked={globalDefaults.allowOverReceipt}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, allowOverReceipt: checked })}
+                    />
+                    <SettingRow
+                      label="允许分批收货"
+                      description="默认允许一个 PO 多次收货。"
+                      checked={globalDefaults.allowPartialReceipt}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, allowPartialReceipt: checked })}
+                    />
+                    <SettingRow
+                      label="默认需要质检"
+                      description="默认收货后进入质检流程。"
+                      checked={globalDefaults.requiresInspection}
+                      onCheckedChange={(checked) => setGlobalDefaults({ ...globalDefaults, requiresInspection: checked })}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">Global Default Configuration</h3>
-                  <p className="text-sm text-muted-foreground">These settings apply when NO routing rules match an order.</p>
+
+                <div className="max-w-[220px] space-y-2">
+                  <Label>默认触发状态</Label>
+                  <Select
+                    value={globalDefaults.receiptTrigger}
+                    onValueChange={(value) => setGlobalDefaults({ ...globalDefaults, receiptTrigger: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NEW">New</SelectItem>
+                      <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+                      <SelectItem value="WAITING_FOR_RECEIVING">Waiting for Receiving</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <Button onClick={handleSaveGlobal} disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* 1. Receiving Controls */}
-              <Card className="md:col-span-1 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Archive className="h-4 w-4 text-primary" /> Receiving Controls
-                  </CardTitle>
-                  <CardDescription>Rules for warehouse receiving process</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="cursor-pointer">Allow Over Receipt (允许超收)</Label>
-                      <p className="text-xs text-muted-foreground">Allow receiving quantity greater than ordered quantity (允许入库数量大于订单数量)</p>
-                    </div>
-                    <Switch checked={globalSettings.allowOverReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, allowOverReceipt: c })} />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="cursor-pointer">Allow Partial Receipt (允许分批到货)</Label>
-                      <p className="text-xs text-muted-foreground">Allow multiple receipts for a single purchase order (允许一个PO分多次收货)</p>
-                    </div>
-                    <Switch checked={globalSettings.allowPartialReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, allowPartialReceipt: c })} />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="cursor-pointer">Requires Inspection (质检控制)</Label>
-                      <p className="text-xs text-muted-foreground">Flag new receipts for quality inspection by default (默认标记新入库单需要质检)</p>
-                    </div>
-                    <Switch checked={globalSettings.requiresInspection} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, requiresInspection: c })} />
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label>Receiving Tolerance (%)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        className="w-24"
-                        value={globalSettings.receivingTolerance}
-                        onChange={(e) => setGlobalSettings({ ...globalSettings, receivingTolerance: Number(e.target.value) })}
-                      />
-                      <span className="text-muted-foreground text-sm self-center">Max excess</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 2. Automation Triggers */}
-              <Card className="md:col-span-1 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-blue-600" /> Automation Triggers
-                  </CardTitle>
-                  <CardDescription>Auto-creation and syncing logic</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-
-                  <div className="space-y-3 bg-muted/20 p-3 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="font-medium">Auto-Create Receipt (自动创建入库单)</Label>
-                        <p className="text-xs text-muted-foreground">Automatically create a receiving document when PO status matches (当采购单状态匹配时自动创建入库通知)</p>
-                      </div>
-                      <Switch checked={globalSettings.autoCreateReceipt} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, autoCreateReceipt: c })} />
-                    </div>
-                    {globalSettings.autoCreateReceipt && (
-                      <div className="pl-2 border-l-2 border-primary/20 space-y-3 pt-1">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Trigger Status</Label>
-                          <Select value={globalSettings.receiptTrigger} onValueChange={(v: any) => setGlobalSettings({ ...globalSettings, receiptTrigger: v })}>
-                            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="NEW">New</SelectItem>
-                              <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-                              <SelectItem value="WAITING_FOR_RECEIVING">Waiting for Receiving</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label>Push to WMS (推送到WMS)</Label>
-                      <p className="text-xs text-muted-foreground">Synchronize receipt data with the warehouse management system (将入库数据同步至仓库管理系统)</p>
-                    </div>
-                    <Switch checked={globalSettings.pushToWMS} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, pushToWMS: c })} />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label>Auto-Close PO (自动关单)</Label>
-                      <p className="text-xs text-muted-foreground">Automatically close PO when fully received (全额收货后自动关闭采购单)</p>
-                    </div>
-                    <Switch checked={globalSettings.autoClosePO} onCheckedChange={(c) => setGlobalSettings({ ...globalSettings, autoClosePO: c })} />
-                  </div>
-
-                </CardContent>
-              </Card>
-
-              {/* 3. System Defaults */}
-              <Card className="md:col-span-2 shadow-sm bg-muted/5 border-dashed">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" /> System Defaults (Fallbacks)
-                  </CardTitle>
-                  <CardDescription>Applied only when NO rules are matched</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Default Target Warehouse</Label>
-                    <Select defaultValue="US-EAST">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="US-EAST">US East Coast (Primary)</SelectItem>
-                        <SelectItem value="US-WEST">US West Coast</SelectItem>
-                        <SelectItem value="CN-SH">Shanghai Consolidation</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Default Fulfillment Workflow</Label>
-                    <Select defaultValue="STANDARD">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="STANDARD">Standard Receipt</SelectItem>
-                        <SelectItem value="CROSS_DOCK">Cross Dock</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-
-            </div>
-
+                <div className="flex justify-end">
+                  <Button onClick={saveGlobalDefaults} disabled={isSavingDefaults}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSavingDefaults ? "保存中..." : "保存全局默认设置"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
+
+        <PORoutingRuleDialogV4
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          rule={selectedRule}
+          onSave={saveRule}
+          locale={locale}
+        />
       </div>
     </MainLayout>
+  )
+}
+
+function SettingRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-4">
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">{label}</Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
   )
 }
