@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -16,7 +17,9 @@ import {
 } from "@/components/ui/table"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, Building, ArrowRight, Package } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Plus, Trash2, Building, Package } from "lucide-react"
+import { ProductSelectionDialog } from "./product-selection-dialog"
 import {
   type TransferOrderType,
   type TransferOrderDraft,
@@ -57,6 +60,21 @@ interface ManualLine {
   uom: string
 }
 
+interface SelectableProduct {
+  id: string
+  sku: string
+  productName: string
+  uom: string
+  specifications?: string
+  unitPrice: number
+  costPrice: number
+  category: string
+  brand: string
+  inStock: boolean
+  requiresSerialNumber: boolean
+  requiresLotNumber: boolean
+}
+
 interface SourceDraft {
   id: string
   routeType: RouteType
@@ -77,7 +95,7 @@ export function CreateTransferOrderDialog({
   defaultTransferType, defaultTargetWarehouse,
   sourceDocument, warehouseOptions, demandLines, onSubmit,
 }: CreateTransferOrderDialogProps) {
-  const tf = tfProp || ((en: string, _zh: string) => en)
+  const tf = React.useCallback((en: string, zh: string) => (tfProp ? tfProp(en, zh) : en), [tfProp])
   const warehouses = warehouseOptions || WAREHOUSE_OPTIONS
   const isPOMode = mode === "po"
   const hasDemandLines = Boolean(demandLines && demandLines.length > 0)
@@ -91,12 +109,31 @@ export function CreateTransferOrderDialog({
   const [fromWarehouseCode, setFromWarehouseCode] = React.useState("")
   const [toWarehouseCode, setToWarehouseCode] = React.useState(defaultTargetWarehouse?.code || "")
   const [routeType, setRouteType] = React.useState<RouteType>("DIRECT")
-  const [viaWarehouseCode, setViaWarehouseCode] = React.useState("")
   const [expectedShipDate, setExpectedShipDate] = React.useState("")
   const [expectedArrivalDate, setExpectedArrivalDate] = React.useState("")
   const [carrier, setCarrier] = React.useState("")
   const [remarks, setRemarks] = React.useState("")
   const [manualLines, setManualLines] = React.useState<ManualLine[]>([])
+  const [showProductSelectionDialog, setShowProductSelectionDialog] = React.useState(false)
+  const [showDemandSelectionDialog, setShowDemandSelectionDialog] = React.useState(false)
+
+  const demandSelectableProducts = React.useMemo<SelectableProduct[]>(() => {
+    if (!demandLines) return []
+    return demandLines.map((line, index) => ({
+      id: `${line.skuCode}-${index}`,
+      sku: line.skuCode,
+      productName: line.productName,
+      uom: line.uom,
+      specifications: "",
+      unitPrice: 0,
+      costPrice: 0,
+      category: tf("PO Demand", "PO 需求"),
+      brand: tf("Unspecified", "未指定"),
+      inStock: true,
+      requiresSerialNumber: false,
+      requiresLotNumber: false,
+    }))
+  }, [demandLines, tf])
 
   // ─── PO Mode State ─────────────────────────────────────────────────────────
   const [targetWarehouseCode, setTargetWarehouseCode] = React.useState(defaultTargetWarehouse?.code || "")
@@ -112,7 +149,6 @@ export function CreateTransferOrderDialog({
       setFromWarehouseCode("")
       setToWarehouseCode(defaultTargetWarehouse?.code || "")
       setRouteType("DIRECT")
-      setViaWarehouseCode("")
       setExpectedShipDate("")
       setExpectedArrivalDate("")
       setCarrier("")
@@ -128,7 +164,7 @@ export function CreateTransferOrderDialog({
   function createEmptySource(): SourceDraft {
     return {
       id: crypto.randomUUID(), routeType: "DIRECT", fromWarehouseCode: "", fromWarehouseName: "",
-      lineQtys: hasDemandLines ? Object.fromEntries(demandLines!.map((l) => [l.skuCode, 0])) : {},
+      lineQtys: {},
     }
   }
 
@@ -137,17 +173,35 @@ export function CreateTransferOrderDialog({
   function removeSource(id: string) { setSources((p) => p.filter((s) => s.id !== id)) }
   function updateSrcWh(id: string, code: string) {
     const wh = warehouses.find((w) => w.code === code)
-    setSources((p) => p.map((s) => s.id === id ? { ...s, fromWarehouseCode: code, fromWarehouseName: wh?.name || "" } : s))
+    setSources((p) => p.map((s) => s.id === id
+      ? {
+          ...s,
+          fromWarehouseCode: code,
+          fromWarehouseName: wh?.name || "",
+          viaWarehouseCode: s.routeType === "VIA_FG" ? code : undefined,
+          viaWarehouseName: s.routeType === "VIA_FG" ? wh?.name || "" : undefined,
+        }
+      : s))
   }
   function updateSrcRoute(id: string, rt: RouteType) {
-    setSources((p) => p.map((s) => s.id === id ? { ...s, routeType: rt, viaWarehouseCode: rt === "DIRECT" ? undefined : s.viaWarehouseCode, viaWarehouseName: rt === "DIRECT" ? undefined : s.viaWarehouseName } : s))
-  }
-  function updateSrcVia(id: string, code: string) {
-    const wh = warehouses.find((w) => w.code === code)
-    setSources((p) => p.map((s) => s.id === id ? { ...s, viaWarehouseCode: code || undefined, viaWarehouseName: wh?.name || undefined } : s))
+    setSources((p) => p.map((s) => s.id === id
+      ? {
+          ...s,
+          routeType: rt,
+          viaWarehouseCode: rt === "DIRECT" ? undefined : s.fromWarehouseCode || undefined,
+          viaWarehouseName: rt === "DIRECT" ? undefined : s.fromWarehouseName || undefined,
+        }
+      : s))
   }
   function updateSrcQty(srcId: string, sku: string, qty: number) {
     setSources((p) => p.map((s) => s.id === srcId ? { ...s, lineQtys: { ...s.lineQtys, [sku]: Math.max(0, qty) } } : s))
+  }
+  function addDemandProducts(products: SelectableProduct[]) {
+    const selectedSkus = products.map((product) => product.sku)
+    setSources((previous) => previous.map((source) => ({
+      ...source,
+      lineQtys: Object.fromEntries(selectedSkus.map((sku) => [sku, source.lineQtys[sku] || 0])),
+    })))
   }
 
   // ─── Standard Mode Handlers ────────────────────────────────────────────────
@@ -160,7 +214,22 @@ export function CreateTransferOrderDialog({
     setSourceDocumentNo("")
   }
 
-  function addManualLine() { setManualLines((p) => [...p, { id: crypto.randomUUID(), skuCode: "", productName: "", quantity: 0, uom: "PCS" }]) }
+  function addManualLine() { setShowProductSelectionDialog(true) }
+  function addSelectedProducts(products: SelectableProduct[]) {
+    setManualLines((previous) => {
+      const existingSkus = new Set(previous.map((line) => line.skuCode))
+      const newLines = products
+        .filter((product) => !existingSkus.has(product.sku))
+        .map((product) => ({
+          id: crypto.randomUUID(),
+          skuCode: product.sku,
+          productName: product.productName,
+          quantity: 1,
+          uom: product.uom,
+        }))
+      return [...previous, ...newLines]
+    })
+  }
   function removeManualLine(id: string) { setManualLines((p) => p.filter((l) => l.id !== id)) }
   function updateManualLine(id: string, field: keyof ManualLine, value: string | number) {
     setManualLines((p) => p.map((l) => l.id === id ? { ...l, [field]: value } : l))
@@ -186,11 +255,12 @@ export function CreateTransferOrderDialog({
       // 标准模式：一张调拨单
       const fromWh = warehouses.find((w) => w.code === fromWarehouseCode)
       const toWh = warehouses.find((w) => w.code === toWarehouseCode)
-      const viaWh = viaWarehouseCode ? warehouses.find((w) => w.code === viaWarehouseCode) : undefined
+      const standardViaWarehouseCode = routeType === "VIA_FG" ? fromWarehouseCode : ""
+      const standardViaWarehouseName = routeType === "VIA_FG" ? fromWh?.name || "" : undefined
       const draft: TransferOrderDraft = {
         id: crypto.randomUUID(), transferType,
         fromWarehouseCode, fromWarehouseName: fromWh?.name || "",
-        viaWarehouseCode: viaWarehouseCode || undefined, viaWarehouseName: viaWh?.name || undefined,
+        viaWarehouseCode: standardViaWarehouseCode || undefined, viaWarehouseName: standardViaWarehouseName,
         toWarehouseCode, toWarehouseName: toWh?.name || "",
         lineQtys: Object.fromEntries(manualLines.filter((l) => l.skuCode && l.quantity > 0).map((l) => [l.skuCode, l.quantity])),
         sourceDocumentType,
@@ -209,6 +279,7 @@ export function CreateTransferOrderDialog({
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
+    <TooltipProvider>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
         <DialogHeader>
@@ -279,43 +350,25 @@ export function CreateTransferOrderDialog({
                   </div>
                 </div>
 
-                {/* 路径类型（仅采购入库） */}
                 {transferType === "PURCHASE_INBOUND" && (
-                  <div className="grid gap-4 md:grid-cols-3 mt-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">{tf("Route Type", "路径类型")} *</Label>
-                      <Select value={routeType} onValueChange={(v) => { setRouteType(v as RouteType); if (v === "DIRECT") setViaWarehouseCode("") }}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="DIRECT">{tf("Direct", "直发")}</SelectItem>
-                          <SelectItem value="VIA_FG">{tf("Via FG Warehouse", "经成品仓")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {routeType === "VIA_FG" && (
-                      <div className="space-y-2">
-                        <Label className="text-xs">{tf("FG Warehouse", "成品仓")} *</Label>
-                        <Select value={viaWarehouseCode} onValueChange={setViaWarehouseCode}>
-                          <SelectTrigger><SelectValue placeholder={tf("Select", "选择")} /></SelectTrigger>
-                          <SelectContent>
-                            {warehouses.filter((w) => w.code !== fromWarehouseCode && w.code !== toWarehouseCode).map((wh) => <SelectItem key={wh.code} value={wh.code}>{wh.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 路径预览 */}
-                {fromWarehouseCode && toWarehouseCode && (
-                  <div className="flex items-center gap-2 text-xs rounded-md bg-muted/30 px-3 py-2 mt-4">
-                    <span className="font-medium">{warehouses.find((w) => w.code === fromWarehouseCode)?.name}</span>
-                    <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                    {routeType === "VIA_FG" && viaWarehouseCode && (
-                      <><span className="font-medium text-blue-600">{warehouses.find((w) => w.code === viaWarehouseCode)?.name}</span><ArrowRight className="h-3 w-3 flex-shrink-0" /></>
-                    )}
-                    <span className="font-medium text-green-600">{warehouses.find((w) => w.code === toWarehouseCode)?.name}</span>
-                  </div>
+                  <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-md bg-muted/30 px-3 py-2 text-sm transition-colors hover:bg-muted/50">
+                    <Checkbox
+                      checked={routeType === "VIA_FG"}
+                      onCheckedChange={(checked) => setRouteType(checked ? "VIA_FG" : "DIRECT")}
+                      className="mt-0.5"
+                    />
+                    <span className="flex items-center gap-1.5 font-medium leading-none">
+                      {tf("Generate inbound document for source warehouse", "为调出仓生成入库单")}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] text-muted-foreground">?</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tf("Generate an inbound document at the source warehouse before outbound transfer.", "调出仓需要先入库再出库调拨时启用。")}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </span>
+                  </label>
                 )}
               </div>
 
@@ -434,23 +487,34 @@ export function CreateTransferOrderDialog({
                     <h3 className="text-sm font-semibold">{tf("Transfer Sources (Vendors)", "调拨来源（Vendor）")}</h3>
                     <p className="text-xs text-muted-foreground">{tf("Each source creates one transfer order.", "每个来源生成一张调拨单。")}</p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={addSource}>
-                    <Plus className="mr-2 h-4 w-4" />{tf("Add Source", "添加来源")}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={addSource}>
+                      <Plus className="mr-2 h-4 w-4" />{tf("Add Source", "添加来源")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mb-3 rounded-md border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                  {tf("Selected items", "已选商品")}: <span className="font-medium text-foreground">{demandLines ? demandLines.filter((line) => sources.some((source) => Object.prototype.hasOwnProperty.call(source.lineQtys, line.skuCode))).length : 0}</span>
                 </div>
 
                 <div className="space-y-4">
                   {sources.map((src, idx) => (
                     <Card key={src.id}>
                       <CardContent className="p-4 space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <Building className="h-4 w-4 text-primary" />
                             <span className="text-sm font-medium">{tf("Source", "来源")} #{idx + 1}</span>
                           </div>
-                          {sources.length > 1 && (
-                            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => removeSource(src.id)}><Trash2 className="h-4 w-4" /></Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setShowDemandSelectionDialog(true)}>
+                              <Plus className="mr-2 h-4 w-4" />{tf("Add Item", "添加商品")}
+                            </Button>
+                            {sources.length > 1 && (
+                              <Button variant="ghost" size="sm" className="text-red-600" onClick={() => removeSource(src.id)}><Trash2 className="h-4 w-4" /></Button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-3 items-end">
@@ -464,41 +528,26 @@ export function CreateTransferOrderDialog({
                             </Select>
                           </div>
                           {transferType === "PURCHASE_INBOUND" && (
-                            <div className="space-y-2">
-                              <Label className="text-xs">{tf("Route Type", "路径类型")} *</Label>
-                              <Select value={src.routeType} onValueChange={(v) => updateSrcRoute(src.id, v as RouteType)}>
-                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="DIRECT">{tf("Direct", "直发")}</SelectItem>
-                                  <SelectItem value="VIA_FG">{tf("Via FG Warehouse", "经成品仓")}</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                          {transferType === "PURCHASE_INBOUND" && src.routeType === "VIA_FG" && (
-                            <div className="space-y-2">
-                              <Label className="text-xs">{tf("FG Warehouse", "成品仓")} *</Label>
-                              <Select value={src.viaWarehouseCode || ""} onValueChange={(v) => updateSrcVia(src.id, v)}>
-                                <SelectTrigger className="h-9"><SelectValue placeholder={tf("Select", "选择")} /></SelectTrigger>
-                                <SelectContent>
-                                  {warehouses.filter((w) => w.code !== targetWarehouseCode && w.code !== src.fromWarehouseCode).map((wh) => <SelectItem key={wh.code} value={wh.code}>{wh.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <label className="flex cursor-pointer items-start gap-3 rounded-md bg-muted/30 px-3 py-2 text-sm transition-colors hover:bg-muted/50 md:col-span-2">
+                              <Checkbox
+                                checked={src.routeType === "VIA_FG"}
+                                onCheckedChange={(checked) => updateSrcRoute(src.id, checked ? "VIA_FG" : "DIRECT")}
+                                className="mt-0.5"
+                              />
+                              <span className="flex items-center gap-1.5 font-medium leading-none">
+                                {tf("Generate inbound document for source warehouse", "为调出仓生成入库单")}
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] text-muted-foreground">?</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{tf("Generate an inbound document at the source warehouse before outbound transfer.", "调出仓需要先入库再出库调拨时启用。")}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </span>
+                            </label>
                           )}
                         </div>
-
-                        {/* Route preview */}
-                        {src.fromWarehouseCode && (
-                          <div className="flex items-center gap-2 text-xs rounded-md bg-muted/30 px-3 py-2">
-                            <span className="font-medium">{src.fromWarehouseName}</span>
-                            <ArrowRight className="h-3 w-3 flex-shrink-0" />
-                            {transferType === "PURCHASE_INBOUND" && src.routeType === "VIA_FG" && src.viaWarehouseName && (
-                              <><span className="font-medium text-blue-600">{src.viaWarehouseName}</span><ArrowRight className="h-3 w-3 flex-shrink-0" /></>
-                            )}
-                            <span className="font-medium text-green-600">{warehouses.find((w) => w.code === targetWarehouseCode)?.name || "?"}</span>
-                          </div>
-                        )}
 
                         {/* Demand allocation */}
                         {hasDemandLines && (
@@ -513,20 +562,27 @@ export function CreateTransferOrderDialog({
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {demandLines!.map((line) => (
-                                  <TableRow key={line.skuCode}>
-                                    <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
-                                    <TableCell className="text-xs">{line.productName}</TableCell>
-                                    <TableCell className="text-xs text-right">{line.quantity}</TableCell>
-                                    <TableCell className="text-xs text-right">
-                                      <Input type="number" min={0} max={line.quantity} className="h-7 w-20 text-xs text-right ml-auto"
-                                        value={src.lineQtys[line.skuCode] || 0}
-                                        onChange={(e) => updateSrcQty(src.id, line.skuCode, parseInt(e.target.value) || 0)} />
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
+                                {demandLines!
+                                  .filter((line) => Object.prototype.hasOwnProperty.call(src.lineQtys, line.skuCode))
+                                  .map((line) => (
+                                    <TableRow key={line.skuCode}>
+                                      <TableCell className="font-mono text-xs">{line.skuCode}</TableCell>
+                                      <TableCell className="text-xs">{line.productName}</TableCell>
+                                      <TableCell className="text-xs text-right">{line.quantity}</TableCell>
+                                      <TableCell className="text-xs text-right">
+                                        <Input type="number" min={0} max={line.quantity} className="h-7 w-20 text-xs text-right ml-auto"
+                                          value={src.lineQtys[line.skuCode] || 0}
+                                          onChange={(e) => updateSrcQty(src.id, line.skuCode, parseInt(e.target.value) || 0)} />
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
                               </TableBody>
                             </Table>
+                            {Object.keys(src.lineQtys).length === 0 && (
+                              <div className="p-6 text-center text-sm text-muted-foreground">
+                                {tf("Click 'Add Item' to choose PO demand items.", "点击“添加商品”选择需要调拨的 PO 商品。")}
+                              </div>
+                            )}
                           </div>
                         )}
                       </CardContent>
@@ -557,5 +613,19 @@ export function CreateTransferOrderDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ProductSelectionDialog
+      open={showProductSelectionDialog}
+      onOpenChange={setShowProductSelectionDialog}
+      onProductsSelected={addSelectedProducts}
+      selectedProductIds={manualLines.map((line) => line.skuCode)}
+    />
+    <ProductSelectionDialog
+      open={showDemandSelectionDialog}
+      onOpenChange={setShowDemandSelectionDialog}
+      onProductsSelected={addDemandProducts}
+      selectedProductIds={demandLines ? demandLines.filter((line) => sources.some((source) => Object.prototype.hasOwnProperty.call(source.lineQtys, line.skuCode))).map((line, index) => `${line.skuCode}-${index}`) : []}
+      products={demandSelectableProducts}
+    />
+    </TooltipProvider>
   )
 }

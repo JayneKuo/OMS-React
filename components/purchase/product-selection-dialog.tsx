@@ -178,13 +178,15 @@ interface ProductSelectionDialogProps {
   onOpenChange: (open: boolean) => void
   onProductsSelected: (products: Product[]) => void
   selectedProductIds?: string[]
+  products?: Product[]
 }
 
 export function ProductSelectionDialog({
   open,
   onOpenChange,
   onProductsSelected,
-  selectedProductIds = []
+  selectedProductIds = [],
+  products = mockProducts,
 }: ProductSelectionDialogProps) {
   console.log("ProductSelectionDialog rendered, open:", open)
   const { t } = useI18n()
@@ -192,7 +194,7 @@ export function ProductSelectionDialog({
   const [selectedProducts, setSelectedProducts] = React.useState<string[]>(selectedProductIds)
 
   // 过滤商品
-  const filteredProducts = mockProducts.filter(product =>
+  const filteredProducts = products.filter(product =>
     product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.specifications.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,7 +221,7 @@ export function ProductSelectionDialog({
 
   // 确认选择
   const handleConfirm = () => {
-    const selected = mockProducts.filter(p => selectedProducts.includes(p.id))
+    const selected = products.filter(p => selectedProducts.includes(p.id))
     onProductsSelected(selected)
     onOpenChange(false)
   }
