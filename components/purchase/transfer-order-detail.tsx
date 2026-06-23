@@ -4,11 +4,12 @@ import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   CheckCircle, Package, Truck, Send, Ban,
   FilePlus, RefreshCw, Building, Clock, ArrowRight,
-  FileInput, FileOutput
+  FileInput, FileOutput, TrendingUp, History, User
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -44,6 +45,14 @@ export interface RelatedDocument {
   createdAt?: string
 }
 
+export interface TransferOrderTimelineEntry {
+  id: string
+  timestamp: string
+  title: string
+  description: string
+  actor?: string
+}
+
 export interface TransferOrder {
   id: string
   transferNo: string
@@ -68,6 +77,8 @@ export interface TransferOrder {
   lines: TransferOrderLine[]
   // Related documents (new structured format)
   relatedDocuments?: RelatedDocument[]
+  routingHistory?: TransferOrderTimelineEntry[]
+  eventHistory?: TransferOrderTimelineEntry[]
   // Legacy fields (kept for backward compat)
   sourceInboundNo?: string
   outboundOrderNo?: string
@@ -234,6 +245,125 @@ export function TransferOrderDetail({
   const canRetry = ["FAILED", "PARTIAL_SUCCESS"].includes(order.executionDocCreationStatus)
   const canCancel = ["PENDING", "CREATING", "FAILED", "PARTIAL_SUCCESS"].includes(order.executionDocCreationStatus)
   const canCreate = ["PENDING", "CANCELLED", "FAILED", "PARTIAL_SUCCESS"].includes(order.executionDocCreationStatus)
+  const [selectedDocumentNo, setSelectedDocumentNo] = React.useState<string | null>(documents[0]?.docNo ?? null)
+  const [activeSideTab, setActiveSideTab] = React.useState("routing")
+
+  const routingHistory = React.useMemo<TransferOrderTimelineEntry[]>(() => {
+    if (order.routingHistory && order.routingHistory.length > 0) {
+      return order.routingHistory
+    }
+
+    return [
+      {
+        id: `${order.id}-route-created`,
+        timestamp: order.createdAt || new Date().toISOString(),
+        title: tf("Transfer Created", "调拨单创建"),
+        description: hasVia
+          ? tf(
+              `${order.fromWarehouseName} routes via ${order.viaWarehouseName} to ${order.toWarehouseName}.`,
+              `${order.fromWarehouseName} 经 ${order.viaWarehouseName} 路由到 ${order.toWarehouseName}。`
+            )
+          : tf(
+              `${order.fromWarehouseName} routes directly to ${order.toWarehouseName}.`,
+              `${order.fromWarehouseName} 直接路由到 ${order.toWarehouseName}。`
+            ),
+        actor: tf("System", "系统"),
+      },
+      {
+        id: `${order.id}-route-current`,
+        timestamp: order.executionDocLastUpdatedAt || order.lastPushedAt || order.createdAt || new Date().toISOString(),
+        title: tf("Current Fulfillment Route", "当前履约路径"),
+        description: hasVia
+          ? tf(
+              `Inbound at ${order.viaWarehouseName}, outbound from ${order.viaWarehouseName}, final receipt at ${order.toWarehouseName}.`,
+              `${order.viaWarehouseName} 入库后出库，最终在 ${order.toWarehouseName} 收货。`
+            )
+          : tf(
+              `Outbound from ${order.fromWarehouseName}, final receipt at ${order.toWarehouseName}.`,
+              `${order.fromWarehouseName} 出库后，最终在 ${order.toWarehouseName} 收货。`
+            ),
+        actor: tf("OMS Routing", "OMS 路由"),
+      },
+    ]
+  }, [hasVia, order.createdAt, order.executionDocLastUpdatedAt, order.fromWarehouseName, order.id, order.lastPushedAt, order.routingHistory, order.toWarehouseName, order.viaWarehouseName, tf])
+
+  const eventHistory = React.useMemo<TransferOrderTimelineEntry[]>(() => {
+    if (order.eventHistory && order.eventHistory.length > 0) {
+      return order.eventHistory
+    }
+
+    const executionDocLabel = (() => {
+      switch (order.executionDocCreationStatus) {
+        case "PENDING": return tf("Pending", "待创建")
+        case "CREATING": return tf("Creating", "创建中")
+        case "FAILED": return tf("Failed", "创建失败")
+        case "PARTIAL_SUCCESS": return tf("Partial Success", "部分成功")
+        case "SUCCESS": return tf("Success", "全部成功")
+        case "CANCELLED": return tf("Cancelled", "已取消")
+        default: return order.executionDocCreationStatus
+      }
+    })()
+
+    const pushStatusLabel = (() => {
+      switch (order.pushStatus) {
+        case "NONE": return tf("Not Created", "未创建")
+        case "CREATED": return tf("Created", "已创建")
+        case "PUSH_FAILED": return tf("Push Failed", "推送失败")
+        case "WAITING_ACCEPT": return tf("Waiting Accept", "等待接收")
+        case "REJECTED": return tf("Rejected", "已拒收")
+        case "ACCEPTED": return tf("Accepted", "已接收")
+        case "CANCELLED": return tf("Cancelled", "已取消")
+        default: return order.pushStatus
+      }
+    })()
+
+    const entries: TransferOrderTimelineEntry[] = [
+      {
+        id: `${order.id}-event-created`,
+        timestamp: order.createdAt || new Date().toISOString(),
+        title: tf("Transfer Created", "调拨单创建"),
+        description: tf("Transfer order was created in OMS.", "调拨单已在 OMS 中创建。"),
+        actor: tf("System", "系统"),
+      },
+      {
+        id: `${order.id}-event-doc`,
+        timestamp: order.executionDocLastUpdatedAt || order.lastPushedAt || order.createdAt || new Date().toISOString(),
+        title: tf("Execution Document Status", "执行单据状态"),
+        description: tf(
+          `Execution document status is ${executionDocLabel}.`,
+          `执行单据状态为 ${executionDocLabel}。`
+        ),
+        actor: tf("OMS", "OMS"),
+      },
+    ]
+
+    if (order.pushStatus !== "NONE") {
+      entries.push({
+        id: `${order.id}-event-push`,
+        timestamp: order.lastPushedAt || order.executionDocLastUpdatedAt || order.createdAt || new Date().toISOString(),
+        title: tf("Warehouse Push Status", "推仓状态"),
+        description: tf(
+          `Warehouse push status is ${pushStatusLabel}.`,
+          `推仓状态为 ${pushStatusLabel}。`
+        ),
+        actor: tf("Warehouse Sync", "仓库同步"),
+      })
+    }
+
+    return entries
+  }, [order.createdAt, order.eventHistory, order.executionDocCreationStatus, order.executionDocLastUpdatedAt, order.id, order.lastPushedAt, order.pushStatus, tf])
+
+  React.useEffect(() => {
+    setSelectedDocumentNo((current) => {
+      if (!documents.length) return null
+      if (current && documents.some((doc) => doc.docNo === current)) return current
+      return documents[0]?.docNo ?? null
+    })
+  }, [documents])
+
+  const selectedDocument = selectedDocumentNo
+    ? documents.find((doc) => doc.docNo === selectedDocumentNo) ?? documents[0]
+    : documents[0]
 
   const lifecycleSteps = [
     { key: "created", label: tf("Created", "已创建"), subLabel: tf("Created", "已创建") },
@@ -398,69 +528,214 @@ export function TransferOrderDetail({
       </div>
 
       {/* ─── Related Documents (关联单据) - below items ─────────────────── */}
-      {documents.length > 0 && (
+      {documents.length > 0 && selectedDocument && (
         <div>
           <h4 className="text-sm font-semibold mb-3">{tf("Related Documents", "关联单据")}</h4>
-          <div className="space-y-3">
-            {documents.map((doc) => {
-              const meta = docStatusMeta[doc.status] || { label: doc.status, className: "bg-gray-100 text-gray-600" }
-              const isInbound = doc.docType === "INBOUND"
-              return (
-                <Card key={doc.docNo}>
-                  <CardContent className="p-4">
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", isInbound ? "bg-blue-50" : "bg-purple-50")}>
-                            {isInbound
-                              ? <FileInput className="h-4 w-4 text-blue-600" />
-                              : <FileOutput className="h-4 w-4 text-purple-600" />
-                            }
-                          </div>
-                          <div>
-                            <div className="text-xs text-muted-foreground">{isInbound ? tf("Inbound Document", "入库单据") : tf("Outbound Document", "出库单据")}</div>
-                            <div className="font-mono text-sm font-medium">{doc.docNo}</div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-                          <span className="text-muted-foreground">{tf("Warehouse", "仓库")}</span>
-                          <div className="text-right">{doc.warehouseName}</div>
-                          <span className="text-muted-foreground">{tf("Warehouse Code", "仓库编码")}</span>
-                          <div className="text-right font-mono">{doc.warehouseCode}</div>
-                          {doc.expectedQty !== undefined && (
-                            <>
-                              <span className="text-muted-foreground">{tf("Expected / Actual", "应收/实收")}</span>
-                              <div className="text-right">
-                                {doc.actualQty !== undefined ? `${doc.actualQty} / ${doc.expectedQty}` : doc.expectedQty}
+          <Card>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-1 gap-0 border-t md:grid-cols-4">
+                <div className="border-r">
+                  <div className="divide-y">
+                    {documents.map((doc) => {
+                      const meta = docStatusMeta[doc.status] || { label: doc.status, className: "bg-gray-100 text-gray-600" }
+                      const isInbound = doc.docType === "INBOUND"
+                      const isActive = selectedDocumentNo === doc.docNo
+
+                      return (
+                        <div
+                          key={doc.docNo}
+                          onClick={() => setSelectedDocumentNo(doc.docNo)}
+                          className={cn(
+                            "cursor-pointer border-l-4 p-3 transition-colors",
+                            isActive
+                              ? "border-l-primary bg-primary/10"
+                              : "border-l-transparent hover:bg-muted/50"
+                          )}
+                        >
+                          <div className="mb-2 flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="font-mono text-sm font-medium">{doc.docNo}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {isInbound ? tf("Inbound Document", "入库单据") : tf("Outbound Document", "出库单据")}
                               </div>
-                            </>
-                          )}
+                            </div>
+                            <Badge className={cn("shrink-0 text-[10px]", meta.className)}>
+                              {doc.statusLabel || meta.label}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <div>{doc.warehouseName}</div>
+                            <div className="font-mono">{doc.warehouseCode}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="md:col-span-3">
+                  {(() => {
+                    const doc = selectedDocument
+                    const meta = docStatusMeta[doc.status] || { label: doc.status, className: "bg-gray-100 text-gray-600" }
+                    const isInbound = doc.docType === "INBOUND"
+
+                    return (
+                      <div className="grid gap-0 lg:grid-cols-4">
+                        <div className="lg:col-span-3 lg:border-r">
+                          <div className="space-y-6 p-6">
+                            <div className="flex items-start justify-between border-b pb-4">
+                              <div>
+                                <div className="mb-2 flex items-center gap-3">
+                                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", isInbound ? "bg-blue-50" : "bg-purple-50")}>
+                                    {isInbound
+                                      ? <FileInput className="h-4 w-4 text-blue-600" />
+                                      : <FileOutput className="h-4 w-4 text-purple-600" />
+                                    }
+                                  </div>
+                                  <h3 className="font-mono text-xl font-semibold">{doc.docNo}</h3>
+                                  <Badge className={meta.className}>{doc.statusLabel || meta.label}</Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {isInbound ? tf("Inbound Document", "入库单据") : tf("Outbound Document", "出库单据")}
+                                  {doc.createdAt ? ` · ${new Date(doc.createdAt).toLocaleString()}` : ""}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-6 md:grid-cols-2">
+                              <div className="space-y-3">
+                                <h4 className="text-sm font-semibold">{tf("Document Information", "单据信息")}</h4>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between gap-3">
+                                    <span className="text-muted-foreground">{tf("Warehouse", "仓库")}</span>
+                                    <span className="text-right font-medium">{doc.warehouseName}</span>
+                                  </div>
+                                  <div className="flex justify-between gap-3">
+                                    <span className="text-muted-foreground">{tf("Warehouse Code", "仓库编码")}</span>
+                                    <span className="font-mono font-medium">{doc.warehouseCode}</span>
+                                  </div>
+                                  <div className="flex justify-between gap-3">
+                                    <span className="text-muted-foreground">{tf("Status", "状态")}</span>
+                                    <Badge className={cn("text-[10px]", meta.className)}>{doc.statusLabel || meta.label}</Badge>
+                                  </div>
+                                  {doc.expectedQty !== undefined && (
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-muted-foreground">{tf("Expected / Actual", "应收/实收")}</span>
+                                      <span className="font-medium text-green-600 dark:text-green-400">
+                                        {doc.expectedQty} / {doc.actualQty ?? 0}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <h4 className="text-sm font-semibold">{tf("Related Context", "关联上下文")}</h4>
+                                <div className="space-y-2 text-sm">
+                                  {order.sourceCode && (
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-muted-foreground">{tf("Source Allocation", "来源调拨")}</span>
+                                      <span className="font-mono text-right">{order.sourceCode}</span>
+                                    </div>
+                                  )}
+                                  {order.outboundOrderNo && isInbound && (
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-muted-foreground">{tf("Outbound / SO", "Outbound / SO")}</span>
+                                      <span className="font-mono text-right">{order.outboundOrderNo}</span>
+                                    </div>
+                                  )}
+                                  {order.transferNo && (
+                                    <div className="flex justify-between gap-3">
+                                      <span className="text-muted-foreground">{tf("Transfer Order", "调拨单")}</span>
+                                      <span className="font-mono text-right">{order.transferNo}</span>
+                                    </div>
+                                  )}
+                                  <div className="rounded-lg bg-muted/30 p-3 text-sm text-muted-foreground">
+                                    {isInbound
+                                      ? tf("This document tracks warehouse receiving in the transfer execution chain.", "该单据用于跟踪调拨履约链路中的仓库入库。")
+                                      : tf("This document tracks warehouse outbound execution before final receiving.", "该单据用于跟踪最终收货前的仓库出库执行。")}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-1">
+                          <Tabs value={activeSideTab} onValueChange={setActiveSideTab}>
+                            <CardHeader className="pb-3">
+                              <TabsList className="inline-grid w-auto grid-cols-2">
+                                <TabsTrigger value="routing" className="px-4">Routing</TabsTrigger>
+                                <TabsTrigger value="events" className="px-4">Events</TabsTrigger>
+                              </TabsList>
+                            </CardHeader>
+
+                            <TabsContent value="routing" className="mt-0">
+                              <CardContent>
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-2 text-sm font-medium">
+                                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                                    <span>Routing History</span>
+                                  </div>
+                                  <div className="space-y-3">
+                                    {routingHistory.map((route) => (
+                                      <div key={route.id} className="relative border-l-2 border-blue-200 pb-4 pl-6 last:border-l-0 last:pb-0 dark:border-blue-800">
+                                        <div className="absolute left-[-9px] top-0 h-4 w-4 rounded-full border-2 border-background bg-blue-500" />
+                                        <div className="space-y-1">
+                                          <div className="text-sm font-medium">{route.title}</div>
+                                          <div className="text-xs text-muted-foreground">{new Date(route.timestamp).toLocaleString()}</div>
+                                          <div className="mt-1 text-xs text-muted-foreground">{route.description}</div>
+                                          {route.actor && (
+                                            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                              <User className="h-3 w-3" />
+                                              <span>{route.actor}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </TabsContent>
+
+                            <TabsContent value="events" className="mt-0">
+                              <CardContent>
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-2 text-sm font-medium">
+                                    <History className="h-4 w-4 text-green-600" />
+                                    <span>Event History</span>
+                                  </div>
+                                  <div className="space-y-3">
+                                    {eventHistory.map((event) => (
+                                      <div key={event.id} className="relative border-l-2 border-green-200 pb-4 pl-6 last:border-l-0 last:pb-0 dark:border-green-800">
+                                        <div className="absolute left-[-9px] top-0 h-4 w-4 rounded-full border-2 border-background bg-green-500" />
+                                        <div className="space-y-1">
+                                          <div className="text-sm font-medium">{event.title}</div>
+                                          <div className="text-xs text-muted-foreground">{new Date(event.timestamp).toLocaleString()}</div>
+                                          <div className="mt-1 text-xs text-muted-foreground">{event.description}</div>
+                                          {event.actor && (
+                                            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                                              <User className="h-3 w-3" />
+                                              <span>{event.actor}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </TabsContent>
+                          </Tabs>
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-                          <span className="text-muted-foreground">{tf("Status", "状态")}</span>
-                          <div className="flex justify-end"><Badge className={cn("text-[10px]", meta.className)}>{doc.statusLabel || meta.label}</Badge></div>
-                          {order.sourceCode && (
-                            <>
-                              <span className="text-muted-foreground">{tf("Source Allocation", "来源调拨")}</span>
-                              <div className="text-right font-mono">{order.sourceCode}</div>
-                            </>
-                          )}
-                          {order.outboundOrderNo && isInbound && (
-                            <>
-                              <span className="text-muted-foreground">{tf("Outbound / SO", "Outbound / SO")}</span>
-                              <div className="text-right font-mono">{order.outboundOrderNo}</div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                    )
+                  })()}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
